@@ -1,0 +1,104 @@
+plugins {
+    id "com.commercehub.gradle.plugin.avro" version "0.5.0"
+}
+
+sourceCompatibility = 1.7
+
+configurations {
+    provided
+    compile.extendsFrom provided
+}
+
+apply plugin: 'java'
+apply plugin: 'maven'
+apply plugin: 'scala'
+apply plugin: "com.commercehub.gradle.plugin.avro"
+apply plugin: 'maven'
+apply plugin: 'idea'
+apply plugin: 'eclipse'
+
+archivesBaseName = 'LogAggregator'
+version = '1.0-SNAPSHOT'
+
+repositories {
+  mavenLocal()
+  mavenCentral()
+  maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
+  maven { url "https://plugins.gradle.org/m2/" }
+  maven { url 'https://clojars.org/repo' }
+  maven { url 'http://conjars.org/repo' }
+}
+
+dependencies {
+  provided 'io.snappydata:snappy-tools_2.10:0.1.0-SNAPSHOT'
+  provided 'io.snappydata:snappy-core_2.10:0.1.0-SNAPSHOT'
+  provided 'org.pentaho:pentaho-aggdesigner-algorithm:5.1.5-jhyde'
+  provided 'org.slf4j:slf4j-api:1.7.5'
+  provided 'org.scala-lang:scala-library:2.10.1'
+  compile 'com.miguno:kafka-avro-codec_2.10:0.1.1-SNAPSHOT'
+  compile 'com.twitter:algebird-core_2.10:0.1.11'
+  provided 'com.datastax.spark:spark-cassandra-connector-java_2.10:1.5.0'
+  // provided 'com.memsql:memsql-connector_2.10:1.2.2'
+}
+
+task generateAvro(type: com.commercehub.gradle.plugin.avro.GenerateAvroJavaTask) {
+  source("src/avro")
+  outputDir = file("src/main/java")
+}
+
+compileJava.source(generateAvro.outputs)
+
+avro.stringType = "charSequence"
+ 
+task gen(type: JavaExec, dependsOn: classes) {
+    main = 'io.snappydata.aggr.RandomLogKafkaProducer'
+    classpath sourceSets.main.runtimeClasspath
+    classpath configurations.runtime
+}
+
+task caggr(type: JavaExec, dependsOn: classes) {
+    main = 'io.snappydata.aggr.CassandraLogAggregator'
+    classpath sourceSets.main.runtimeClasspath
+    classpath configurations.runtime
+}
+
+task maggr(type: JavaExec, dependsOn: classes) {
+    main = 'io.snappydata.aggr.MemSqlLogAggregator'
+    classpath sourceSets.main.runtimeClasspath
+    classpath configurations.runtime
+}
+
+task saggr(type: JavaExec, dependsOn: classes) {
+    main = 'io.snappydata.aggr.SparkLogAggregator'
+    classpath sourceSets.main.runtimeClasspath
+    classpath configurations.runtime
+}
+
+task aggr(type: JavaExec, dependsOn: classes) {
+    main = 'io.snappydata.aggr.SnappyLogAggregator'
+    classpath sourceSets.main.runtimeClasspath
+    classpath configurations.runtime
+    jvmArgs = ['-XX:MaxPermSize=512m']
+}
+
+/* task copyToLib(type: Copy) {
+    into "$buildDir/libs"
+    from configurations.runtime
+}
+
+build.dependsOn(copyToLib)
+*/
+jar {
+    dependsOn configurations.runtime
+    from {
+        (configurations.runtime - configurations.provided).collect {
+            it.isDirectory() ? it : zipTree(it)
+        }
+    } {
+        exclude "META-INF/*.SF"
+        exclude "META-INF/*.DSA"
+        exclude "META-INF/*.RSA"
+    }
+}
+
+
