@@ -32,6 +32,7 @@ repositories {
 dependencies {
   provided 'io.snappydata:snappy-tools_2.10:0.1.0-SNAPSHOT'
   provided 'io.snappydata:snappy-core_2.10:0.1.0-SNAPSHOT'
+  provided 'io.snappydata:snappy-aqp:0.1.0-SNAPSHOT'
   provided 'org.pentaho:pentaho-aggdesigner-algorithm:5.1.5-jhyde'
   provided 'org.slf4j:slf4j-api:1.7.5'
   provided 'org.scala-lang:scala-library:2.10.1'
@@ -50,7 +51,7 @@ compileJava.source(generateAvro.outputs)
 
 avro.stringType = "charSequence"
  
-task gen(type: JavaExec, dependsOn: classes) {
+task createAndPublishLogs(type: JavaExec, dependsOn: classes) {
     main = 'io.snappydata.examples.adanalytics.RandomLogKafkaProducer'
     classpath sourceSets.main.runtimeClasspath
     classpath configurations.runtime
@@ -75,7 +76,7 @@ task saggr(type: JavaExec, dependsOn: classes) {
     jvmArgs = ['-XX:MaxPermSize=512m']
 }
 
-task aggr(type: JavaExec, dependsOn: classes) {
+task startLogAggregation(type: JavaExec, dependsOn: classes) {
     main = 'io.snappydata.examples.adanalytics.SnappySQLLogAggregator'
     classpath sourceSets.main.runtimeClasspath
     classpath configurations.runtime

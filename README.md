@@ -69,10 +69,10 @@ snappy-commons/build-artifacts/scala-2.10/snappy/sbin $ ./snappy-servers.sh star
 
 Start generating and publishing logs to Kafka
 ```
-./gradlew gen
+./gradlew createAndPublishLogs
 ```
 
 Start aggregation
 ```
-./gradlew aggr
+./gradlew startLogAggregation
 ```
