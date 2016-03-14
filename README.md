@@ -9,22 +9,30 @@ In order to run this example, we need to install the followings:
 Please follow the below steps to run the example:
 
 You need to checkout SnappyData product repo 
+```
 git clone https://github.com/SnappyDataInc/snappydata.git
-
+```
 To build the repo
+```
 ./gradlew assemble
-
+```
 publish it locally 
+```
 ./gradlew localPublish
+```
 
 Then checkout the adanalytics example
+```
 git clone https://github.com/SnappyDataInc/snappy-examples.git
-
+```
+build the repo
+```
 ./gradlew assemble
-
+```
 If you would like to use Intellij Idea, please run following build target
+```
 ./gradlew idea 
-
+```
 And import the project in Idea.
 
 Start Zookeeper with default zookeeper.properties:
