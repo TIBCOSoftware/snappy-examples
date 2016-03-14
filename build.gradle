@@ -72,6 +72,7 @@ task saggr(type: JavaExec, dependsOn: classes) {
     main = 'io.snappydata.examples.adanalytics.SnappySparkLogAggregator'
     classpath sourceSets.main.runtimeClasspath
     classpath configurations.runtime
+    jvmArgs = ['-XX:MaxPermSize=512m']
 }
 
 task aggr(type: JavaExec, dependsOn: classes) {
