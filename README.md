@@ -18,7 +18,7 @@ To build the repo
 ```
 publish it locally 
 ```
-./gradlew localPublish
+./gradlew publishLocal
 ```
 
 Then checkout the adanalytics example
@@ -39,7 +39,7 @@ Start Zookeeper with default zookeeper.properties:
 ```
 bin/zookeeper-server-start.sh config/zookeeper.properties
 ```
-Start Kafka broker1 and broker2 in two different terminals on ports 9092 and 9093 respectively. You can create two copies of config/server.propoerties and edit ports to use 9092 and 9093 respectively.
+Start Kafka broker1 and broker2 in two different terminals on ports 9092 and 9093 respectively. Both the brokers needs to be started with different log.dirs locations and broker.id. You can create two copies of config/server.propoerties and edit ports to use 9092 and 9093 respectively. Also, edit these files to have different log.dirs locations and broker.id as 0 and 1.
 
 ```
 bin/kafka-server-start.sh config/server1.properties
