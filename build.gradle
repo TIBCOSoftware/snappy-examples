@@ -51,31 +51,31 @@ compileJava.source(generateAvro.outputs)
 avro.stringType = "charSequence"
  
 task gen(type: JavaExec, dependsOn: classes) {
-    main = 'io.snappydata.aggr.RandomLogKafkaProducer'
+    main = 'io.snappydata.examples.adanalytics.RandomLogKafkaProducer'
     classpath sourceSets.main.runtimeClasspath
     classpath configurations.runtime
 }
 
 task caggr(type: JavaExec, dependsOn: classes) {
-    main = 'io.snappydata.aggr.CassandraLogAggregator'
+    main = 'io.snappydata.examples.adanalytics.CassandraLogAggregator'
     classpath sourceSets.main.runtimeClasspath
     classpath configurations.runtime
 }
 
 task maggr(type: JavaExec, dependsOn: classes) {
-    main = 'io.snappydata.aggr.MemSqlLogAggregator'
+    main = 'io.snappydata.examples.adanalytics.MemSqlLogAggregator'
     classpath sourceSets.main.runtimeClasspath
     classpath configurations.runtime
 }
 
 task saggr(type: JavaExec, dependsOn: classes) {
-    main = 'io.snappydata.aggr.SparkLogAggregator'
+    main = 'io.snappydata.examples.adanalytics.SnappySparkLogAggregator'
     classpath sourceSets.main.runtimeClasspath
     classpath configurations.runtime
 }
 
 task aggr(type: JavaExec, dependsOn: classes) {
-    main = 'io.snappydata.aggr.SnappyLogAggregator'
+    main = 'io.snappydata.examples.adanalytics.SnappySQLLogAggregator'
     classpath sourceSets.main.runtimeClasspath
     classpath configurations.runtime
     jvmArgs = ['-XX:MaxPermSize=512m']

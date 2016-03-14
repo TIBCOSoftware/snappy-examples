@@ -1,4 +1,4 @@
-package io.snappydata.aggr
+package io.snappydata.examples.adanalytics
 
 import com.twitter.algebird.HLL
 import org.joda.time.DateTime

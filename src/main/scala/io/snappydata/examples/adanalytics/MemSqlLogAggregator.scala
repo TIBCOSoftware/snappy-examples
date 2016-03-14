@@ -1,5 +1,4 @@
-package io.snappydata.aggr
-
+package io.snappydata.examples.adanalytics
 
 import org.apache.spark.SparkContext
 // import org.apache.spark.sql.Row

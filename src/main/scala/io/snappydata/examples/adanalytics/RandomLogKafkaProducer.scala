@@ -1,21 +1,21 @@
-package io.snappydata.aggr
+package io.snappydata.examples.adanalytics
 
 import java.util.Properties
 
-import io.snappydata.aggr.Constants._
 import kafka.producer.{KeyedMessage, Producer, ProducerConfig}
+import io.snappydata.examples.adanalytics.Constants._
 
 import scala.util.Random
 
 object RandomLogKafkaProducer extends App {
 
   val props = new Properties()
-  props.put("serializer.class", "io.snappydata.aggr.ImpressionLogAvroEncoder")
+  props.put("serializer.class", "io.snappydata.examples.adanalytics.AdImpressionLogAvroEncoder")
   props.put("metadata.broker.list", "localhost:9092")
   props.put("request.required.acks", "1")
 
   val config = new ProducerConfig(props)
-  val producer = new Producer[String, ImpressionLog](config)
+  val producer = new Producer[String, AdImpressionLog](config)
 
   println("Sending messages...")
   val random = new Random()
@@ -29,7 +29,7 @@ object RandomLogKafkaProducer extends App {
     val cookie = s"cookie_${random.nextInt(Constants.NumCookies)}"
     val geo = Geos(random.nextInt(Geos.size))
     val bid = math.abs(random.nextDouble()) % 1
-    val log = new ImpressionLog()
+    val log = new AdImpressionLog()
     log.setTimestamp(timestamp)
     log.setPublisher(publisher)
     log.setAdvertiser(advertiser)
@@ -38,7 +38,7 @@ object RandomLogKafkaProducer extends App {
     log.setBid(bid)
     log.setCookie(cookie)
 
-    producer.send(new KeyedMessage[String, ImpressionLog](Constants.KafkaTopic, log))
+    producer.send(new KeyedMessage[String, AdImpressionLog](Constants.KafkaTopic, log))
     i = i + 1
     if (i % 10000 == 0) {
       println(s"Sent $i messages!")

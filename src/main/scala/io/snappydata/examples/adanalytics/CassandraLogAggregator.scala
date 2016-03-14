@@ -1,18 +1,18 @@
-package io.snappydata.aggr
-
+package io.snappydata.examples.adanalytics
 
 import com.twitter.algebird.HyperLogLogMonoid
 import kafka.serializer.StringDecoder
 import org.apache.commons.io.Charsets
-import org.apache.spark.{SparkConf}
+import org.apache.spark.SparkConf
 import org.apache.spark.streaming.kafka.KafkaUtils
 import org.apache.spark.streaming.{Seconds, StreamingContext}
 
 object CassandraLogAggregator extends App {
 
-  val  batchDuration = Seconds(10)
-  val sc = new SparkConf().setAppName("logAggregator").setMaster("local[4]")
-  val ssc = new StreamingContext(sc, batchDuration)
+  val sc = new SparkConf()
+    .setAppName("CassandraLogAggregator")
+    .setMaster("local[4]")
+  val ssc = new StreamingContext(sc, Seconds(1))
   val kafkaParams: Map[String, String] = Map(
     "metadata.broker.list"->"localhost:9092,localhost:9093"
   )
@@ -20,7 +20,8 @@ object CassandraLogAggregator extends App {
   val topics  = Set(Constants.KafkaTopic)
 
   // stream of (topic, ImpressionLog)
-  val messages = KafkaUtils.createDirectStream[String, ImpressionLog, StringDecoder, ImpressionLogAvroDecoder](ssc, kafkaParams, topics)
+  val messages = KafkaUtils.createDirectStream
+    [String, AdImpressionLog, StringDecoder, AdImpressionLogAvroDecoder](ssc, kafkaParams, topics)
 
   // to count uniques
   lazy val hyperLogLog = new HyperLogLogMonoid(12)
@@ -38,8 +39,8 @@ object CassandraLogAggregator extends App {
       (key, agg)
   }
 
-  // Reduce to generate imps, uniques, sumBid per pub and geo per interval of BatchDuration seconds
-  val aggLogs = logsByPubGeo.reduceByKeyAndWindow(reduceAggregationLogs, batchDuration)
+  // Reduce to generate imps, uniques, sumBid per pub and geo per interval of 2 seconds
+  val aggLogs = logsByPubGeo.reduceByKeyAndWindow(reduceAggregationLogs, Seconds(2))
   import com.datastax.spark.connector.streaming._
 
   aggLogs.saveToCassandra("cassandraTable", "aggr" )

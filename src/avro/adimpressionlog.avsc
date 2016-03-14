@@ -1,7 +1,7 @@
 {
   "type": "record",
-  "name": "ImpressionLog",
-  "namespace": "io.snappydata.aggr",
+  "name": "AdImpressionLog",
+  "namespace": "io.snappydata.examples.adanalytics",
   "fields": [ {
     "name": "timestamp",
     "type": "long",
