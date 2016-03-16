@@ -17,25 +17,22 @@ apply plugin: 'maven'
 apply plugin: 'idea'
 apply plugin: 'eclipse'
 
-archivesBaseName = 'LogAggregator'
-version = '1.0-SNAPSHOT'
+archivesBaseName = 'AdImpressionLogAggr'
+version = '2.0-SNAPSHOT'
 
 repositories {
-  mavenLocal()
   mavenCentral()
-  maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
-  maven { url "https://plugins.gradle.org/m2/" }
-  maven { url 'https://clojars.org/repo' }
-  maven { url 'http://conjars.org/repo' }
+  maven { url "https://oss.sonatype.org/content/groups/public" }
+  maven { url "http://repository.snappydata.io:8089/repository/internal" }
+  // maven { url "https://plugins.gradle.org/m2/" }
+   maven { url 'https://clojars.org/repo' }
 }
 
 dependencies {
-  provided 'io.snappydata:snappy-tools_2.10:0.1.0-SNAPSHOT'
-  provided 'io.snappydata:snappy-core_2.10:0.1.0-SNAPSHOT'
-  provided 'io.snappydata:snappy-aqp:0.1.0-SNAPSHOT'
-  provided 'org.pentaho:pentaho-aggdesigner-algorithm:5.1.5-jhyde'
-  provided 'org.slf4j:slf4j-api:1.7.5'
-  provided 'org.scala-lang:scala-library:2.10.1'
+  provided 'io.snappydata:snappy-tools_2.10:0.2.0-PREVIEW'
+  provided 'io.snappydata:snappy-core_2.10:0.2.0-PREVIEW'
+  provided 'io.snappydata:snappy-aqp:0.2.0-PREVIEW'
+  provided 'io.snappydata:snappy-spark-catalyst_2.10:1.6.0-BETA'
   compile 'com.miguno:kafka-avro-codec_2.10:0.1.1-SNAPSHOT'
   compile 'com.twitter:algebird-core_2.10:0.1.11'
   provided 'com.datastax.spark:spark-cassandra-connector-java_2.10:1.5.0'
@@ -83,13 +80,6 @@ task startLogAggregation(type: JavaExec, dependsOn: classes) {
     jvmArgs = ['-XX:MaxPermSize=512m']
 }
 
-/* task copyToLib(type: Copy) {
-    into "$buildDir/libs"
-    from configurations.runtime
-}
-
-build.dependsOn(copyToLib)
-*/
 jar {
     dependsOn configurations.runtime
     from {
