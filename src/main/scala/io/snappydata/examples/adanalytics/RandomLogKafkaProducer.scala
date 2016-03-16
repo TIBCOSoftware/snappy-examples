@@ -11,7 +11,7 @@ object RandomLogKafkaProducer extends App {
 
   val props = new Properties()
   props.put("serializer.class", "io.snappydata.examples.adanalytics.AdImpressionLogAvroEncoder")
-  props.put("metadata.broker.list", "localhost:9092")
+  props.put("metadata.broker.list", "localhost:9092,localhost:9093")
   props.put("request.required.acks", "1")
 
   val config = new ProducerConfig(props)

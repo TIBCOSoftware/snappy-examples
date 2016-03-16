@@ -16,6 +16,7 @@ object SnappySQLLogAggregator extends App {
 
   snsc.sql("drop table if exists AdImpressionLog")
   snsc.sql("drop table if exists adImpressionsColumnTable")
+snsc.sql("drop table if exists sampledAdImpressions")
 
   snsc.sql("create stream table AdImpressionLog (" +
     " timestamp long," +
