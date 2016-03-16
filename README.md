@@ -13,19 +13,6 @@ In order to run this example, we need to install the followings:
 
 Please follow the below steps to run the example:
 
-You need to checkout SnappyData product repo 
-```
-git clone https://github.com/SnappyDataInc/snappydata.git
-```
-To build the repo
-```
-./gradlew assemble
-```
-publish it locally 
-```
-./gradlew publishLocal
-```
-
 Then checkout the adanalytics example
 ```
 git clone https://github.com/SnappyDataInc/snappy-examples.git
@@ -65,8 +52,8 @@ snappy-commons/build-artifacts/scala-2.10/snappy/sbin $ ./snappy-locators.sh sta
 Start SnappyData Servers:  
 In snappy-commons/build-artifacts/scala-2.10/snappy/conf, create a file named servers and add following two lines to create two servers: 
 ```
-localhost -classpath='snappy-examples/build/libs/LogAggregator-1.0-SNAPSHOT.jar'
-localhost -classpath='snappy-examples/build/libs/LogAggregator-1.0-SNAPSHOT.jar'
+localhost -classpath='snappy-examples/build/libs/AdImpressionLogAggr-2.0-SNAPSHOT.jar'
+localhost -classpath='snappy-examples/build/libs/AdImpressionLogAggr-2.0-SNAPSHOT.jar'
 ```
 and run following command 
 
