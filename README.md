@@ -7,7 +7,7 @@ In order to run this example, we need to install the followings:
 
 1. Scala 2.10
 2. Apache Kafka 0.8.2.2
-3. SnappyData 0.2 Preview Release
+3. SnappyData 0.2.1 Preview Release
 4. Gradle 2.11
 5. JDK 7.0
 
@@ -31,9 +31,24 @@ Start Zookeeper with default zookeeper.properties:
 ```
 bin/zookeeper-server-start.sh config/zookeeper.properties
 ```
-Start Kafka broker1 and broker2 in two different terminals.
-You can create two copies of config/server.propoerties and edit ports to use 9092 and 9093 respectively. 
-Also, both these brokers need to be started with different log.dirs locations and broker.id. .
+
+You can configure multiple Kafka brokers by simply having multiple copies of the  config/server.properties file.
+For example, server1.properties & server2.properties
+
+You need to then specify different broker.id, log.dir and port in each of those files to make them unique
+```
+   config/server1.properties:
+     broker.id=1
+     port=9092
+     log.dir=/tmp/kafka-logs-1
+```
+```
+   config/server2.properties:
+     broker.id=2
+     port=9093
+     log.dir=/tmp/kafka-logs-2
+```
+And then start multiple instances with following commands
 
 ```
 bin/kafka-server-start.sh config/server1.properties
@@ -41,16 +56,19 @@ bin/kafka-server-start.sh config/server2.properties
 ```
 Create a topic “adnetwork-topic”:
 ```
-bin/kafka-topics.sh --create --zookeeper localhost:2181 --partitions 8 --topic adnetwork-topic
+bin/kafka-topics.sh --create --zookeeper localhost:2181 --partitions 8 --topic adnetwork-topic --replication-factor=1
 ```
+Please download binary for SnppayData 0.2.1 Preview release from here : https://github.com/SnappyDataInc/snappydata/releases/tag/v0.2.1-preview
+Unzip it to SnappyData-0.2.1-PREVIEW
+
 Start SnappyData Locator:
 run following command 
 ```
-snappy-commons/build-artifacts/scala-2.10/snappy/sbin $ ./snappy-locators.sh start
+SnappyData-0.2.1-PREVIEW/sbin $ ./snappy-locators.sh start
 ```
 
 Start SnappyData Servers:  
-In snappy-commons/build-artifacts/scala-2.10/snappy/conf, create a file named servers and add following two lines to create two servers: 
+In SnappyData-0.2.1-PREVIEW/conf, create a file named servers and add following two lines to create two servers: 
 ```
 localhost -classpath='snappy-examples/build/libs/AdImpressionLogAggr-2.0-SNAPSHOT.jar'
 localhost -classpath='snappy-examples/build/libs/AdImpressionLogAggr-2.0-SNAPSHOT.jar'
@@ -58,7 +76,7 @@ localhost -classpath='snappy-examples/build/libs/AdImpressionLogAggr-2.0-SNAPSHO
 and run following command 
 
 ```
-snappy-commons/build-artifacts/scala-2.10/snappy/sbin $ ./snappy-servers.sh start
+SnappyData-0.2.1-PREVIEW/sbin $ ./snappy-servers.sh start
 ```
 
 Start generating and publishing logs to Kafka
@@ -73,7 +91,7 @@ Start aggregation
 
 We can even verify if the data is getting stored in the adImpressions column table by using snappy-shell. 
 ```
-snappy-commons/build-artifacts/scala-2.10/snappy/bin $ ./snappy-shell 
+SnappyData-0.2.1-PREVIEW/bin $ ./snappy-shell 
 SnappyData version 2.0-BETA
 snappy> connect client 'localhost:1527';
 Using CONNECTION0
