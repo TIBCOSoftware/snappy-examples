@@ -37,7 +37,7 @@ dependencies {
   compile 'com.miguno:kafka-avro-codec_2.10:0.1.1-SNAPSHOT'
   compile 'com.twitter:algebird-core_2.10:0.1.11'
   provided 'com.datastax.spark:spark-cassandra-connector-java_2.10:1.5.0'
-  provided 'com.memsql:memsql-connector_2.10:1.2.2'
+  // provided 'com.memsql:memsql-connector_2.10:1.2.2'
 }
 
 task generateAvro(type: com.commercehub.gradle.plugin.avro.GenerateAvroJavaTask) {
@@ -53,6 +53,9 @@ task createAndPublishLogs(type: JavaExec, dependsOn: classes) {
     main = 'io.snappydata.examples.adanalytics.RandomLogKafkaProducer'
     classpath sourceSets.main.runtimeClasspath
     classpath configurations.runtime
+    systemProperties System.getProperties()
+    systemProperty "numThreads", System.getProperty("numThreads")
+    // args System.getProperty("exec.args").split() 
 }
 
 task caggr(type: JavaExec, dependsOn: classes) {
