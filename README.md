@@ -41,7 +41,7 @@ bin/kafka-server-start.sh config/server2.properties
 ```
 Create a topic “adnetwork-topic”:
 ```
-bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 8 --topic adnetwork-topic
+bin/kafka-topics.sh --create --zookeeper localhost:2181 --partitions 8 --topic adnetwork-topic
 ```
 Start SnappyData Locator:
 run following command 
