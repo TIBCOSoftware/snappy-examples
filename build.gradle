@@ -58,19 +58,7 @@ task createAndPublishLogs(type: JavaExec, dependsOn: classes) {
     // args System.getProperty("exec.args").split() 
 }
 
-task caggr(type: JavaExec, dependsOn: classes) {
-    main = 'io.snappydata.examples.adanalytics.CassandraLogAggregator'
-    classpath sourceSets.main.runtimeClasspath
-    classpath configurations.runtime
-}
-
-task maggr(type: JavaExec, dependsOn: classes) {
-    main = 'io.snappydata.examples.adanalytics.MemSqlLogAggregator'
-    classpath sourceSets.main.runtimeClasspath
-    classpath configurations.runtime
-}
-
-task saggr(type: JavaExec, dependsOn: classes) {
+task startLogAggregation_Spark(type: JavaExec, dependsOn: classes) {
     main = 'io.snappydata.examples.adanalytics.SnappySparkLogAggregator'
     classpath sourceSets.main.runtimeClasspath
     classpath configurations.runtime

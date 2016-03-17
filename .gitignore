@@ -1,0 +1,26 @@
+*.class
+snappy-aqp
+
+# sbt specific
+.cache/
+.history
+.lib/
+dist/*
+build-artifacts/
+lib_managed/
+src_managed/
+project/boot/
+project/plugins/project/
+
+# gradle specific
+.gradle/
+
+# Scala-IDE specific
+.scala_dependencies
+.worksheet
+.idea
+*.iml
+
+# Emacs files
+.#*
+*~

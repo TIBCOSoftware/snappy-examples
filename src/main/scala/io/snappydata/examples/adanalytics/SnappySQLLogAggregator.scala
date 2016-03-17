@@ -15,8 +15,8 @@ object SnappySQLLogAggregator extends App {
   val snsc = SnappyStreamingContext(SnappyContext.getOrCreate(sc), Milliseconds(1000))
 
   snsc.sql("drop table if exists AdImpressionLog")
-  snsc.sql("drop table if exists adImpressionsColumnTable")
-snsc.sql("drop table if exists sampledAdImpressions")
+  snsc.sql("drop table if exists adImpressions")
+  snsc.sql("drop table if exists sampledAdImpressions")
 
   snsc.sql("create stream table AdImpressionLog (" +
     " timestamp long," +
@@ -36,7 +36,9 @@ snsc.sql("drop table if exists sampledAdImpressions")
     " KD 'kafka.serializer.StringDecoder', " +
     " VD 'io.snappydata.examples.adanalytics.AdImpressionLogAvroDecoder')")
 
-  snsc.sql("create table adImpressionsColumnTable(publisher string," +
+  snsc.getSchemaDStream("AdImpressionLog").foreachRDD(rdd => println(rdd.count))
+
+  snsc.sql("create table adImpressions(publisher string," +
     " geo string, avg_bid double, imps long, uniques long) " +
     "using column " +
     "options(PARTITION_BY 'publisher')")
@@ -46,11 +48,9 @@ snsc.sql("drop table if exists sampledAdImpressions")
 
   snsc.registerCQ("select publisher, geo, avg(bid) as avg_bid, count(*) imps, count(distinct(cookie)) uniques" +
     " from AdImpressionLog window (duration '2' seconds, slide '2' seconds)" +
-    " where geo != 'unknown' group by publisher, geo")
-    .foreachDataFrame(df => {
-      df.show
+    " where geo != 'unknown' group by publisher, geo").foreachDataFrame(df => {
       df.write.format("column").mode(SaveMode.Append)
-        .options(Map.empty[String, String]).saveAsTable("adImpressionsColumnTable")
+        .options(Map.empty[String, String]).saveAsTable("adImpressions")
       df.write.format("sample").mode(SaveMode.Append)
         .options(Map.empty[String, String]).saveAsTable("sampledAdImpressions")
     })

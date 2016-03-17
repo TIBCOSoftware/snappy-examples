@@ -44,7 +44,7 @@ object SnappySparkLogAggregator extends App {
   // Reduce to generate imps, uniques, sumBid per pub and geo per 2 seconds
   val aggLogs = logsByPubGeo.reduceByKeyAndWindow(reduceAggregationLogs, Seconds(2))
 
-  aggLogs.foreachRDD(println(_,_))
+  aggLogs.foreachRDD(rdd => println(rdd.count))
 
   // start rolling!
   ssc.start
