@@ -38,12 +38,23 @@ object SnappySQLLogAggregator extends App {
 
   snsc.getSchemaDStream("AdImpressionLog").foreachRDD(rdd => println(rdd.count))
 
-  snsc.sql("create table adImpressions(publisher string," +
+  snsc.sql("create table adImpressions(timestamp long, publisher string, " +
+      "advertiser string, website string, geo string, bid double, cookie string) " +
+      "using column " +
+      // "options(PARTITION_BY 'timestamp')")
+      // "options(PERSISTENT 'ASYNCHRONOUS')")
+      "options(PERSISTENT 'ASYNCHRONOUS', EVICTION_BY 'LRUMEMSIZE 600')")
+
+  snsc.getSchemaDStream("AdImpressionLog").foreachDataFrame(df => {
+    df.write.format("column").mode(SaveMode.Append)
+      .options(Map.empty[String, String]).saveAsTable("adImpressions")
+  })
+
+  /* snsc.sql("create table adImpressions(publisher string," +
     " geo string, avg_bid double, imps long, uniques long) " +
     "using column " +
     "options(PARTITION_BY 'publisher')")
-
-  snsc.sql("CREATE SAMPLE TABLE sampledAdImpressions (publisher string, geo string, avg_bid double, imps long, uniques long)" +
+    snsc.sql("CREATE SAMPLE TABLE sampledAdImpressions (publisher string, geo string, avg_bid double, imps long, uniques long)" +
     " OPTIONS(qcs 'publisher', fraction '0.03', strataReservoirSize '50')")
 
   snsc.registerCQ("select publisher, geo, avg(bid) as avg_bid, count(*) imps, count(distinct(cookie)) uniques" +
@@ -53,7 +64,7 @@ object SnappySQLLogAggregator extends App {
         .options(Map.empty[String, String]).saveAsTable("adImpressions")
       df.write.format("sample").mode(SaveMode.Append)
         .options(Map.empty[String, String]).saveAsTable("sampledAdImpressions")
-    })
+    }) */
 
   snsc.start
   snsc.awaitTermination

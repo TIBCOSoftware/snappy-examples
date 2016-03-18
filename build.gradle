@@ -9,24 +9,30 @@ configurations {
     compile.extendsFrom provided
 }
 
-apply plugin: 'java'
-apply plugin: 'maven'
-apply plugin: 'scala'
-apply plugin: "com.commercehub.gradle.plugin.avro"
-apply plugin: 'maven'
-apply plugin: 'idea'
-apply plugin: 'eclipse'
-
 archivesBaseName = 'AdImpressionLogAggr'
 version = '2.0-SNAPSHOT'
 
-repositories {
-  mavenCentral()
-  maven { url "https://oss.sonatype.org/content/groups/public" }
-  maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
-  maven { url "http://repository.snappydata.io:8089/repository/internal" }
-  maven { url "http://repository.snappydata.io:8089/repository/snapshots" }
-  maven { url 'https://clojars.org/repo' }
+allprojects {
+  repositories {
+    mavenCentral()
+    maven { url "https://oss.sonatype.org/content/groups/public" }
+    maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
+    maven { url "http://repository.snappydata.io:8089/repository/internal" }
+    maven { url "http://repository.snappydata.io:8089/repository/snapshots" }
+    maven { url 'https://clojars.org/repo' }
+  }
+
+  apply plugin: 'java'
+  apply plugin: 'maven'
+  apply plugin: 'scala'
+  apply plugin: 'idea'
+  apply plugin: 'eclipse'
+  apply plugin: "com.commercehub.gradle.plugin.avro"
+
+  dependencies {
+    compile 'org.scala-lang:scala-library:2.10.6'
+    compile 'org.scala-lang:scala-reflect:2.10.6'
+  }
 }
 
 dependencies {
@@ -36,8 +42,6 @@ dependencies {
   provided 'io.snappydata:snappy-spark-catalyst_2.10:1.6.0-BETA'
   compile 'com.miguno:kafka-avro-codec_2.10:0.1.1-SNAPSHOT'
   compile 'com.twitter:algebird-core_2.10:0.1.11'
-  provided 'com.datastax.spark:spark-cassandra-connector-java_2.10:1.5.0'
-  // provided 'com.memsql:memsql-connector_2.10:1.2.2'
 }
 
 task generateAvro(type: com.commercehub.gradle.plugin.avro.GenerateAvroJavaTask) {

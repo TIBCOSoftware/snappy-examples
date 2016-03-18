@@ -1,0 +1,20 @@
+configurations {
+  provided
+  compile.extendsFrom provided
+}
+
+dependencies {
+  provided 'com.datastax.spark:spark-cassandra-connector_2.10:1.6.0-M1'
+  provided 'org.apache.spark:spark-core_2.10:1.6.1'
+  provided 'org.apache.spark:spark-streaming_2.10:1.6.1'
+  provided 'org.apache.spark:spark-streaming-kafka_2.10:1.6.1'
+  provided 'org.apache.spark:spark-sql_2.10:1.6.1'
+  compile project(':')
+}
+
+task startLogAggregation_Cassandra(type: JavaExec, dependsOn: classes) {
+    main = 'io.snappydata.examples.adanalytics.CassandraLogAggregator'
+    classpath sourceSets.main.runtimeClasspath
+    classpath configurations.runtime
+    jvmArgs = ['-XX:MaxPermSize=512m']
+}
