@@ -70,8 +70,8 @@ SnappyData-0.2.1-PREVIEW/sbin $ ./snappy-locators.sh start
 Start SnappyData Servers:  
 In SnappyData-0.2.1-PREVIEW/conf, create a file named servers and add following two lines to create two servers: 
 ```
-localhost -classpath='snappy-examples/build/libs/AdImpressionLogAggr-2.0-SNAPSHOT.jar'
-localhost -classpath='snappy-examples/build/libs/AdImpressionLogAggr-2.0-SNAPSHOT.jar'
+localhost -classpath='absolute_path_to_snappy-examples-checkout/build/libs/AdImpressionLogAggr-2.0-SNAPSHOT.jar'
+localhost -classpath='absolute_path_to_snappy-examples-checkout/build/libs/AdImpressionLogAggr-2.0-SNAPSHOT.jar'
 ```
 and run following command 
 
