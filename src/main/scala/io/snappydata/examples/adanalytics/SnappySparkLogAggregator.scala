@@ -19,7 +19,7 @@ object SnappySparkLogAggregator extends App {
     "metadata.broker.list"->"localhost:9092,localhost:9093"
   )
 
-  val topics  = Set(Constants.KafkaTopic)
+  val topics  = Set(Constants.kafkaTopic)
 
   // stream of (topic, ImpressionLog)
   val messages = KafkaUtils.createDirectStream

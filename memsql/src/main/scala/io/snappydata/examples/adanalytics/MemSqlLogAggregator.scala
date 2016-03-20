@@ -17,24 +17,21 @@ object MemSqlLogAggregator extends App {
   val sc = new SparkContext(conf)
   val msc = new MemSQLContext(sc)
 
-  val dbName = "log_aggregator"
-  val tableName = "adimpressions"
-
   val ssc = new StreamingContext(sc, Seconds(1))
   val kafkaParams: Map[String, String] = Map(
     "metadata.broker.list"->"localhost:9092,localhost:9093"
   )
 
-  val topics  = Set(Constants.KafkaTopic)
+  val topics  = Set(Constants.memsqlaKafkaTopic)
 
  val rowConverter = new ImpressionLogToRow
 
   msc.getMemSQLCluster.withMasterConn(conn => {
     conn.withStatement(stmt => {
-      stmt.execute(s"CREATE DATABASE IF NOT EXISTS $dbName")
-      stmt.execute(s"DROP TABLE IF EXISTS $dbName.$tableName")
+      stmt.execute(s"CREATE DATABASE IF NOT EXISTS logaggregator")
+      stmt.execute(s"DROP TABLE IF EXISTS logaggregator.adimpressions")
       stmt.execute(s"""
-                CREATE TABLE $dbName.$tableName
+                CREATE TABLE logaggregator.adimpressions
                 (timestamp bigint,
                 publisher varchar(15),
                 advertiser varchar(15),
@@ -42,18 +39,23 @@ object MemSqlLogAggregator extends App {
                 geo varchar(4),
                 bid double,
                 cookie varchar(20),
-                PRIMARY KEY (timestamp))
+                SHARD KEY (timestamp))
               """)
     })
   })
 
-  val schema = msc.table(s"$dbName.$tableName").schema
+  val schema = msc.table("logaggregator.adimpressions").schema
+
+  // msc.table("logaggregator.adimpressions").show()
 
   val messages = KafkaUtils.createDirectStream
     [String, AdImpressionLog, StringDecoder, AdImpressionLogAvroDecoder](ssc, kafkaParams, topics)
     .map(_._2).foreachRDD(rdd => {
-    msc.createDataFrame(rowConverter.toRowRDD(rdd), schema).saveToMemSQL(dbName, tableName)
+    msc.createDataFrame(rowConverter.toRowRDD(rdd), schema).saveToMemSQL("logaggregator","adimpressions")
   })
+
+  ssc.start
+  ssc.awaitTermination
 }
 
 class ImpressionLogToRow {

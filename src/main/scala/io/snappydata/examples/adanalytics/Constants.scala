@@ -15,5 +15,19 @@ object Constants {
   val NumWebsites = 10000
   val NumCookies = 10000
 
-  val KafkaTopic = "adnetwork-topic"
+  val cassandraKafkaTopic = "cassandraAdNetwork"
+  val memsqlaKafkaTopic = "memsqlAdNetwork"
+  val kafkaTopic ="adnetwork-topic"
+
+  // val KafkaTopic = "adnetwork-topic"
+  // val KafkaTopic = "adLogs" // 1 partition  - 1L
+  // val KafkaTopic = "adLogs1" // 8 partition 35K
+  // val KafkaTopic = "adLogs2" // 1 partition 1L
+  // val KafkaTopic = "adLogs3" // 1 partition fresh kafka cluster, 1L, only driver
+  // val KafkaTopic = "adLogs4" // 1 partition snappy cluster, create stream table, 1L, table insertion lags
+  // val KafkaTopic = "adLogs5" //1.3 minutes scheduleDelay
+  // val KafkaTopic = "adLogs6"
+  // val KafkaTopic = "adLogs7" // 8 partitions
+  // val KafkaTopic ="cassandraTopic"
+
 }
