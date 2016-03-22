@@ -10,16 +10,20 @@ import org.apache.spark.streaming.kafka.KafkaUtils
 object SnappySQLLogAggregator extends App {
 
   val sparkConf = new org.apache.spark.SparkConf()
-    .setAppName("SnappySQLLogAggregator")
-    //.setMaster("snappydata://localhost:10334")
-    .setMaster("local[4]")
+    .setAppName(getClass.getSimpleName)
+    .set("spark.sql.inMemoryColumnarStorage.compressed", "false")
+    .set("spark.sql.inMemoryColumnarStorage.batchSize", "2000")
+    // .setMaster("snappydata://localhost:10334")
+    .setMaster("local[*]")
+
 
   val sc = new SparkContext(sparkConf)
   val snsc = SnappyStreamingContext(SnappyContext.getOrCreate(sc), Milliseconds(1000))
   // val ssc = new StreamingContext(sc, Seconds(1))
 
   val kafkaParams: Map[String, String] = Map(
-    "metadata.broker.list"->"localhost:9092,localhost:9093"
+    // "metadata.broker.list"->"localhost:9092,localhost:9093"
+    "metadata.broker.list"->"localhost:9092"
   )
 
   val topics  = Set(Constants.kafkaTopic)
@@ -45,8 +49,9 @@ object SnappySQLLogAggregator extends App {
     " using directkafka_stream options" +
     " (storagelevel 'MEMORY_AND_DISK_SER_2'," +
     " rowConverter 'io.snappydata.examples.adanalytics.KafkaStreamToRowsConverter' ," +
-    " kafkaParams 'metadata.broker.list->localhost:9092,localhost:9093'," +
-    " topics 'adnetwork-topic'," +
+    // " kafkaParams 'metadata.broker.list->localhost:9092,localhost:9093'," +
+    " kafkaParams 'metadata.broker.list->localhost:9092'," +
+    " topics 'adlogsTopic'," +
     " K 'java.lang.String'," +
     " V 'io.snappydata.examples.adanalytics.AdImpressionLog', " +
     " KD 'kafka.serializer.StringDecoder', " +
@@ -60,18 +65,17 @@ object SnappySQLLogAggregator extends App {
   snsc.sql("create table adImpressions(timestamp long, publisher string, " +
       "advertiser string, website string, geo string, bid double, cookie string) " +
       "using column " +
-      "options ()")
+      "options ( BUCKETS '29')")
 //      // "options(PARTITION_BY 'timestamp')")
       // "options(PERSISTENT 'ASYNCHRONOUS')")
       // "options(PERSISTENT 'ASYNCHRONOUS', EVICTION_BY 'LRUMEMSIZE 600')")
 
-  val ingestTime = sc.accumulator(0l, "Actual time taken to ingest")
+  // val ingestTime = sc.accumulator(0l, "Actual time taken to ingest")
   snsc.getSchemaDStream("AdImpressionLog").foreachDataFrame(df => {
-    val start = System.currentTimeMillis()
-    df.write.format("column").mode(SaveMode.Append)
-      .options(Map.empty[String, String]).saveAsTable("adImpressions")
-    val end = System.currentTimeMillis()
-    ingestTime.add(end-start)
+    // val start = System.currentTimeMillis()
+    df.write.insertInto("adImpressions")
+    // val end = System.currentTimeMillis()
+    // println("Actual time taken to ingest the batch " + (end - start) + " millis")
   })
 
 
@@ -92,7 +96,5 @@ object SnappySQLLogAggregator extends App {
     }) */
 
   snsc.start
-  println("Snappy --- Actual ingestion time taken " + ingestTime.value)
-
   snsc.awaitTermination
 }

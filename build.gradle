@@ -54,12 +54,11 @@ compileJava.source(generateAvro.outputs)
 avro.stringType = "charSequence"
  
 task createAndPublishLogs(type: JavaExec, dependsOn: classes) {
-    main = 'io.snappydata.examples.adanalytics.RandomLogKafkaProducer'
+    main = 'io.snappydata.examples.adanalytics.KafkaLogProducer'
     classpath sourceSets.main.runtimeClasspath
     classpath configurations.runtime
     systemProperties System.getProperties()
     systemProperty "numThreads", System.getProperty("numThreads")
-    // args System.getProperty("exec.args").split() 
 }
 
 task startLogAggregation_Spark(type: JavaExec, dependsOn: classes) {
@@ -70,7 +69,7 @@ task startLogAggregation_Spark(type: JavaExec, dependsOn: classes) {
 }
 
 task startLogAggregation(type: JavaExec, dependsOn: classes) {
-    main = 'io.snappydata.examples.adanalytics.SnappySQLLogAggregator'
+    main = 'io.snappydata.examples.adanalytics.SnappyIngestionPerf'
     classpath sourceSets.main.runtimeClasspath
     classpath configurations.runtime
     jvmArgs = ['-XX:MaxPermSize=512m']

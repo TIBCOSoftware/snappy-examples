@@ -13,7 +13,7 @@ dependencies {
 }
 
 task startLogAggregation_Cassandra(type: JavaExec, dependsOn: classes) {
-    main = 'io.snappydata.examples.adanalytics.CassandraLogAggregator'
+    main = 'io.snappydata.examples.adanalytics.CassandraIngestionPerf'
     classpath sourceSets.main.runtimeClasspath
     classpath configurations.runtime
     jvmArgs = ['-XX:MaxPermSize=512m']

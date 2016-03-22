@@ -21,7 +21,7 @@ dependencies {
 }
 
 task startLogAggregation_MemSql(type: JavaExec, dependsOn: classes) {
-    main = 'io.snappydata.examples.adanalytics.MemSqlLogAggregator'
+    main = 'io.snappydata.examples.adanalytics.MemSqlIngestionPerf'
     classpath sourceSets.main.runtimeClasspath
     classpath configurations.runtime
 }
