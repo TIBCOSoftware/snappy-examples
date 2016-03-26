@@ -33,9 +33,10 @@ import org.apache.spark.{SparkConf, SparkContext}
 object CassandraIngestionPerf extends App {
 
   val conf = new SparkConf(true)
-    .set("spark.cassandra.connection.host", "127.0.0.1")
-    .set("spark.cassandra.auth.username", "cassandra")
-    .set("spark.cassandra.auth.password", "cassandra")
+    .set("spark.cassandra.connection.host" , "127.0.0.1")
+    .set("spark.cassandra.auth.username" , "cassandra")
+    .set("spark.cassandra.auth.password" , "cassandra")
+    .set("spark.streaming.kafka.maxRatePerPartition" , "40000")
   val sc = new SparkContext("local[*]", getClass.getSimpleName, conf)
 
   CassandraConnector(conf).withSessionDo { session =>

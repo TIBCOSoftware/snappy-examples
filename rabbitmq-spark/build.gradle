@@ -1,0 +1,33 @@
+configurations {
+    provided
+    compile.extendsFrom provided
+}
+
+apply plugin: 'java'
+apply plugin: 'maven'
+apply plugin: 'scala'
+apply plugin: 'maven'
+apply plugin: 'idea'
+apply plugin: 'eclipse'
+
+dependencies {
+    provided 'com.stratio.receiver:spark-rabbitmq_1.5:0.2.0'
+    provided 'org.apache.spark:spark-core_2.10:1.5.0'
+    provided 'org.apache.spark:spark-streaming_2.10:1.5.0'
+    provided 'org.apache.spark:spark-sql_2.10:1.5.0'
+    provided 'org.apache.spark:spark-catalyst_2.10:1.5.0'
+    compile project(':')
+}
+
+task sendRabbitMQMsgs(type: JavaExec, dependsOn: classes) {
+    main = 'io.snappydata.examples.adanalytics.Send'
+    classpath sourceSets.main.runtimeClasspath
+    classpath configurations.runtime
+}
+
+task receiveRabbitMQMsgs(type: JavaExec, dependsOn: classes) {
+    main = 'io.snappydata.examples.adanalytics.RabbitMQStream'
+    classpath sourceSets.main.runtimeClasspath
+    classpath configurations.runtime
+    jvmArgs = ['-XX:MaxPermSize=512m'] // for snappy
+}
