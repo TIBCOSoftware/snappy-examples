@@ -20,14 +20,16 @@ package io.snappydata.examples.adanalytics
 import org.apache.spark.streaming.Seconds
 
 object Constants {
+
   val NumPublishers = 50
 
   val NumAdvertisers = 30
 
-  val Publishers = (0 to NumPublishers).map("publisher_" +)
+  val Publishers = (0 to NumPublishers).map("p" +)
 
-  val Advertisers = (0 to NumAdvertisers).map("advertiser_" +)
+  val Advertisers = (0 to NumAdvertisers).map("a" +)
 
+  val numProducerThreads = 2
   val UnknownGeo = "unknown"
 
   val Geos = Seq("AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL",
@@ -40,12 +42,13 @@ object Constants {
 
   val NumCookies = 10000
 
-  val totalNumLogs = 30000000;
+  val totalNumLogs = 20000000;
 
-  val kafkaTopic = "adlogsTopic"
+  // val kafkaTopic = "adlogsTopic"
+  val kafkaTopic ="perfTopic"
 
   val kafkaParams: Map[String, String] = Map(
-    "metadata.broker.list" -> "localhost:9092"
+    "metadata.broker.list" -> "localhost:9092,localhost:9093"
   )
 
   val batchDuration = Seconds(1)

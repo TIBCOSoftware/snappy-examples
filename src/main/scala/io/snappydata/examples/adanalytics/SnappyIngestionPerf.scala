@@ -33,7 +33,9 @@ object SnappyIngestionPerf extends App {
     .setAppName(getClass.getSimpleName)
     .set("spark.sql.inMemoryColumnarStorage.compressed", "false")
     .set("spark.sql.inMemoryColumnarStorage.batchSize", "2000")
+    //.set("spark.streaming.kafka.maxRatePerPartition" , "100000")
     .setMaster("local[*]")
+    //.setMaster("snappydata://localhost:10334")
 
   val sc = new SparkContext(sparkConf)
   // batchDuration of 1 second
@@ -53,16 +55,26 @@ object SnappyIngestionPerf extends App {
     " bid double," +
     " cookie string) " +
     " using directkafka_stream options (" +
+  //  " using kafka_stream options (" +
     " storagelevel 'MEMORY_AND_DISK_SER_2'," +
     " rowConverter 'io.snappydata.examples.adanalytics.KafkaStreamToRowsConverter' ," +
-    " kafkaParams 'metadata.broker.list->localhost:9092'," +
-    " topics 'adlogsTopic'," +
+//    " zkQuorum 'localhost:2181', " +
+//    " groupId 'streamSQLConsumer', " +
+//    " topics 'adlogsTopic:01')")
+    //" kafkaParams 'metadata.broker.list->192.168.1.92:9092,192.168.1.92:9093'," +
+    " kafkaParams 'metadata.broker.list->localhost:9092,localhost:9093'," +
+    " topics 'perfTopic'," +
     " K 'java.lang.String'," +
     " V 'io.snappydata.examples.adanalytics.AdImpressionLog', " +
     " KD 'kafka.serializer.StringDecoder', " +
     " VD 'io.snappydata.examples.adanalytics.AdImpressionLogAvroDecoder')")
 
-  // create a columnar table in Snappy store
+
+//  snsc.sql("create table adImpressions1(timestamp bigint, publisher varchar(15), " +
+//    "advertiser varchar(15), website varchar(20), geo varchar(8), bid double, cookie varchar(20), primary key(timestamp)) " +
+//    "using row " +
+//    "options ( PARTITION_BY 'PRIMARY KEY', BUCKETS '40')")
+
   snsc.sql("create table adImpressions(timestamp long, publisher string, " +
     "advertiser string, website string, geo string, bid double, cookie string) " +
     "using column " +
