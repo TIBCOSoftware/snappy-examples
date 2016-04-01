@@ -21,6 +21,14 @@ import org.apache.spark.streaming.Seconds
 
 object Constants {
 
+  val kafkaTopic ="perfTopic"
+
+  val brokerList = "localhost:9092,localhost:9093"
+
+  val kafkaParams: Map[String, String] = Map(
+    "metadata.broker.list" -> brokerList
+  )
+
   val NumPublishers = 50
 
   val NumAdvertisers = 30
@@ -30,6 +38,7 @@ object Constants {
   val Advertisers = (0 to NumAdvertisers).map("a" +)
 
   val numProducerThreads = 2
+
   val UnknownGeo = "unknown"
 
   val Geos = Seq("AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL",
@@ -43,13 +52,6 @@ object Constants {
   val NumCookies = 10000
 
   val totalNumLogs = 20000000;
-
-  // val kafkaTopic = "adlogsTopic"
-  val kafkaTopic ="perfTopic"
-
-  val kafkaParams: Map[String, String] = Map(
-    "metadata.broker.list" -> "localhost:9092,localhost:9093"
-  )
 
   val batchDuration = Seconds(1)
 

@@ -22,7 +22,6 @@ import org.apache.spark.SparkContext
 import org.apache.spark.sql.SnappyContext
 import org.apache.spark.sql.streaming.SnappyStreamingContext
 
-
 /**
   * Simple direct kafka spark streaming program which pulls log messages
   * from kafka broker and ingest those log messages to Snappy store.
@@ -46,7 +45,7 @@ object SnappyIngestionPerf extends App {
 
   // Create a stream of AdImpressionLog which will pull the log messages
   // from Kafka broker
-  snsc.sql("create stream table adImpressionStream (" +
+  snsc.sql(s"create stream table adImpressionStream (" +
     " timestamp long," +
     " publisher string," +
     " advertiser string," +
@@ -62,8 +61,8 @@ object SnappyIngestionPerf extends App {
 //    " groupId 'streamSQLConsumer', " +
 //    " topics 'adlogsTopic:01')")
     //" kafkaParams 'metadata.broker.list->192.168.1.92:9092,192.168.1.92:9093'," +
-    " kafkaParams 'metadata.broker.list->localhost:9092,localhost:9093'," +
-    " topics 'perfTopic'," +
+    s" kafkaParams 'metadata.broker.list->$brokerList'," +
+    s" topics '$kafkaTopic'," +
     " K 'java.lang.String'," +
     " V 'io.snappydata.examples.adanalytics.AdImpressionLog', " +
     " KD 'kafka.serializer.StringDecoder', " +

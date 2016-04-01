@@ -26,6 +26,8 @@ import org.apache.spark.streaming.StreamingContext
 import org.apache.spark.streaming.kafka.KafkaUtils
 import org.apache.spark.unsafe.types.UTF8String
 import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.log4j.Logger
+import org.apache.log4j.Level
 
 /**
   * Simple direct kafka spark streaming program which pulls log messages
@@ -34,6 +36,8 @@ import org.apache.spark.{SparkConf, SparkContext}
   * start an aggregator and leaf node of MemSql and run Spark in local mode.
   */
 object MemSqlIngestionPerf extends App {
+
+  Logger.getRootLogger().setLevel(Level.ERROR)
 
   val conf = new SparkConf()
     .setAppName(getClass.getSimpleName)

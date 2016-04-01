@@ -35,21 +35,21 @@ object KafkaLogProducer extends App {
   props.put("producer.type", "async")
   props.put("request.required.acks", "0")
   props.put("serializer.class", "io.snappydata.examples.adanalytics.AdImpressionLogAvroEncoder")
+  props.put("queue.buffering.max.messages", "1000000") // 10000
+  props.put("metadata.broker.list", brokerList)
 //  props.put("partitioner.class", "kafka.producer.DefaultPartitioner")
 //  props.put("key.serializer.class", "kafka.serializer.StringEncoder")
-  props.put("queue.buffering.max.messages", "1000000") // 10000
-  props.put("metadata.broker.list", "192.168.1.92:9092,192.168.1.92:9093")
 
   props.put("batch.size", "9000000") // bytes
   props.put("linger.ms", "50") // ms
 
-  //props.put("metadata.broker.list", "localhost:9092,localhost:9093") // one broker
-  // props.put("batch.size", "100000") // bytes
-  //props.put("linger.ms", "500") // ms
-  //  props.put("queue.enqueue.timeout.ms" , "-1") // -1
+//  props.put("batch.size", "100000") // bytes
+//  props.put("linger.ms", "500") // ms
+//  props.put("queue.enqueue.timeout.ms" , "-1") // -1
 //  props.put("queue.buffering.max.ms" , "500000") //500 sec
 //  props.put("batch.num.messages" , "50000000") // 200
-  // props.put("send.buffer.bytes" , "1024000")
+//  props.put("send.buffer.bytes" , "1024000")
+
   val config = new ProducerConfig(props)
   val producer = new Producer[String, AdImpressionLog](config)
 
