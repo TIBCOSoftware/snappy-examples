@@ -20,14 +20,10 @@ package io.snappydata.examples.adanalytics
 import com.memsql.spark.connector.MemSQLContext
 import io.snappydata.examples.adanalytics.Constants._
 import kafka.serializer.StringDecoder
-import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.Row
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.streaming.StreamingContext
 import org.apache.spark.streaming.kafka.KafkaUtils
-import org.apache.spark.unsafe.types.UTF8String
 import org.apache.spark.{SparkConf, SparkContext}
-import org.apache.log4j.Logger
-import org.apache.log4j.Level
 
 /**
   * Simple direct kafka spark streaming program which pulls log messages
@@ -91,20 +87,4 @@ object MemSqlIngestionPerf extends App {
   ssc.awaitTermination
 }
 
-/**
-  * Convertes Spark RDD[AsImpressionLog] from Kafka stream to RDD[Row]
-  * to insert into MemSql table
-  */
-class ImpressionLogToRow {
-  def toRowRDD(logRdd: RDD[AdImpressionLog]): RDD[Row] = {
-    logRdd.map(log => {
-      Row(log.getTimestamp,
-        UTF8String.fromString(log.getPublisher.toString),
-        UTF8String.fromString(log.getAdvertiser.toString),
-        UTF8String.fromString(log.getWebsite.toString),
-        UTF8String.fromString(log.getGeo.toString),
-        log.getBid,
-        UTF8String.fromString(log.getCookie.toString))
-    })
-  }
-}
+

@@ -17,19 +17,19 @@
 
 package io.snappydata.examples.adanalytics
 
-import com.miguno.kafka.avro.{AvroEncoder, AvroDecoder}
-
+import com.miguno.kafka.avro.{AvroDecoder, AvroEncoder}
 import kafka.utils.VerifiableProperties
-
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.unsafe.types.UTF8String
 import org.apache.spark.sql.streaming.StreamToRowsConverter
+import org.apache.spark.unsafe.types.UTF8String
 
 class AdImpressionLogAvroEncoder(props: VerifiableProperties = null)
-    extends AvroEncoder[AdImpressionLog](props, AdImpressionLog.getClassSchema)
+  extends AvroEncoder[AdImpressionLog](props, AdImpressionLog.getClassSchema)
 
 class AdImpressionLogAvroDecoder(props: VerifiableProperties = null)
-    extends AvroDecoder[AdImpressionLog](props, AdImpressionLog.getClassSchema)
+  extends AvroDecoder[AdImpressionLog](props, AdImpressionLog.getClassSchema)
 
 class KafkaStreamToRowsConverter extends StreamToRowsConverter with Serializable {
 
@@ -42,5 +42,23 @@ class KafkaStreamToRowsConverter extends StreamToRowsConverter with Serializable
       UTF8String.fromString(log.getGeo.toString),
       log.getBid,
       UTF8String.fromString(log.getCookie.toString))))
+  }
+}
+
+/**
+  * Convertes Spark RDD[AsImpressionLog] to RDD[Row]
+  * to insert into table
+  */
+class ImpressionLogToRow {
+  def toRowRDD(logRdd: RDD[AdImpressionLog]): RDD[Row] = {
+    logRdd.map(log => {
+      Row(log.getTimestamp,
+        UTF8String.fromString(log.getPublisher.toString),
+        UTF8String.fromString(log.getAdvertiser.toString),
+        UTF8String.fromString(log.getWebsite.toString),
+        UTF8String.fromString(log.getGeo.toString),
+        log.getBid,
+        UTF8String.fromString(log.getCookie.toString))
+    })
   }
 }

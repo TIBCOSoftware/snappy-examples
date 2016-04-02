@@ -1,1 +1,1 @@
-include 'spark-memsql', 'spark-cassandra', 'rabbitmq-spark'
+include 'spark-memsql', 'spark-cassandra', 'rabbitmq-snappy'
