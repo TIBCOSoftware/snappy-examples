@@ -29,9 +29,9 @@ object SnappySQLLogAggregator extends App {
     .set("spark.sql.inMemoryColumnarStorage.compressed", "false")
     .set("spark.sql.inMemoryColumnarStorage.batchSize", "2000")
     // .setMaster(s"spark://$hostName:7077")
-    // .set("snappydata.store.locators", s"localhost:$locatorPort")
+    .set("snappydata.store.locators", s"localhost:$locatorPort")
     //.setMaster("snappydata://localhost:10334")// embedded
-     .setMaster("local[*]") //local
+    .setMaster("local[*]") //local
 
   val sc = new SparkContext(sparkConf)
   val snsc = SnappyStreamingContext(SnappyContext.getOrCreate(sc), batchDuration)
