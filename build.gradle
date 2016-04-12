@@ -69,6 +69,13 @@ task startLogAggregation_Spark(type: JavaExec, dependsOn: classes) {
 }
 
 task startLogAggregation(type: JavaExec, dependsOn: classes) {
+    main = 'io.snappydata.examples.adanalytics.SnappySQLLogAggregator'
+    classpath sourceSets.main.runtimeClasspath
+    classpath configurations.runtime
+    jvmArgs = ['-XX:MaxPermSize=512m']
+}
+
+task startSnappyIngestionPerf(type: JavaExec, dependsOn: classes) {
     main = 'io.snappydata.examples.adanalytics.SnappyIngestionPerf'
     classpath sourceSets.main.runtimeClasspath
     classpath configurations.runtime
