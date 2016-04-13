@@ -15,10 +15,11 @@
  * LICENSE file.
  */
 
-package io.snappydata.examples.adanalytics
+package io.snappydata.adanalytics.benchmark
 
 import com.memsql.spark.connector.MemSQLContext
-import io.snappydata.examples.adanalytics.Constants._
+import io.snappydata.adanalytics.aggregator.Constants._
+import io.snappydata.adanalytics.aggregator.{AdImpressionLog, AdImpressionLogAvroDecoder, AdImpressionLogToRowRDD}
 import kafka.serializer.StringDecoder
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.streaming.StreamingContext
@@ -68,7 +69,7 @@ object MemSqlIngestionPerf extends App {
 
   val schema = msc.table("adLogs.adImpressions").schema
 
-  val rowConverter = new ImpressionLogToRow
+  val rowConverter = new AdImpressionLogToRowRDD
 
   import com.memsql.spark.connector._
 
@@ -79,7 +80,7 @@ object MemSqlIngestionPerf extends App {
 
   // transform the Spark RDDs as per the table schema and save it to MemSql
   messages.map(_._2).foreachRDD(rdd => {
-    msc.createDataFrame(rowConverter.toRowRDD(rdd), schema)
+    msc.createDataFrame(rowConverter.convert(rdd), schema)
       .saveToMemSQL("adLogs", "adImpressions")
   })
 

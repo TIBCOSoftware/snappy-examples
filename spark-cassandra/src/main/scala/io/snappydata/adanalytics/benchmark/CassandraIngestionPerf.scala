@@ -15,16 +15,16 @@
  * LICENSE file.
  */
 
-package io.snappydata.examples.adanalytics
+package io.snappydata.adanalytics.benchmark
 
 import com.datastax.spark.connector.cql.CassandraConnector
-import io.snappydata.examples.adanalytics.Constants._
+import io.snappydata.adanalytics.aggregator.Constants._
+import io.snappydata.adanalytics.aggregator.{AdImpressionLog, AdImpressionLogAvroDecoder}
 import kafka.serializer.StringDecoder
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.streaming.StreamingContext
 import org.apache.spark.streaming.kafka.KafkaUtils
 import org.apache.spark.{SparkConf, SparkContext}
-import org.apache.log4j.Logger
-import org.apache.log4j.Level
 
 /**
   * Simple direct kafka spark streaming program which pulls log messages
@@ -55,6 +55,26 @@ object CassandraIngestionPerf extends App {
   // batchDuration of 1 second
   val ssc = new StreamingContext(sc, batchDuration)
 
+  val mb = 1024*1024;
+
+  //Getting the runtime reference from system
+  val runtime = Runtime.getRuntime();
+
+  System.out.println("##### Heap utilization statistics [MB] #####");
+
+  //Print used memory
+  System.out.println("Used Memory:"
+    + (runtime.totalMemory() - runtime.freeMemory()) / mb);
+
+  //Print free memory
+  System.out.println("Free Memory:"
+    + runtime.freeMemory() / mb);
+
+  //Print total available memory
+  System.out.println("Total Memory:" + runtime.totalMemory() / mb);
+
+  //Print Maximum available memory
+  System.out.println("Max Memory:" + runtime.maxMemory() / mb);
   // Creates a stream of AdImpressionLog using kafka direct that pulls
   // messages from a Kafka Broker
   val messages = KafkaUtils.createDirectStream

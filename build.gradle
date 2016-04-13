@@ -36,12 +36,15 @@ allprojects {
 }
 
 dependencies {
-  provided 'io.snappydata:snappy-tools_2.10:0.2.1-PREVIEW'
-  provided 'io.snappydata:snappy-core_2.10:0.2.1-PREVIEW'
-  provided 'io.snappydata:snappy-aqp:0.2.1-PREVIEW'
-  provided 'io.snappydata:snappy-spark-catalyst_2.10:1.6.0-BETA'
-  compile 'com.miguno:kafka-avro-codec_2.10:0.1.1-SNAPSHOT'
-  compile 'com.twitter:algebird-core_2.10:0.1.11'
+//  provided 'io.snappydata:snappy-tools_2.10:0.2.1-PREVIEW'
+//  provided 'io.snappydata:snappy-core_2.10:0.2.1-PREVIEW'
+//  provided 'io.snappydata:snappy-aqp:0.2.1-PREVIEW'
+//  provided 'io.snappydata:snappy-spark-catalyst_2.10:1.6.0-BETA'
+//  provided 'io.snappydata:snappy-aqp:0.2-SNAPSHOT'
+    provided 'io.snappydata:snappy-tools_2.10:0.2-SNAPSHOT'
+    provided 'io.snappydata:snappy-spark-catalyst_2.10:1.6.0-BETA'
+    provided 'io.snappydata:snappy-core_2.10:0.2-SNAPSHOT'
+    compile 'com.miguno:kafka-avro-codec_2.10:0.1.1-SNAPSHOT'
 }
 
 task generateAvro(type: com.commercehub.gradle.plugin.avro.GenerateAvroJavaTask) {
@@ -53,33 +56,40 @@ compileJava.source(generateAvro.outputs)
 
 avro.stringType = "charSequence"
  
-task createAndPublishLogs(type: JavaExec, dependsOn: classes) {
-    main = 'io.snappydata.examples.adanalytics.KafkaLogProducer'
+task generateAdImpressions(type: JavaExec, dependsOn: classes) {
+    main = 'io.snappydata.adanalytics.aggregator.KafkaAdImpressionGenerator'
     classpath sourceSets.main.runtimeClasspath
     classpath configurations.runtime
-    systemProperties System.getProperties()
-    systemProperty "numThreads", System.getProperty("numThreads")
 }
 
-task startLogAggregation_Spark(type: JavaExec, dependsOn: classes) {
-    main = 'io.snappydata.examples.adanalytics.SnappySparkLogAggregator'
+task aggeregateAdImpressions_API(type: JavaExec, dependsOn: classes) {
+    main = 'io.snappydata.adanalytics.aggregator.SnappyAPILogAggregator'
     classpath sourceSets.main.runtimeClasspath
     classpath configurations.runtime
     jvmArgs = ['-XX:MaxPermSize=512m']
 }
 
-task startLogAggregation(type: JavaExec, dependsOn: classes) {
-    main = 'io.snappydata.examples.adanalytics.SnappySQLLogAggregator'
+task aggeregateAdImpressions_SQL(type: JavaExec, dependsOn: classes) {
+    main = 'io.snappydata.adanalytics.aggregator.SnappySQLLogAggregator'
     classpath sourceSets.main.runtimeClasspath
     classpath configurations.runtime
     jvmArgs = ['-XX:MaxPermSize=512m']
 }
 
-task startSnappyIngestionPerf(type: JavaExec, dependsOn: classes) {
-    main = 'io.snappydata.examples.adanalytics.SnappyIngestionPerf'
+task startSnappyIngestionPerf_Kafka(type: JavaExec, dependsOn: classes) {
+    main = 'io.snappydata.adanalytics.benchmark.KafkaSnappyIngestionPerf'
     classpath sourceSets.main.runtimeClasspath
     classpath configurations.runtime
     jvmArgs = ['-XX:MaxPermSize=512m']
+    maxHeapSize = "8196m"
+}
+
+task startSnappyIngestionPerf_Socket(type: JavaExec, dependsOn: classes) {
+    main = 'io.snappydata.adanalytics.benchmark.SocketSnappyIngestionPerf'
+    classpath sourceSets.main.runtimeClasspath
+    classpath configurations.runtime
+    jvmArgs = ['-XX:MaxPermSize=512m']
+    maxHeapSize = "8196m"
 }
 
 jar {

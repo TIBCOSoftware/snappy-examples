@@ -3,12 +3,12 @@
  * 
  * DO NOT EDIT DIRECTLY
  */
-package io.snappydata.examples.adanalytics;  
+package io.snappydata.adanalytics.aggregator;  
 @SuppressWarnings("all")
 /** A basic schema for storing ImpressionLog messages */
 @org.apache.avro.specific.AvroGenerated
 public class AdImpressionLog extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"AdImpressionLog\",\"namespace\":\"io.snappydata.examples.adanalytics\",\"doc\":\"A basic schema for storing ImpressionLog messages\",\"fields\":[{\"name\":\"timestamp\",\"type\":\"long\",\"doc\":\"timestamp\"},{\"name\":\"publisher\",\"type\":\"string\",\"doc\":\"publisher\"},{\"name\":\"advertiser\",\"type\":\"string\",\"doc\":\"advertiser\"},{\"name\":\"website\",\"type\":\"string\",\"doc\":\"website\"},{\"name\":\"geo\",\"type\":\"string\",\"doc\":\"geo\"},{\"name\":\"bid\",\"type\":\"double\",\"doc\":\"bid\"},{\"name\":\"cookie\",\"type\":\"string\",\"doc\":\"cookie\"}]}");
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"AdImpressionLog\",\"namespace\":\"io.snappydata.adanalytics.aggregator\",\"doc\":\"A basic schema for storing ImpressionLog messages\",\"fields\":[{\"name\":\"timestamp\",\"type\":\"long\",\"doc\":\"timestamp\"},{\"name\":\"publisher\",\"type\":\"string\",\"doc\":\"publisher\"},{\"name\":\"advertiser\",\"type\":\"string\",\"doc\":\"advertiser\"},{\"name\":\"website\",\"type\":\"string\",\"doc\":\"website\"},{\"name\":\"geo\",\"type\":\"string\",\"doc\":\"geo\"},{\"name\":\"bid\",\"type\":\"double\",\"doc\":\"bid\"},{\"name\":\"cookie\",\"type\":\"string\",\"doc\":\"cookie\"}]}");
   public static org.apache.avro.Schema getClassSchema() { return SCHEMA$; }
   /** timestamp */
   @Deprecated public long timestamp;
@@ -180,18 +180,18 @@ public class AdImpressionLog extends org.apache.avro.specific.SpecificRecordBase
   }
 
   /** Creates a new AdImpressionLog RecordBuilder */
-  public static io.snappydata.examples.adanalytics.AdImpressionLog.Builder newBuilder() {
-    return new io.snappydata.examples.adanalytics.AdImpressionLog.Builder();
+  public static io.snappydata.adanalytics.aggregator.AdImpressionLog.Builder newBuilder() {
+    return new io.snappydata.adanalytics.aggregator.AdImpressionLog.Builder();
   }
   
   /** Creates a new AdImpressionLog RecordBuilder by copying an existing Builder */
-  public static io.snappydata.examples.adanalytics.AdImpressionLog.Builder newBuilder(io.snappydata.examples.adanalytics.AdImpressionLog.Builder other) {
-    return new io.snappydata.examples.adanalytics.AdImpressionLog.Builder(other);
+  public static io.snappydata.adanalytics.aggregator.AdImpressionLog.Builder newBuilder(io.snappydata.adanalytics.aggregator.AdImpressionLog.Builder other) {
+    return new io.snappydata.adanalytics.aggregator.AdImpressionLog.Builder(other);
   }
   
   /** Creates a new AdImpressionLog RecordBuilder by copying an existing AdImpressionLog instance */
-  public static io.snappydata.examples.adanalytics.AdImpressionLog.Builder newBuilder(io.snappydata.examples.adanalytics.AdImpressionLog other) {
-    return new io.snappydata.examples.adanalytics.AdImpressionLog.Builder(other);
+  public static io.snappydata.adanalytics.aggregator.AdImpressionLog.Builder newBuilder(io.snappydata.adanalytics.aggregator.AdImpressionLog other) {
+    return new io.snappydata.adanalytics.aggregator.AdImpressionLog.Builder(other);
   }
   
   /**
@@ -210,11 +210,11 @@ public class AdImpressionLog extends org.apache.avro.specific.SpecificRecordBase
 
     /** Creates a new Builder */
     private Builder() {
-      super(io.snappydata.examples.adanalytics.AdImpressionLog.SCHEMA$);
+      super(io.snappydata.adanalytics.aggregator.AdImpressionLog.SCHEMA$);
     }
     
     /** Creates a Builder by copying an existing Builder */
-    private Builder(io.snappydata.examples.adanalytics.AdImpressionLog.Builder other) {
+    private Builder(io.snappydata.adanalytics.aggregator.AdImpressionLog.Builder other) {
       super(other);
       if (isValidValue(fields()[0], other.timestamp)) {
         this.timestamp = data().deepCopy(fields()[0].schema(), other.timestamp);
@@ -247,8 +247,8 @@ public class AdImpressionLog extends org.apache.avro.specific.SpecificRecordBase
     }
     
     /** Creates a Builder by copying an existing AdImpressionLog instance */
-    private Builder(io.snappydata.examples.adanalytics.AdImpressionLog other) {
-            super(io.snappydata.examples.adanalytics.AdImpressionLog.SCHEMA$);
+    private Builder(io.snappydata.adanalytics.aggregator.AdImpressionLog other) {
+            super(io.snappydata.adanalytics.aggregator.AdImpressionLog.SCHEMA$);
       if (isValidValue(fields()[0], other.timestamp)) {
         this.timestamp = data().deepCopy(fields()[0].schema(), other.timestamp);
         fieldSetFlags()[0] = true;
@@ -285,7 +285,7 @@ public class AdImpressionLog extends org.apache.avro.specific.SpecificRecordBase
     }
     
     /** Sets the value of the 'timestamp' field */
-    public io.snappydata.examples.adanalytics.AdImpressionLog.Builder setTimestamp(long value) {
+    public io.snappydata.adanalytics.aggregator.AdImpressionLog.Builder setTimestamp(long value) {
       validate(fields()[0], value);
       this.timestamp = value;
       fieldSetFlags()[0] = true;
@@ -298,7 +298,7 @@ public class AdImpressionLog extends org.apache.avro.specific.SpecificRecordBase
     }
     
     /** Clears the value of the 'timestamp' field */
-    public io.snappydata.examples.adanalytics.AdImpressionLog.Builder clearTimestamp() {
+    public io.snappydata.adanalytics.aggregator.AdImpressionLog.Builder clearTimestamp() {
       fieldSetFlags()[0] = false;
       return this;
     }
@@ -309,7 +309,7 @@ public class AdImpressionLog extends org.apache.avro.specific.SpecificRecordBase
     }
     
     /** Sets the value of the 'publisher' field */
-    public io.snappydata.examples.adanalytics.AdImpressionLog.Builder setPublisher(java.lang.CharSequence value) {
+    public io.snappydata.adanalytics.aggregator.AdImpressionLog.Builder setPublisher(java.lang.CharSequence value) {
       validate(fields()[1], value);
       this.publisher = value;
       fieldSetFlags()[1] = true;
@@ -322,7 +322,7 @@ public class AdImpressionLog extends org.apache.avro.specific.SpecificRecordBase
     }
     
     /** Clears the value of the 'publisher' field */
-    public io.snappydata.examples.adanalytics.AdImpressionLog.Builder clearPublisher() {
+    public io.snappydata.adanalytics.aggregator.AdImpressionLog.Builder clearPublisher() {
       publisher = null;
       fieldSetFlags()[1] = false;
       return this;
@@ -334,7 +334,7 @@ public class AdImpressionLog extends org.apache.avro.specific.SpecificRecordBase
     }
     
     /** Sets the value of the 'advertiser' field */
-    public io.snappydata.examples.adanalytics.AdImpressionLog.Builder setAdvertiser(java.lang.CharSequence value) {
+    public io.snappydata.adanalytics.aggregator.AdImpressionLog.Builder setAdvertiser(java.lang.CharSequence value) {
       validate(fields()[2], value);
       this.advertiser = value;
       fieldSetFlags()[2] = true;
@@ -347,7 +347,7 @@ public class AdImpressionLog extends org.apache.avro.specific.SpecificRecordBase
     }
     
     /** Clears the value of the 'advertiser' field */
-    public io.snappydata.examples.adanalytics.AdImpressionLog.Builder clearAdvertiser() {
+    public io.snappydata.adanalytics.aggregator.AdImpressionLog.Builder clearAdvertiser() {
       advertiser = null;
       fieldSetFlags()[2] = false;
       return this;
@@ -359,7 +359,7 @@ public class AdImpressionLog extends org.apache.avro.specific.SpecificRecordBase
     }
     
     /** Sets the value of the 'website' field */
-    public io.snappydata.examples.adanalytics.AdImpressionLog.Builder setWebsite(java.lang.CharSequence value) {
+    public io.snappydata.adanalytics.aggregator.AdImpressionLog.Builder setWebsite(java.lang.CharSequence value) {
       validate(fields()[3], value);
       this.website = value;
       fieldSetFlags()[3] = true;
@@ -372,7 +372,7 @@ public class AdImpressionLog extends org.apache.avro.specific.SpecificRecordBase
     }
     
     /** Clears the value of the 'website' field */
-    public io.snappydata.examples.adanalytics.AdImpressionLog.Builder clearWebsite() {
+    public io.snappydata.adanalytics.aggregator.AdImpressionLog.Builder clearWebsite() {
       website = null;
       fieldSetFlags()[3] = false;
       return this;
@@ -384,7 +384,7 @@ public class AdImpressionLog extends org.apache.avro.specific.SpecificRecordBase
     }
     
     /** Sets the value of the 'geo' field */
-    public io.snappydata.examples.adanalytics.AdImpressionLog.Builder setGeo(java.lang.CharSequence value) {
+    public io.snappydata.adanalytics.aggregator.AdImpressionLog.Builder setGeo(java.lang.CharSequence value) {
       validate(fields()[4], value);
       this.geo = value;
       fieldSetFlags()[4] = true;
@@ -397,7 +397,7 @@ public class AdImpressionLog extends org.apache.avro.specific.SpecificRecordBase
     }
     
     /** Clears the value of the 'geo' field */
-    public io.snappydata.examples.adanalytics.AdImpressionLog.Builder clearGeo() {
+    public io.snappydata.adanalytics.aggregator.AdImpressionLog.Builder clearGeo() {
       geo = null;
       fieldSetFlags()[4] = false;
       return this;
@@ -409,7 +409,7 @@ public class AdImpressionLog extends org.apache.avro.specific.SpecificRecordBase
     }
     
     /** Sets the value of the 'bid' field */
-    public io.snappydata.examples.adanalytics.AdImpressionLog.Builder setBid(double value) {
+    public io.snappydata.adanalytics.aggregator.AdImpressionLog.Builder setBid(double value) {
       validate(fields()[5], value);
       this.bid = value;
       fieldSetFlags()[5] = true;
@@ -422,7 +422,7 @@ public class AdImpressionLog extends org.apache.avro.specific.SpecificRecordBase
     }
     
     /** Clears the value of the 'bid' field */
-    public io.snappydata.examples.adanalytics.AdImpressionLog.Builder clearBid() {
+    public io.snappydata.adanalytics.aggregator.AdImpressionLog.Builder clearBid() {
       fieldSetFlags()[5] = false;
       return this;
     }
@@ -433,7 +433,7 @@ public class AdImpressionLog extends org.apache.avro.specific.SpecificRecordBase
     }
     
     /** Sets the value of the 'cookie' field */
-    public io.snappydata.examples.adanalytics.AdImpressionLog.Builder setCookie(java.lang.CharSequence value) {
+    public io.snappydata.adanalytics.aggregator.AdImpressionLog.Builder setCookie(java.lang.CharSequence value) {
       validate(fields()[6], value);
       this.cookie = value;
       fieldSetFlags()[6] = true;
@@ -446,7 +446,7 @@ public class AdImpressionLog extends org.apache.avro.specific.SpecificRecordBase
     }
     
     /** Clears the value of the 'cookie' field */
-    public io.snappydata.examples.adanalytics.AdImpressionLog.Builder clearCookie() {
+    public io.snappydata.adanalytics.aggregator.AdImpressionLog.Builder clearCookie() {
       cookie = null;
       fieldSetFlags()[6] = false;
       return this;

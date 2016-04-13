@@ -12,8 +12,8 @@ dependencies {
   compile project(':')
 }
 
-task startLogAggregation_Cassandra(type: JavaExec, dependsOn: classes) {
-    main = 'io.snappydata.examples.adanalytics.CassandraIngestionPerf'
+task startCassandraIngestionPerf(type: JavaExec, dependsOn: classes) {
+    main = 'io.snappydata.adanalytics.benchmark.CassandraIngestionPerf'
     classpath sourceSets.main.runtimeClasspath
     classpath configurations.runtime
     jvmArgs = ['-XX:MaxPermSize=512m']

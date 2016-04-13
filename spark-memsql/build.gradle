@@ -20,8 +20,8 @@ dependencies {
     compile project(':')
 }
 
-task startLogAggregation_MemSql(type: JavaExec, dependsOn: classes) {
-    main = 'io.snappydata.examples.adanalytics.MemSqlIngestionPerf'
+task startMemSqlIngestionPerf(type: JavaExec, dependsOn: classes) {
+    main = 'io.snappydata.adanalytics.benchmark.MemSqlIngestionPerf'
     classpath sourceSets.main.runtimeClasspath
     classpath configurations.runtime
 }

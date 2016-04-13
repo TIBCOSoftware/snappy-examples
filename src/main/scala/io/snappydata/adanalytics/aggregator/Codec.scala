@@ -15,7 +15,7 @@
  * LICENSE file.
  */
 
-package io.snappydata.examples.adanalytics
+package io.snappydata.adanalytics.aggregator
 
 import com.miguno.kafka.avro.{AvroDecoder, AvroEncoder}
 import kafka.utils.VerifiableProperties
@@ -23,7 +23,6 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.streaming.StreamToRowsConverter
-import org.apache.spark.unsafe.types.UTF8String
 
 class AdImpressionLogAvroEncoder(props: VerifiableProperties = null)
   extends AvroEncoder[AdImpressionLog](props, AdImpressionLog.getClassSchema)
@@ -31,17 +30,17 @@ class AdImpressionLogAvroEncoder(props: VerifiableProperties = null)
 class AdImpressionLogAvroDecoder(props: VerifiableProperties = null)
   extends AvroDecoder[AdImpressionLog](props, AdImpressionLog.getClassSchema)
 
-class KafkaStreamToRowsConverter extends StreamToRowsConverter with Serializable {
+class AdImpressionToRowsConverter extends StreamToRowsConverter with Serializable {
 
   override def toRows(message: Any): Seq[InternalRow] = {
     val log = message.asInstanceOf[AdImpressionLog]
     Seq(InternalRow.fromSeq(Seq(log.getTimestamp,
-      UTF8String.fromString(log.getPublisher.toString),
-      UTF8String.fromString(log.getAdvertiser.toString),
-      UTF8String.fromString(log.getWebsite.toString),
-      UTF8String.fromString(log.getGeo.toString),
+      log.getPublisher.toString,
+      log.getAdvertiser.toString,
+      log.getWebsite.toString,
+      log.getGeo.toString,
       log.getBid,
-      UTF8String.fromString(log.getCookie.toString))))
+      log.getCookie.toString)))
   }
 }
 
@@ -49,16 +48,17 @@ class KafkaStreamToRowsConverter extends StreamToRowsConverter with Serializable
   * Convertes Spark RDD[AsImpressionLog] to RDD[Row]
   * to insert into table
   */
-class ImpressionLogToRow {
-  def toRowRDD(logRdd: RDD[AdImpressionLog]): RDD[Row] = {
+class AdImpressionLogToRowRDD extends Serializable {
+
+  def convert(logRdd: RDD[AdImpressionLog]): RDD[Row] = {
     logRdd.map(log => {
       Row(log.getTimestamp,
-        UTF8String.fromString(log.getPublisher.toString),
-        UTF8String.fromString(log.getAdvertiser.toString),
-        UTF8String.fromString(log.getWebsite.toString),
-        UTF8String.fromString(log.getGeo.toString),
+        log.getPublisher.toString,
+        log.getAdvertiser.toString,
+        log.getWebsite.toString,
+        log.getGeo.toString,
         log.getBid,
-        UTF8String.fromString(log.getCookie.toString))
+        log.getCookie.toString)
     })
   }
 }

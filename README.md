@@ -1,7 +1,36 @@
-In this post we are goinig to describe a use case mentioned in this blog: https://chimpler.wordpress.com/2014/07/01/implementing-a-real-time-data-pipeline-with-spark-streaming/
-Where we consider an adnetwork where adservers log impressions in Apache Kafka. These impressions are then aggregated by Spark Streaming into an in-memory store from SnappyData. 
-These ad impressions can provide direct lookup for fast data access, or can be sampled so that you can run error bouded queries which can return aproximate answers.
-All this is achived in a sinle SnappyData cluster very easily and efficiently. 
+Serving an ad involves multiple information pieces stored in various repositories, starting with the user profile, the appropriate real time bids based on the profile, ad networks that can serve those ads efficiently and often involves working with a different systems/clusters or tools for each activity. These clusters often involve redundant data management, tuning, debugging and constitute individual points of failure in a business that is extremely sensitive to latency and delays.
+
+Our example will showcase the way to do this analysis fast and also make sure the output gets ingested into a data store with high throughput. Moreover, the data, once ingested, needs to be interactively accessed using analytic queries. Our intent is to showcase a single SnappyData cluster that can:
+- Keep up with the stream, 
+- Run continuous queries (stream analytics) and 
+- Store the output in memory so client applications can run interactive queries concurrently with the stream. 
+
+By running aggregates on the incoming micro-batches and storing those aggregations with minimal network hops so as to not throttle the incoming stream, running OLAP queries on the stored aggregates can occur interactively. A typical ad impression record comprises fields like publisher, advertiser, website, geo, bid, cookie, and timestamp. In this case, we chose to group these records by Geo and Publisher and store aggregations into the data store.
+
+As mentioned in this blog - https://chimpler.wordpress.com/2014/07/01/implementing-a-real-time-data-pipeline-with-spark-streaming/
+we will take the same format ad for impression logs:
+
+|timestamp           |publisher |advertiser| website  |geo|bid    |cookie|
+|--------------------|----------|----------|----------|---|-------|------|
+|2013-01-28 13:21:12 |     pub1 |    adv10 |   abc.com| NY| 0.0001|  1214|
+|2013-01-28 13:21:13 |     pub1 |     adv10|   abc.com| NY| 0.0005|  1214|
+|2013-01-28 13:21:14 |     pub2 |    adv20 |   xyz.com| CA| 0.0003|  4321|
+|2013-01-28 13:21:15 |     pub2 |     adv20|   xyz.com| CA| 0.0001|  5675|
+
+We pre-aggregate these logs by publisher and geo, and compute the average bid, the number of impressions and the number of uniques by minute. We want to maintain the last day’s worth of data in memory for interactive queries. 
+Some examples of interactive queries:  
+- Find total uniques for a certain AD grouped on geography; 
+- Impression trends for advertisers over time; 
+- Top ads based on uniques count for each Geo. 
+
+So the aggregation will look something like:
+
+|timestamp           |publisher |geo    | avg_bid  |imps|uniques|
+|--------------------|----------|-------|----------|----|-------|
+|2013-01-28 13:21:00 |     pub1 |    NY |  0.0003  | 256| 104   |
+|2013-01-28 13:21:00 |     pub2 |    CA |   0.0002 | 121| 15    |
+|2013-01-28 13:22:00 |     pub1 |    NY |  0.0001  | 190| 98    |
+|2013-01-28 13:22:00 |     pub2 |    CA |   0.0007 | 137| 19    |
 
 In order to run this example, we need to install the followings:
 
@@ -15,9 +44,9 @@ Please follow the below steps to run the example:
 
 Then checkout the adanalytics example
 ```
-git clone https://github.com/SnappyDataInc/snappy-examples.git
+git clone https://github.com/SnappyDataInc/snappy-poc.git
 ```
-build the repo from the `/snappy-examples/` directory
+build the repo from the `/snappy-poc/` directory
 ```
 ./gradlew assemble
 ```
@@ -71,8 +100,8 @@ SnappyData-0.2.1-PREVIEW/sbin $ ./snappy-locators.sh start
 Start SnappyData Servers:  
 In SnappyData-0.2.1-PREVIEW/conf, create a file named servers and add following two lines to create two servers *make sure you add the absolute path*: 
 ```
-localhost -classpath='absolute_path_to_snappy-examples-checkout/build/libs/AdImpressionLogAggr-2.0-SNAPSHOT.jar'
-localhost -classpath='absolute_path_to_snappy-examples-checkout/build/libs/AdImpressionLogAggr-2.0-SNAPSHOT.jar'
+localhost -classpath='absolute_path_to_snappy-poc-checkout/build/libs/AdImpressionLogAggr-2.0-SNAPSHOT.jar'
+localhost -classpath='absolute_path_to_snappy-poc-checkout/build/libs/AdImpressionLogAggr-2.0-SNAPSHOT.jar'
 ```
 and run following command
 
@@ -80,16 +109,15 @@ and run following command
 SnappyData-0.2.1-PREVIEW/sbin $ ./snappy-servers.sh start
 ```
 
-Start generating and publishing logs to Kafka from the `/snappy-examples/` folder
+Start aggregation from the `/snappy-poc/` folder
 ```
-./gradlew createAndPublishLogs
-```
-
-Start aggregation from the `/snappy-examples/` folder
-```
-./gradlew startLogAggregation
+./gradlew aggeregateAdImpressions_SQL
 ```
 
+Start generating and publishing logs to Kafka from the `/snappy-poc/` folder
+```
+./gradlew generateAdImpressions
+```
 We can even verify if the data is getting stored in the adImpressions column table by using snappy-shell. 
 ```
 SnappyData-0.2.1-PREVIEW/bin $ ./snappy-shell 
@@ -101,7 +129,4 @@ c0
 --------------------
 134510 
 ```
-
-
-
 

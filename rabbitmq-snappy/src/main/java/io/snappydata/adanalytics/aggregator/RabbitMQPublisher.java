@@ -15,7 +15,7 @@
  * LICENSE file.
  */
 
-package io.snappydata.examples.adanalytics;
+package io.snappydata.adanalytics.aggregator;
 
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
@@ -47,7 +47,7 @@ public class RabbitMQPublisher {
         int totalNumLogs = 1000000;
 
         while (logCount <= totalNumLogs) {
-            AdImpressionLog log = KafkaLogProducer.createLog();
+            AdImpressionLog log = KafkaAdImpressionGenerator.generateAdImpression();
             channel.basicPublish("", QUEUE_NAME, null, getLogBytes(log));
             logCount += 1;
             if (logCount % 100000 == 0) {

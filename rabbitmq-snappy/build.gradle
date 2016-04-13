@@ -17,13 +17,13 @@ dependencies {
 }
 
 task publishRabbitMQMsgs(type: JavaExec, dependsOn: classes) {
-    main = 'io.snappydata.examples.adanalytics.RabbitMQPublisher'
+    main = 'io.snappydata.adanalytics.aggregator.RabbitMQPublisher'
     classpath sourceSets.main.runtimeClasspath
     classpath configurations.runtime
 }
 
 task receiveRabbitMQMsgs(type: JavaExec, dependsOn: classes) {
-    main = 'io.snappydata.examples.adanalytics.RabbitMQSnappyStream'
+    main = 'io.snappydata.adanalytics.aggregator.RabbitMQSnappyStream'
     classpath sourceSets.main.runtimeClasspath
     classpath configurations.runtime
     jvmArgs = ['-XX:MaxPermSize=512m'] // for snappy

@@ -15,15 +15,15 @@
  * LICENSE file.
  */
 
-package io.snappydata.examples.adanalytics
+package io.snappydata.adanalytics.aggregator
 
 import org.apache.spark.streaming.Seconds
 
 object Constants {
 
-  val kafkaTopic ="perfTopic"
+  val kafkaTopic ="perf4Topic"
 
-  val brokerList = "localhost:9092,localhost:9093"
+  val brokerList = "localhost:9092"//,localhost:9093"
 
   val kafkaParams: Map[String, String] = Map(
     "metadata.broker.list" -> brokerList
@@ -33,11 +33,11 @@ object Constants {
 
   val NumAdvertisers = 30
 
-  val Publishers = (0 to NumPublishers).map("p" +)
+  val Publishers = (0 to NumPublishers).map("publisher" +)
 
-  val Advertisers = (0 to NumAdvertisers).map("a" +)
+  val Advertisers = (0 to NumAdvertisers).map("advertiser" +)
 
-  val numProducerThreads = 2
+  val numProducerThreads = 1
 
   val UnknownGeo = "unknown"
 
@@ -51,7 +51,7 @@ object Constants {
 
   val NumCookies = 10000
 
-  val totalNumLogs = 20000000;
+  val totalNumLogs = 50000000;
 
   val batchDuration = Seconds(1)
 

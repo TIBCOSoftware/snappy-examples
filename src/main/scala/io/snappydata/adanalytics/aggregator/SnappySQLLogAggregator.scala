@@ -15,12 +15,11 @@
  * LICENSE file.
  */
 
-package io.snappydata.examples.adanalytics
+package io.snappydata.adanalytics.aggregator
 
-import io.snappydata.examples.adanalytics.Constants._
+import Constants._
 import org.apache.spark.SparkContext
-import org.apache.spark.sql.SnappyContext
-import org.apache.spark.sql.streaming.SnappyStreamingContext
+import org.apache.spark.streaming.SnappyStreamingContext
 
 object SnappySQLLogAggregator extends App {
 
@@ -28,13 +27,12 @@ object SnappySQLLogAggregator extends App {
     .setAppName(getClass.getSimpleName)
     .set("spark.sql.inMemoryColumnarStorage.compressed", "false")
     .set("spark.sql.inMemoryColumnarStorage.batchSize", "2000")
-    // .setMaster(s"spark://$hostName:7077")
-    .set("snappydata.store.locators", s"localhost:$locatorPort")
-    //.setMaster("snappydata://localhost:10334")// embedded
-    .setMaster("local[*]") //local
+    // .setMaster(s"spark://$hostName:7077") //split
+    //.setMaster("local[*]") //local
+    .setMaster("snappydata://localhost:10334")// embedded
 
   val sc = new SparkContext(sparkConf)
-  val snsc = SnappyStreamingContext(SnappyContext.getOrCreate(sc), batchDuration)
+  val snsc = new SnappyStreamingContext(sc, batchDuration)
 
   snsc.sql("drop table if exists AdImpressionLog")
   snsc.sql("drop table if exists adImpressions")
@@ -50,13 +48,13 @@ object SnappySQLLogAggregator extends App {
     " cookie string) " +
     " using directkafka_stream options" +
     " (storagelevel 'MEMORY_AND_DISK_SER_2'," +
-    " rowConverter 'io.snappydata.examples.adanalytics.KafkaStreamToRowsConverter' ," +
-    " kafkaParams 'metadata.broker.list->localhost:9092'," +
-    " topics 'adlogsTopic'," +
+    " rowConverter 'io.snappydata.adanalytics.aggregator.AdImpressionToRowsConverter' ," +
+    s" kafkaParams '$brokerList'," +
+    s" topics '$kafkaTopic'," +
     " K 'java.lang.String'," +
-    " V 'io.snappydata.examples.adanalytics.AdImpressionLog', " +
+    " V 'io.snappydata.adanalytics.aggregator.AdImpressionLog', " +
     " KD 'kafka.serializer.StringDecoder', " +
-    " VD 'io.snappydata.examples.adanalytics.AdImpressionLogAvroDecoder')")
+    " VD 'io.snappydata.adanalytics.aggregator.AdImpressionLogAvroDecoder')")
 
   snsc.sql("create table adImpressions(timestamp long, publisher string, " +
     "advertiser string, website string, geo string, bid double, cookie string) " +
@@ -68,20 +66,21 @@ object SnappySQLLogAggregator extends App {
     df.write.insertInto("adImpressions")
   })
 
-  /* snsc.sql("create table adImpressions(publisher string," +
+   snsc.sql("create table adImpressions(publisher string," +
     " geo string, avg_bid double, imps long, uniques long) " +
     "using column " +
     "options(PARTITION_BY 'publisher')")
-    snsc.sql("CREATE SAMPLE TABLE sampledAdImpressions (publisher string, geo string, avg_bid double, imps long, uniques long)" +
-    " OPTIONS(qcs 'publisher', fraction '0.03', strataReservoirSize '50')")
+
+//    snsc.sql("CREATE SAMPLE TABLE sampledAdImpressions (publisher string, geo string, avg_bid double, imps long, uniques long)" +
+//    " OPTIONS(qcs 'publisher', fraction '0.03', strataReservoirSize '50')")
 
   snsc.registerCQ("select publisher, geo, avg(bid) as avg_bid, count(*) imps, count(distinct(cookie)) uniques" +
     " from AdImpressionLog window (duration '2' seconds, slide '2' seconds)" +
     " where geo != 'unknown' group by publisher, geo")
     .foreachDataFrame(df => {
       df.write.insertInto("adImpressions")
-      df.write.insertInto("sampledAdImpressions")
-    })*/
+      //df.write.insertInto("sampledAdImpressions")
+    })
 
   snsc.start
   snsc.awaitTermination
