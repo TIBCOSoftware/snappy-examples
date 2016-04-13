@@ -49,7 +49,7 @@ object SnappySQLLogAggregator extends App {
     " using directkafka_stream options" +
     " (storagelevel 'MEMORY_AND_DISK_SER_2'," +
     " rowConverter 'io.snappydata.adanalytics.aggregator.AdImpressionToRowsConverter' ," +
-    s" kafkaParams '$brokerList'," +
+    s" kafkaParams 'metadata.broker.list->localhost:9092,localhost:9093'," +
     s" topics '$kafkaTopic'," +
     " K 'java.lang.String'," +
     " V 'io.snappydata.adanalytics.aggregator.AdImpressionLog', " +
