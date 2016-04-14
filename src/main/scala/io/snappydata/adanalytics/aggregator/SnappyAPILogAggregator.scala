@@ -17,8 +17,7 @@
 
 package io.snappydata.adanalytics.aggregator
 
-import io.snappydata.adanalytics.aggregator
-import Constants._
+import io.snappydata.adanalytics.aggregator.Constants._
 import kafka.serializer.StringDecoder
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.types._
@@ -30,10 +29,10 @@ object SnappyAPILogAggregator extends App {
 
   val conf = new SparkConf()
     .setAppName(getClass.getSimpleName)
-    //.setMaster("snappydata://localhost:10334")
-    .setMaster("local[*]")
+    .setMaster("snappydata://localhost:10334")
+    //.setMaster("local[*]")
     .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
-    .registerAvroSchemas(aggregator.AdImpressionLog.getClassSchema)
+    .registerAvroSchemas(AdImpressionLog.getClassSchema)
 
   val sc = new SparkContext(conf)
   val ssc = new SnappyStreamingContext(sc, batchDuration)
@@ -46,10 +45,9 @@ object SnappyAPILogAggregator extends App {
   val logs = messages.map(_._2).filter(_.getGeo != Constants.UnknownGeo)
     .window(Duration.apply(2000), Duration.apply(2000))
 
-  // Best to operate stream as a DataFrame/Table ... easy to run analytics on
-  // stream
-  val rows = logs.map(v => Row(v.getTimestamp, v.getPublisher, v
-    .getAdvertiser, v.getWebsite, v.getGeo, v.getBid, v.getCookie))
+  // Best to operate stream as a DataFrame/Table ... easy to run analytics on stream
+  val rows = logs.map(v => Row(new java.sql.Timestamp(v.getTimestamp), v.getPublisher.toString,
+    v.getAdvertiser.toString, v.getWebsite.toString, v.getGeo.toString, v.getBid, v.getCookie.toString))
 
   val logStreamAsTable = ssc.createSchemaDStream(rows, getAdImpressionSchema)
 
@@ -59,12 +57,12 @@ object SnappyAPILogAggregator extends App {
     * We want to execute the following analytic query ... using the DataFrame
     * API ...
     * select publisher, geo, avg(bid) as avg_bid, count(*) imps, count(distinct(cookie)) uniques
-    * from AdImpressionLog group by publisher, geo"
+    * from AdImpressionLog group by publisher, geo, timestamp"
     */
   logStreamAsTable.foreachDataFrame(df => {
-    val df1 = df.groupBy("publisher", "geo")
-      .agg(avg("bid") as "avg_bid", count("geo") as "imps",
-        countDistinct("cookie") as "uniques")
+    val df1 = df.groupBy("publisher", "geo", "timestamp")
+      .agg(avg("bid").alias("avg_bid"), count("geo").alias("imps"),
+        countDistinct("cookie").alias("uniques"))
     df1.show()
   })
 
@@ -74,7 +72,7 @@ object SnappyAPILogAggregator extends App {
 
   private def getAdImpressionSchema: StructType = {
     StructType(Array(
-      StructField("timestamp", LongType, true),
+      StructField("timestamp", TimestampType, true),
       StructField("publisher", StringType, true),
       StructField("advertiser", StringType, true),
       StructField("website", StringType, true),

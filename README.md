@@ -3,7 +3,7 @@ SnappyData aims to deliver interactive speed analytics with modest investments i
 - delivering true interactive speeds via a state-of-the-art approximate query engine that can leverage a multitude of synopses as well as the full dataset. SnappyData implements this by deeply integrating an in-memory database into Spark. 
 
 ### Purpose
-Here we use a simplified Ad Analytics example streaming in [AdImpression](link to some AdImpression note) logs, pre-aggregating the logs and ingesting into the built-in in-memory columnar store (where the data is stored both in 'exact' form as well as a stratified sample). 
+Here we use a simplified Ad Analytics example streaming in [AdImpression](https://en.wikipedia.org/wiki/Impression_(online_media)) logs, pre-aggregating the logs and ingesting into the built-in in-memory columnar store (where the data is stored both in 'exact' form as well as a stratified sample). 
 We showcase the following aspects of this unified cluster:
 - Simplicity of using SQL to model streams in spark. 
 - using SQL (as continuous queries) to pre-aggregate AdImpression logs rather than map-reduce (it is faster and lot easier to incorporate more complex analytics).
@@ -20,9 +20,9 @@ The incoming AdImpression log is formatted as depicted below.
 
 |timestamp           |publisher |advertiser| website  |geo|bid    |cookie|
 |--------------------|----------|----------|----------|---|-------|------|
-|2013-01-28 13:21:12 |     pub1 |    adv10 |   abc.com| NY| 0.0001|  1214|
+|2013-01-28 13:21:12 |     pub1 |     adv10|   abc.com| NY| 0.0001|  1214|
 |2013-01-28 13:21:13 |     pub1 |     adv10|   abc.com| NY| 0.0005|  1214|
-|2013-01-28 13:21:14 |     pub2 |    adv20 |   xyz.com| CA| 0.0003|  4321|
+|2013-01-28 13:21:14 |     pub2 |     adv20|   xyz.com| CA| 0.0003|  4321|
 |2013-01-28 13:21:15 |     pub2 |     adv20|   xyz.com| CA| 0.0001|  5675|
 
 We pre-aggregate these logs by publisher and geo, and compute the average bid, the number of impressions and the number of uniques(the number of unique users that viewed the Ad) every 2 seconds. We want to maintain the last day’s worth of data in memory for interactive queries. 
@@ -36,9 +36,9 @@ So the aggregation will look something like:
 |timestamp           |publisher |geo    | avg_bid  |imps|uniques|
 |--------------------|----------|-------|----------|----|-------|
 |2013-01-28 13:21:00 |     pub1 |    NY |  0.0003  | 256| 104   |
-|2013-01-28 13:21:00 |     pub2 |    CA |   0.0002 | 121| 15    |
+|2013-01-28 13:21:00 |     pub2 |    CA |  0.0002  | 121| 15    |
 |2013-01-28 13:22:00 |     pub1 |    NY |  0.0001  | 190| 98    |
-|2013-01-28 13:22:00 |     pub2 |    CA |   0.0007 | 137| 19    |
+|2013-01-28 13:22:00 |     pub2 |    CA |  0.0007  | 137| 19    |
 
 ### Let's get this going
 In order to run this example, we need to install the followings:
@@ -93,13 +93,13 @@ And then start multiple instances from the root kafka folder with following comm
 bin/kafka-server-start.sh config/server1.properties
 bin/kafka-server-start.sh config/server2.properties
 ```
-From the root kafka folder, Create a topic “adnetwork-topic”:
+From the root kafka folder, Create a topic “adImpressionsTopic”:
 ```
-bin/kafka-topics.sh --create --zookeeper localhost:2181 --partitions 8 --topic adnetwork-topic --replication-factor=1
+bin/kafka-topics.sh --create --zookeeper localhost:2181 --partitions 4 --topic adImpressionsTopic --replication-factor=1
 ```
 Please download binary for SnppayData 0.2.1 Preview release from here : https://github.com/SnappyDataInc/snappydata/releases/tag/v0.2.1-preview
 Unzip it to SnappyData-0.2.1-PREVIEW
-
+TODO: CORRECT THE PRODUCT VERSION AND DOWNLOAD LOCATION
 Start SnappyData Locator:
 run following command from the root SnappyData directory
 ```
@@ -127,14 +127,14 @@ Start generating and publishing logs to Kafka from the `/snappy-poc/` folder
 ```
 ./gradlew generateAdImpressions
 ```
-We can even verify if the data is getting stored in the adImpressions column table by using snappy-shell. 
-(THIS CANNOT RUN WITH NO LEAD NODE. WE COULD BE ONLY SHOWCASING BY IMPLEMENTING THE JOB API? )
+We can even verify if the data is getting stored in the aggrAdImpressions column table by using snappy-shell.
+Please make sure your Spark Driver program is running while connecting to snappy-shell. 
 ```
 SnappyData-0.2.1-PREVIEW/bin $ ./snappy-shell 
 SnappyData version 2.0-BETA
 snappy> connect client 'localhost:1527';
 Using CONNECTION0
-snappy> select count(*) from adImpressions;
+snappy> select count(*) from aggrAdImpressions;
 c0                 
 --------------------
 134510 

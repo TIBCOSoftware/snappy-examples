@@ -28,18 +28,17 @@ object SnappySQLLogAggregator extends App {
     .set("spark.sql.inMemoryColumnarStorage.compressed", "false")
     .set("spark.sql.inMemoryColumnarStorage.batchSize", "2000")
     // .setMaster(s"spark://$hostName:7077") //split
-    //.setMaster("local[*]") //local
+    // .setMaster("local[*]") //local
     .setMaster("snappydata://localhost:10334")// embedded
 
   val sc = new SparkContext(sparkConf)
   val snsc = new SnappyStreamingContext(sc, batchDuration)
 
-  snsc.sql("drop table if exists AdImpressionLog")
-  snsc.sql("drop table if exists adImpressions")
-  snsc.sql("drop table if exists sampledAdImpressions")
+  snsc.sql("drop table if exists adImpressionStream")
+  snsc.sql("drop table if exists aggrAdImpressions")
 
-  snsc.sql("create stream table AdImpressionLog (" +
-    " timestamp long," +
+  snsc.sql("create stream table adImpressionStream (" +
+    " time_stamp timestamp," +
     " publisher string," +
     " advertiser string," +
     " website string," +
@@ -56,29 +55,20 @@ object SnappySQLLogAggregator extends App {
     " KD 'kafka.serializer.StringDecoder', " +
     " VD 'io.snappydata.adanalytics.aggregator.AdImpressionLogAvroDecoder')")
 
-  snsc.sql("create table adImpressions(timestamp long, publisher string, " +
-    "advertiser string, website string, geo string, bid double, cookie string) " +
-    "using column " +
-    "options ( BUCKETS '29')")
-
-  // insert streaming data directly into a column table
-  snsc.getSchemaDStream("AdImpressionLog").foreachDataFrame(df => {
-    df.write.insertInto("adImpressions")
-  })
-
-   snsc.sql("create table adImpressions(publisher string," +
+   snsc.sql("create table aggrAdImpressions(time_stamp timestamp, publisher string," +
     " geo string, avg_bid double, imps long, uniques long) " +
-    "using column " +
-    "options(PARTITION_BY 'publisher')")
+    "using column options(buckets '29')")
 
 //    snsc.sql("CREATE SAMPLE TABLE sampledAdImpressions (publisher string, geo string, avg_bid double, imps long, uniques long)" +
 //    " OPTIONS(qcs 'publisher', fraction '0.03', strataReservoirSize '50')")
 
-  snsc.registerCQ("select publisher, geo, avg(bid) as avg_bid, count(*) imps, count(distinct(cookie)) uniques" +
-    " from AdImpressionLog window (duration '2' seconds, slide '2' seconds)" +
-    " where geo != 'unknown' group by publisher, geo")
+  snsc.registerCQ("select time_stamp, publisher, geo, avg(bid) as avg_bid," +
+    " count(*) imps, count(distinct(cookie)) uniques" +
+    " from adImpressionStream window (duration '2' seconds, slide '2' seconds)" +
+    " where geo != 'unknown' group by publisher, geo, time_stamp")
+
     .foreachDataFrame(df => {
-      df.write.insertInto("adImpressions")
+      df.write.insertInto("aggrAdImpressions")
       //df.write.insertInto("sampledAdImpressions")
     })
 

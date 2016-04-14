@@ -45,6 +45,7 @@ dependencies {
     provided 'io.snappydata:snappy-spark-catalyst_2.10:1.6.0-BETA'
     provided 'io.snappydata:snappy-core_2.10:0.2-SNAPSHOT'
     compile 'com.miguno:kafka-avro-codec_2.10:0.1.1-SNAPSHOT'
+    compile 'com.twitter:algebird-core_2.10:0.1.11'
 }
 
 task generateAvro(type: com.commercehub.gradle.plugin.avro.GenerateAvroJavaTask) {

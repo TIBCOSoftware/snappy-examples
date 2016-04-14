@@ -22,7 +22,7 @@ import java.nio.ByteBuffer
 
 import org.apache.spark.SparkConf
 import org.apache.spark.serializer.KryoSerializer
-
+import org.apache.spark.streaming.StreamUtils
 /**
   * A Simple program which writes Avro objects to socket stream
   */
@@ -46,11 +46,11 @@ class SocketAdImpressionGenerator extends AdImpressionGenerator {
   while (true) {
     val socket = serverSocket.accept()
     println("Got a new connection")
-    // val out = new RateLimitedOutputStream(socket.getOutputStream, bytesPerSec)
+    val out = StreamUtils.getRateLimitedOutputStream(socket.getOutputStream, bytesPerSec)
     try {
       while (true) {
-       // out.write(countBuf.array)
-       // out.write(array)
+       out.write(countBuf.array)
+       out.write(array)
       }
     } catch {
       case e: IOException =>

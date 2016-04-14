@@ -21,7 +21,6 @@ import com.miguno.kafka.avro.{AvroDecoder, AvroEncoder}
 import kafka.utils.VerifiableProperties
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.streaming.StreamToRowsConverter
 
 class AdImpressionLogAvroEncoder(props: VerifiableProperties = null)
@@ -32,9 +31,10 @@ class AdImpressionLogAvroDecoder(props: VerifiableProperties = null)
 
 class AdImpressionToRowsConverter extends StreamToRowsConverter with Serializable {
 
-  override def toRows(message: Any): Seq[InternalRow] = {
+  override def toRows(message: Any): Seq[Row] = {
     val log = message.asInstanceOf[AdImpressionLog]
-    Seq(InternalRow.fromSeq(Seq(log.getTimestamp,
+    Seq(Row.fromSeq(Seq(
+      new java.sql.Timestamp(log.getTimestamp),
       log.getPublisher.toString,
       log.getAdvertiser.toString,
       log.getWebsite.toString,
@@ -45,7 +45,7 @@ class AdImpressionToRowsConverter extends StreamToRowsConverter with Serializabl
 }
 
 /**
-  * Convertes Spark RDD[AsImpressionLog] to RDD[Row]
+  * Convertes Spark RDD[AdImpressionLog] to RDD[Row]
   * to insert into table
   */
 class AdImpressionLogToRowRDD extends Serializable {

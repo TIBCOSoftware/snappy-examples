@@ -21,7 +21,7 @@ import org.apache.spark.streaming.Seconds
 
 object Constants {
 
-  val kafkaTopic ="perf4Topic"
+  val kafkaTopic ="adImpressionsTopic"
 
   val brokerList = "localhost:9092,localhost:9093"
 

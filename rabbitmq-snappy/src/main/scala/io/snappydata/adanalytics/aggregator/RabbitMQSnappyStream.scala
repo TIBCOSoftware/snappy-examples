@@ -40,9 +40,9 @@ object RabbitMQSnappyStream extends App {
   val snsc = new SnappyStreamingContext(sc, Duration(1000))
 
   snsc.sql("drop table if exists adImpressions")
-  snsc.sql("drop table if exists AdImpressionLog")
+  snsc.sql("drop table if exists adImpressionStream")
 
-  snsc.sql("create stream table AdImpressionLog (" +
+  snsc.sql("create stream table adImpressionStream (" +
     " timestamp long," +
     " publisher string," +
     " advertiser string," +
@@ -63,7 +63,7 @@ object RabbitMQSnappyStream extends App {
     "using column " +
     "options ( BUCKETS '29')")
 
-  snsc.getSchemaDStream("AdImpressionLog").foreachDataFrame(df => {
+  snsc.getSchemaDStream("adImpressionStream").foreachDataFrame(df => {
     df.show
     df.write.insertInto("adImpressions")
   })
