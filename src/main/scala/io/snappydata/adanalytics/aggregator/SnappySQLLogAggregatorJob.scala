@@ -1,3 +1,20 @@
+/*
+ * Copyright (c) 2016 SnappyData, Inc. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you
+ * may not use this file except in compliance with the License. You
+ * may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License. See accompanying
+ * LICENSE file.
+ */
+
 package io.snappydata.adanalytics.aggregator
 
 import com.typesafe.config.Config
@@ -9,6 +26,7 @@ import spark.jobserver.{SparkJobValid, SparkJobValidation}
 class SnappySQLLogAggregatorJob extends SnappyStreamingJob {
 
   override def runJob(snsc: C, jobConfig: Config): Any = {
+    snsc.sql("set spark.sql.shuffle.partitions=4")
     snsc.sql("drop table if exists adImpressionStream")
     snsc.sql("drop table if exists aggrAdImpressions")
 
@@ -35,8 +53,8 @@ class SnappySQLLogAggregatorJob extends SnappyStreamingJob {
       "using column options(buckets '29')")
 
     snsc.registerCQ("select time_stamp, publisher, geo, avg(bid) as avg_bid," +
-      " count(*) imps, count(distinct(cookie)) uniques" +
-      " from adImpressionStream window (duration '2' seconds, slide '2' seconds)" +
+      " count(*) as imps , count(distinct(cookie)) as uniques" +
+      " from adImpressionStream window (duration 1 seconds, slide 1 seconds)"+
       " where geo != 'unknown' group by publisher, geo, time_stamp")
 
       .foreachDataFrame(df => {
@@ -44,6 +62,7 @@ class SnappySQLLogAggregatorJob extends SnappyStreamingJob {
       })
 
     snsc.start
+    snsc.awaitTermination()
   }
 
   override def validate(snsc: C, config: Config): SparkJobValidation = {

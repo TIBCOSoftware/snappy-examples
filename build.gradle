@@ -73,6 +73,7 @@ dependencies {
   provided "io.snappydata:snappy-spark-streaming_2.10:${sparkVersion}"
   // provided 'io.snappydata:snappy-aqp:0.2-SNAPSHOT'
   compile 'com.miguno:kafka-avro-codec_2.10:0.1.1-SNAPSHOT'
+  compile 'org.apache.kafka:kafka_2.10:0.8.2.1'
   compile 'com.twitter:algebird-core_2.10:0.1.11'
   compile 'com.googlecode.javaewah:JavaEWAH:1.1.5'
   compile 'org.joda:joda-convert:1.2'
@@ -89,36 +90,31 @@ avro.stringType = "charSequence"
 
 task generateAdImpressions(type: JavaExec, dependsOn: classes) {
   main = 'io.snappydata.adanalytics.aggregator.KafkaAdImpressionGenerator'
-  classpath sourceSets.main.runtimeClasspath
-  classpath configurations.runtime
+  classpath sourceSets.test.runtimeClasspath
 }
 
 task aggeregateAdImpressions_API(type: JavaExec, dependsOn: classes) {
   main = 'io.snappydata.adanalytics.aggregator.SnappyAPILogAggregator'
-  classpath sourceSets.main.runtimeClasspath
-  classpath configurations.runtime
+  classpath sourceSets.test.runtimeClasspath
   jvmArgs = ['-XX:MaxPermSize=512m']
 }
 
 task aggeregateAdImpressions_SQL(type: JavaExec, dependsOn: classes) {
   main = 'io.snappydata.adanalytics.aggregator.SnappySQLLogAggregator'
-  classpath sourceSets.main.runtimeClasspath
-  classpath configurations.runtime
+  classpath sourceSets.test.runtimeClasspath
   jvmArgs = ['-XX:MaxPermSize=512m']
 }
 
 task startSnappyIngestionPerf_Kafka(type: JavaExec, dependsOn: classes) {
   main = 'io.snappydata.adanalytics.benchmark.KafkaSnappyIngestionPerf'
-  classpath sourceSets.main.runtimeClasspath
-  classpath configurations.runtime
+  classpath sourceSets.test.runtimeClasspath
   jvmArgs = ['-XX:MaxPermSize=512m']
   maxHeapSize = "8196m"
 }
 
 task startSnappyIngestionPerf_Socket(type: JavaExec, dependsOn: classes) {
   main = 'io.snappydata.adanalytics.benchmark.SocketSnappyIngestionPerf'
-  classpath sourceSets.main.runtimeClasspath
-  classpath configurations.runtime
+  classpath sourceSets.test.runtimeClasspath
   jvmArgs = ['-XX:MaxPermSize=512m']
   maxHeapSize = "8196m"
 }

@@ -72,3 +72,5 @@ shadowJar {
     )
   }
 }
+
+jar.dependsOn shadowJar

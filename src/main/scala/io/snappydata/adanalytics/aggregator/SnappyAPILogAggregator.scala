@@ -29,13 +29,16 @@ object SnappyAPILogAggregator extends App {
 
   val conf = new SparkConf()
     .setAppName(getClass.getSimpleName)
-    .setMaster("snappydata://localhost:10334")
-    //.setMaster("local[*]")
+    // .setMaster(s"spark://$hostName:7077") //split
+    .setMaster("local[*]") // local split
+    .set("snappydata.store.locators", "localhost:10334")
     .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
     .registerAvroSchemas(AdImpressionLog.getClassSchema)
 
   val sc = new SparkContext(conf)
   val ssc = new SnappyStreamingContext(sc, batchDuration)
+
+  ssc.sql("set spark.sql.shuffle.partitions=4")
 
   // stream of (topic, ImpressionLog)
   val messages = KafkaUtils.createDirectStream
@@ -43,7 +46,7 @@ object SnappyAPILogAggregator extends App {
 
   // Filter out bad messages ...use a 2 second window
   val logs = messages.map(_._2).filter(_.getGeo != Constants.UnknownGeo)
-    .window(Duration.apply(2000), Duration.apply(2000))
+    .window(Duration(1000), Duration(1000))
 
   // Best to operate stream as a DataFrame/Table ... easy to run analytics on stream
   val rows = logs.map(v => Row(new java.sql.Timestamp(v.getTimestamp), v.getPublisher.toString,

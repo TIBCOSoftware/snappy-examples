@@ -51,7 +51,7 @@ object Constants {
 
   val NumCookies = 10000
 
-  val totalNumLogs = 50000000;
+  val totalNumLogs = 3000000
 
   val batchDuration = Seconds(1)
 

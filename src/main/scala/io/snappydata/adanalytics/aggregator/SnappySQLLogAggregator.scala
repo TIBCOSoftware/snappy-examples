@@ -28,14 +28,16 @@ object SnappySQLLogAggregator extends App {
     .set("spark.sql.inMemoryColumnarStorage.compressed", "false")
     .set("spark.sql.inMemoryColumnarStorage.batchSize", "2000")
     // .setMaster(s"spark://$hostName:7077") //split
-    // .setMaster("local[*]") //local
-    .setMaster("snappydata://localhost:10334")// embedded
+    .setMaster("local[*]") //local split
+    .set("snappydata.store.locators", "localhost:10334")
+    // .set("spark.streaming.kafka.maxRatePerPartition", "100")
 
   val sc = new SparkContext(sparkConf)
   val snsc = new SnappyStreamingContext(sc, batchDuration)
 
-  snsc.sql("drop table if exists adImpressionStream")
+  snsc.sql("set spark.sql.shuffle.partitions=4")
   snsc.sql("drop table if exists aggrAdImpressions")
+  snsc.sql("drop table if exists adImpressionStream")
 
   snsc.sql("create stream table adImpressionStream (" +
     " time_stamp timestamp," +
@@ -63,8 +65,8 @@ object SnappySQLLogAggregator extends App {
 //    " OPTIONS(qcs 'publisher', fraction '0.03', strataReservoirSize '50')")
 
   snsc.registerCQ("select time_stamp, publisher, geo, avg(bid) as avg_bid," +
-    " count(*) imps, count(distinct(cookie)) uniques" +
-    " from adImpressionStream window (duration '2' seconds, slide '2' seconds)" +
+    " count(*) as imps , count(distinct(cookie)) as uniques" +
+    " from adImpressionStream window (duration 1 seconds, slide 1 seconds)"+
     " where geo != 'unknown' group by publisher, geo, time_stamp")
 
     .foreachDataFrame(df => {

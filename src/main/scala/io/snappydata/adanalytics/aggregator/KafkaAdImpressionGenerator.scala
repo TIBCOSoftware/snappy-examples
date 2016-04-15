@@ -26,7 +26,7 @@ import kafka.producer.{KeyedMessage, Producer, ProducerConfig}
 /**
   * A simple Kafka Producer program which randomly generates
   * ad impression log messages and sends it to Kafka broker.
-  * This program generates and sends 50 million messages.
+  * This program generates and sends 3 million messages.
   */
 object KafkaAdImpressionGenerator extends AdImpressionGenerator {
 
@@ -59,7 +59,7 @@ object KafkaAdImpressionGenerator extends AdImpressionGenerator {
 
 final class Worker extends Runnable {
   def run() {
-    while (true) {
+    for (i <- 0 until totalNumLogs) {
       sendToKafka(generateAdImpression)
     }
   }
