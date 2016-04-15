@@ -105,10 +105,10 @@ localhost
 localhost 
 ```
 
-Start SnappyData cluster using following command
+Start SnappyData cluster using following command from sbin sub-directory
 
 ```
-./sbin snappy-start-all.sh 
+./snappy-start-all.sh 
 ```
 
 This will start one locator, 2 servers and a lead node.
