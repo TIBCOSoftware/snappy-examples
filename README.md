@@ -47,14 +47,13 @@ In order to run this example, we need to install the followings:
 2. [SnappyData POC 0.1 Release](https://github.com/SnappyDataInc/snappy-poc/releases/download/v0.1/snappydata-poc-0.1-bin.tar.gz)
 3. JDK 7.0 or JDK 8
 
-Please follow the below steps to run the example:
-
-Then checkout the adanalytics example
+Then checkout the Ad analytics example
 ```
 git clone https://github.com/SnappyDataInc/snappy-poc.git
 ```
 
-Start Zookeeper from the root kafka folder with default zookeeper.properties:
+Note that the instructions for kafka configuration below are for 0.8.x version of Kafka.
+To setup kafka cluster, start Zookeeper first from the root kafka folder with default zookeeper.properties:
 ```
 bin/zookeeper-server-start.sh config/zookeeper.properties
 ```
