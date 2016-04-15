@@ -1,20 +1,16 @@
-configurations {
-  provided
-  compile.extendsFrom provided
-}
-
 dependencies {
-  provided 'com.datastax.spark:spark-cassandra-connector_2.10:1.6.0-M1'
-  provided 'org.apache.spark:spark-core_2.10:1.6.1'
-  provided 'org.apache.spark:spark-streaming_2.10:1.6.1'
-  provided 'org.apache.spark:spark-streaming-kafka_2.10:1.6.1'
-  provided 'org.apache.spark:spark-sql_2.10:1.6.1'
+  provided "org.apache.spark:spark-core_2.10:${sparkVersion}"
+  provided "org.apache.spark:spark-streaming_2.10:${sparkVersion}"
+  provided "org.apache.spark:spark-streaming-kafka_2.10:${sparkVersion}"
+  provided "org.apache.spark:spark-sql_2.10:${sparkVersion}"
+
   compile project(':')
+  compile 'com.datastax.spark:spark-cassandra-connector_2.10:1.6.0-M2'
 }
 
 task startCassandraIngestionPerf(type: JavaExec, dependsOn: classes) {
-    main = 'io.snappydata.adanalytics.benchmark.CassandraIngestionPerf'
-    classpath sourceSets.main.runtimeClasspath
-    classpath configurations.runtime
-    jvmArgs = ['-XX:MaxPermSize=512m']
+  main = 'io.snappydata.adanalytics.benchmark.CassandraIngestionPerf'
+  classpath sourceSets.main.runtimeClasspath
+  classpath configurations.runtime
+  jvmArgs = ['-XX:MaxPermSize=512m']
 }

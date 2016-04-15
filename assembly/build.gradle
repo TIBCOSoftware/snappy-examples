@@ -1,0 +1,74 @@
+apply plugin: 'com.github.johnrengelman.shadow'
+
+archivesBaseName = 'AdImpressionLogAggr'
+
+dependencies {
+  compile rootProject
+  compile project(':spark-memsql')
+  compile project(':spark-cassandra')
+  compile project(':rabbitmq-snappy')
+}
+
+shadowJar {
+  mergeServiceFiles {
+    exclude 'META-INF/*.SF'
+    exclude 'META-INF/*.DSA'
+    exclude 'META-INF/*.RSA'
+  }
+  // exclude dependencies available in snappydata assembly jar
+  // else version conflicts can cause problems
+  dependencies {
+    exclude dependency('org.scala-lang:scala-library:.*')
+    exclude dependency('org.scala-lang:scala-reflect:.*')
+    exclude dependency('org.scala-lang:scala-compiler:.*')
+    exclude dependency('log4j:log4j:.*')
+    exclude dependency('org.slf4j:slf4j-api:.*')
+    exclude dependency('org.apache.kafka:kafka_2.10:.*')
+    exclude dependency('org.joda:joda-convert:.*')
+    exclude dependency('joda-time:joda-time:.*')
+    exclude dependency('commons-collections:commons-collections:.*')
+    exclude dependency('commons-lang:commons-lang:.*')
+    exclude dependency('commons-logging:commons-logging:.*')
+    exclude dependency('org.apache.commons:commons-lang3:.*')
+    exclude dependency('org.apache.avro:avro:.*')
+    exclude dependency('org.apache.zookeeper:zookeeper:.*')
+    exclude dependency('com.101tec:zkclient:.*')
+    exclude dependency('org.codehaus.jackson:jackson-core-asl:.*')
+    exclude dependency('org.codehaus.jackson:jackson-mapper-asl:.*')
+    exclude dependency('com.yammer.metrics:metrics-core:.*')
+    exclude dependency('io.dropwizard.metrics:metrics-core:.*')
+    exclude dependency('org.xerial.snappy:snappy-java:.*')
+    exclude dependency('net.sf.jopt-simple:jopt-simple:.*')
+    exclude dependency('jline:jline:.*')
+    exclude dependency('junit:junit:.*')
+    exclude dependency('org.apache.commons:commons-compress:.*')
+    exclude dependency('org.tukaani:xz:.*')
+    exclude dependency('com.googlecode.javaewah:JavaEWAH:.*')
+    exclude dependency('com.thoughtworks.paranamer:paranamer:.*')
+    exclude dependency('javax.mail:mail:.*')
+    exclude dependency('javax.activation:activation:.*')
+    exclude dependency('io.spray:spray-json_2.10:.*')
+    exclude dependency('io.netty:netty-buffer:.*')
+    exclude dependency('io.netty:netty-codec:.*')
+    exclude dependency('io.netty:netty-common:.*')
+    exclude dependency('io.netty:netty-handler:.*')
+    exclude dependency('io.netty:netty-transport:.*')
+    exclude dependency('com.google.guava:guava:.*')
+  }
+
+  def createdBy = ""
+  if (rootProject.hasProperty('enablePublish')) {
+    createdBy = "SnappyData Build Team"
+  } else {
+    createdBy = System.getProperty("user.name")
+  }
+  manifest {
+    attributes(
+      "Manifest-Version"  : "1.0",
+      "Created-By"        : createdBy,
+      "Title"             : rootProject.name,
+      "Version"           : version,
+      "Vendor"            : "SnappyData, Inc."
+    )
+  }
+}

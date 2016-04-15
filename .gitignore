@@ -6,7 +6,7 @@ snappy-aqp
 .history
 .lib/
 dist/*
-build-artifacts/
+build/
 lib_managed/
 src_managed/
 project/boot/

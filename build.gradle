@@ -1,18 +1,15 @@
 plugins {
-    id "com.commercehub.gradle.plugin.avro" version "0.5.0"
-}
-
-sourceCompatibility = 1.7
-
-configurations {
-    provided
-    compile.extendsFrom provided
+  id 'java'
+  id 'com.github.johnrengelman.shadow' version '1.2.3'
+  id 'com.commercehub.gradle.plugin.avro' version "0.5.0"
 }
 
 archivesBaseName = 'AdImpressionLogAggr'
-version = '2.0-SNAPSHOT'
 
 allprojects {
+
+  version = '2.0-SNAPSHOT'
+
   repositories {
     mavenCentral()
     maven { url "https://oss.sonatype.org/content/groups/public" }
@@ -29,23 +26,54 @@ allprojects {
   apply plugin: 'eclipse'
   apply plugin: "com.commercehub.gradle.plugin.avro"
 
+  configurations {
+    provided {
+      description 'a dependency that is provided externally at runtime'
+      visible true
+    }
+  }
+
+  idea {
+    module {
+      scopes.PROVIDED.plus += [ configurations.provided ]
+    }
+  }
+  eclipse {
+    classpath {
+      plusConfigurations += [ configurations.provided ]
+    }
+  }
+
+  sourceSets {
+    main.compileClasspath += configurations.provided
+    main.runtimeClasspath -= configurations.provided
+    test.compileClasspath += configurations.provided
+    test.runtimeClasspath += configurations.provided
+  }
+
+  javadoc.classpath += configurations.provided
+
+  ext {
+    sparkVersion = '1.6.1'
+  }
+
   dependencies {
     compile 'org.scala-lang:scala-library:2.10.6'
     compile 'org.scala-lang:scala-reflect:2.10.6'
+    compile 'org.scala-lang:scala-compiler:2.10.6'
   }
 }
 
 dependencies {
-//  provided 'io.snappydata:snappy-tools_2.10:0.2.1-PREVIEW'
-//  provided 'io.snappydata:snappy-core_2.10:0.2.1-PREVIEW'
-//  provided 'io.snappydata:snappy-aqp:0.2.1-PREVIEW'
-//  provided 'io.snappydata:snappy-spark-catalyst_2.10:1.6.0-BETA'
-//  provided 'io.snappydata:snappy-aqp:0.2-SNAPSHOT'
-    provided 'io.snappydata:snappy-tools_2.10:0.2-SNAPSHOT'
-    provided 'io.snappydata:snappy-spark-catalyst_2.10:1.6.0-BETA'
-    provided 'io.snappydata:snappy-core_2.10:0.2-SNAPSHOT'
-    compile 'com.miguno:kafka-avro-codec_2.10:0.1.1-SNAPSHOT'
-    compile 'com.twitter:algebird-core_2.10:0.1.11'
+  provided 'io.snappydata:snappy-core_2.10:0.2-SNAPSHOT'
+  provided 'io.snappydata:snappy-spark-core_2.10:1.6.1'
+  provided 'io.snappydata:snappy-spark-catalyst_2.10:1.6.1'
+  provided 'io.snappydata:snappy-spark-sql_2.10:1.6.1'
+  // provided 'io.snappydata:snappy-aqp:0.2-SNAPSHOT'
+  compile 'com.miguno:kafka-avro-codec_2.10:0.1.1-SNAPSHOT'
+  compile 'com.twitter:algebird-core_2.10:0.1.11'
+  compile 'com.googlecode.javaewah:JavaEWAH:1.1.5'
+  compile 'org.joda:joda-convert:1.8.1'
 }
 
 task generateAvro(type: com.commercehub.gradle.plugin.avro.GenerateAvroJavaTask) {
@@ -56,54 +84,66 @@ task generateAvro(type: com.commercehub.gradle.plugin.avro.GenerateAvroJavaTask)
 compileJava.source(generateAvro.outputs)
 
 avro.stringType = "charSequence"
- 
+
 task generateAdImpressions(type: JavaExec, dependsOn: classes) {
-    main = 'io.snappydata.adanalytics.aggregator.KafkaAdImpressionGenerator'
-    classpath sourceSets.main.runtimeClasspath
-    classpath configurations.runtime
+  main = 'io.snappydata.adanalytics.aggregator.KafkaAdImpressionGenerator'
+  classpath sourceSets.main.runtimeClasspath
+  classpath configurations.runtime
 }
 
 task aggeregateAdImpressions_API(type: JavaExec, dependsOn: classes) {
-    main = 'io.snappydata.adanalytics.aggregator.SnappyAPILogAggregator'
-    classpath sourceSets.main.runtimeClasspath
-    classpath configurations.runtime
-    jvmArgs = ['-XX:MaxPermSize=512m']
+  main = 'io.snappydata.adanalytics.aggregator.SnappyAPILogAggregator'
+  classpath sourceSets.main.runtimeClasspath
+  classpath configurations.runtime
+  jvmArgs = ['-XX:MaxPermSize=512m']
 }
 
 task aggeregateAdImpressions_SQL(type: JavaExec, dependsOn: classes) {
-    main = 'io.snappydata.adanalytics.aggregator.SnappySQLLogAggregator'
-    classpath sourceSets.main.runtimeClasspath
-    classpath configurations.runtime
-    jvmArgs = ['-XX:MaxPermSize=512m']
+  main = 'io.snappydata.adanalytics.aggregator.SnappySQLLogAggregator'
+  classpath sourceSets.main.runtimeClasspath
+  classpath configurations.runtime
+  jvmArgs = ['-XX:MaxPermSize=512m']
 }
 
 task startSnappyIngestionPerf_Kafka(type: JavaExec, dependsOn: classes) {
-    main = 'io.snappydata.adanalytics.benchmark.KafkaSnappyIngestionPerf'
-    classpath sourceSets.main.runtimeClasspath
-    classpath configurations.runtime
-    jvmArgs = ['-XX:MaxPermSize=512m']
-    maxHeapSize = "8196m"
+  main = 'io.snappydata.adanalytics.benchmark.KafkaSnappyIngestionPerf'
+  classpath sourceSets.main.runtimeClasspath
+  classpath configurations.runtime
+  jvmArgs = ['-XX:MaxPermSize=512m']
+  maxHeapSize = "8196m"
 }
 
 task startSnappyIngestionPerf_Socket(type: JavaExec, dependsOn: classes) {
-    main = 'io.snappydata.adanalytics.benchmark.SocketSnappyIngestionPerf'
-    classpath sourceSets.main.runtimeClasspath
-    classpath configurations.runtime
-    jvmArgs = ['-XX:MaxPermSize=512m']
-    maxHeapSize = "8196m"
+  main = 'io.snappydata.adanalytics.benchmark.SocketSnappyIngestionPerf'
+  classpath sourceSets.main.runtimeClasspath
+  classpath configurations.runtime
+  jvmArgs = ['-XX:MaxPermSize=512m']
+  maxHeapSize = "8196m"
 }
 
-jar {
-    dependsOn configurations.runtime
-    from {
-        (configurations.runtime - configurations.provided).collect {
-            it.isDirectory() ? it : zipTree(it)
-        }
-    } {
-        exclude "META-INF/*.SF"
-        exclude "META-INF/*.DSA"
-        exclude "META-INF/*.RSA"
+task product(type: Exec) {
+  dependsOn ':assembly:shadowJar'
+
+  def productDir = "${rootProject.buildDir}/snappydata-poc"
+  def snappyData = System.env.SNAPPYDATA
+  if (snappyData == null || snappyData.length == 0) {
+    snappyData = "${projectDir}/../snappydata"
+  }
+
+  doFirst {
+    delete productDir
+    file("${productDir}/lib").mkdirs()
+  }
+
+  // first execute the snappydata "product" target based on env var SNAPPYDATA
+  workingDir snappyData
+  commandLine './gradlew', 'copyProduct', "-PcopyToDir=${productDir}"
+
+  // lastly copy own assembly fat jar in product lib dir
+  doLast {
+    copy {
+      from project(':assembly').shadowJar.outputs
+      into "${productDir}/lib"
     }
+  }
 }
-
-
