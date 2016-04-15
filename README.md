@@ -43,11 +43,9 @@ So the aggregation will look something like:
 ### Let's get this going
 In order to run this example, we need to install the followings:
 
-1. Scala 2.10 or 2.11
-2. [Apache Kafka 0.8.2.2 -> 0.9.0.1](http://kafka.apache.org/downloads.html)
-3. [SnappyData 0.2.1 Preview Release](https://github.com/SnappyDataInc/snappydata/releases)
-4. Gradle 2.11
-5. JDK 7.0 or JDK 8
+1. [Apache Kafka 0.8.2.2 -> 0.9.0.1](http://kafka.apache.org/downloads.html)
+2. [SnappyData POC 0.1 Release](https://github.com/SnappyDataInc/snappy-poc/releases/download/v0.1/snappydata-poc-0.1-bin.tar.gz)
+3. JDK 7.0 or JDK 8
 
 Please follow the below steps to run the example:
 
@@ -59,12 +57,6 @@ build the repo from the `/snappy-poc/` directory
 ```
 ./gradlew assemble
 ```
-If you would like to use Intellij Idea, please run following build target
-```
-./gradlew idea 
-```
-And import the project in Idea.
-
 Start Zookeeper from the root kafka folder with default zookeeper.properties:
 ```
 bin/zookeeper-server-start.sh config/zookeeper.properties
@@ -97,26 +89,29 @@ From the root kafka folder, Create a topic “adImpressionsTopic”:
 ```
 bin/kafka-topics.sh --create --zookeeper localhost:2181 --partitions 4 --topic adImpressionsTopic --replication-factor=1
 ```
-Please download binary for SnppayData 0.2.1 Preview release from here : https://github.com/SnappyDataInc/snappydata/releases/tag/v0.2.1-preview
-Unzip it to SnappyData-0.2.1-PREVIEW
-TODO: CORRECT THE PRODUCT VERSION AND DOWNLOAD LOCATION
-Start SnappyData Locator:
-run following command from the root SnappyData directory
+Please download binary for SnappyData POC first release from here: https://github.com/SnappyDataInc/snappy-poc/releases/download/v0.1/snappydata-poc-0.1-bin.tar.gz
+Unzip it and the latest product with AD analytics will be inside "snappydata-poc-0.1" directory (referred to as the installation directory henceforth).
+
+In conf subdirectory of the installation, create two files spark-env.sh and servers.
+
+In spark-env.sh, set classpath as mentioned below. Replace your snappy-poc checkout path in the following line
 ```
-SnappyData-0.2.1-PREVIEW/sbin $ ./snappy-locators.sh start
+SPARK_DIST_CLASSPATH=absolute_path_to_snappy-poc-checkout/build/snappydata-poc/lib/AdImpressionLogAggr-0.1-assembly.jar
 ```
 
-Start SnappyData Servers:  
-In SnappyData-0.2.1-PREVIEW/conf, create a file named servers and add following two lines to create two servers *make sure you add the absolute path*: 
+Edit 'servers' file and add following two lines to create two servers 
 ```
-localhost -classpath='absolute_path_to_snappy-poc-checkout/build/libs/AdImpressionLogAggr-2.0-SNAPSHOT.jar'
-localhost -classpath='absolute_path_to_snappy-poc-checkout/build/libs/AdImpressionLogAggr-2.0-SNAPSHOT.jar'
+localhost
+localhost 
 ```
-and run following command
+
+Start SnappyData cluster using following command
 
 ```
-SnappyData-0.2.1-PREVIEW/sbin $ ./snappy-servers.sh start
+./sbin snappy-start-all.sh 
 ```
+
+This will start one locator, 2 servers and a lead node.
 
 Start aggregation from the `/snappy-poc/` folder
 ```
@@ -128,9 +123,8 @@ Start generating and publishing logs to Kafka from the `/snappy-poc/` folder
 ./gradlew generateAdImpressions
 ```
 We can even verify if the data is getting stored in the aggrAdImpressions column table by using snappy-shell.
-Please make sure your Spark Driver program is running while connecting to snappy-shell. 
 ```
-SnappyData-0.2.1-PREVIEW/bin $ ./snappy-shell 
+snappydata-poc-0.1/bin $ ./snappy-shell
 SnappyData version 2.0-BETA
 snappy> connect client 'localhost:1527';
 Using CONNECTION0
