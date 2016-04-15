@@ -32,6 +32,7 @@ object SnappyAPILogAggregator extends App {
     // .setMaster(s"spark://$hostName:7077") //split
     .setMaster("local[*]") // local split
     .set("snappydata.store.locators", "localhost:10334")
+    .set("spark.ui.port", "4041")
     .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
     .registerAvroSchemas(AdImpressionLog.getClassSchema)
 

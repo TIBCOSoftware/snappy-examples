@@ -26,7 +26,7 @@ import kafka.producer.{KeyedMessage, Producer, ProducerConfig}
 /**
   * A simple Kafka Producer program which randomly generates
   * ad impression log messages and sends it to Kafka broker.
-  * This program generates and sends 3 million messages.
+  * This program generates and sends 10 million messages.
   */
 object KafkaAdImpressionGenerator extends AdImpressionGenerator {
 
@@ -46,9 +46,15 @@ object KafkaAdImpressionGenerator extends AdImpressionGenerator {
 
   def main(args: Array[String]) {
     println("Sending Kafka messages of topic " + kafkaTopic + " to brokers " + brokerList)
-    for (i <- 1 to numProducerThreads) {
-      new Thread(new Worker()).start()
+    val threads = new Array[Thread](numProducerThreads)
+    for (i <- 0 until numProducerThreads) {
+      val thread = new Thread(new Worker())
+      thread.start()
+      threads(i) = thread
     }
+    threads.foreach(_.join())
+    println(s"Done sending $totalNumLogs Kafka messages of topic $kafkaTopic")
+    System.exit(0)
   }
 
   def sendToKafka(log: AdImpressionLog) = {
@@ -61,6 +67,9 @@ final class Worker extends Runnable {
   def run() {
     for (i <- 0 until totalNumLogs) {
       sendToKafka(generateAdImpression)
+      if (i > 0 && (i % 1000000) == 0) {
+        println(s"Sent $i Kafka messages of topic $kafkaTopic")
+      }
     }
   }
 }

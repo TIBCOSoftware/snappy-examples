@@ -43,7 +43,7 @@ So the aggregation will look something like:
 ### Let's get this going
 In order to run this example, we need to install the followings:
 
-1. [Apache Kafka 0.8.2.2 -> 0.9.0.1](http://kafka.apache.org/downloads.html)
+1. [Apache Kafka 0.8.2.2](http://kafka.apache.org/downloads.html)
 2. [SnappyData POC 0.1 Release](https://github.com/SnappyDataInc/snappy-poc/releases/download/v0.1/snappydata-poc-0.1-bin.tar.gz)
 3. JDK 7.0 or JDK 8
 
@@ -53,65 +53,71 @@ Then checkout the adanalytics example
 ```
 git clone https://github.com/SnappyDataInc/snappy-poc.git
 ```
-build the repo from the `/snappy-poc/` directory
-```
-./gradlew assemble
-```
+
 Start Zookeeper from the root kafka folder with default zookeeper.properties:
 ```
 bin/zookeeper-server-start.sh config/zookeeper.properties
 ```
 
-You can configure multiple Kafka brokers by simply having multiple copies of the /kafkaroot/config/server.properties file.
-For example, duplicate server.properties as server1.properties & server2.properties
-
-You need to then specify different broker.id, log.dir and port in each of those files to make them unique. Note that the port needs to be changed twice
+To start a Kafka broker with default properties:
 ```
-   config/server1.properties:
+bin/kafka-server-start.sh config/server.properties &
+```
+
+You can configure multiple Kafka brokers by simply having more copies of the /kafkaroot/config/server.properties file.
+For example, duplicate server.properties as server1.properties to start another broker.
+
+```
+cp config/server.properties config/server1.properties &
+```
+
+You need to then specify different broker.id, log.dir and port in the file to make them unique.
+In config/server1.properties change:
+```
      broker.id=1
-     port=9092
+     port=9093
      log.dir=/tmp/kafka-logs-1
 ```
-```
-   config/server2.properties:
-     broker.id=2
-     listeners=PLAINTEXT://:9093
-     port=9093
-     log.dir=/tmp/kafka-logs-2
-```
-And then start multiple instances from the root kafka folder with following commands
+Start the second broker from the root kafka folder with following command
 
 ```
 bin/kafka-server-start.sh config/server1.properties
-bin/kafka-server-start.sh config/server2.properties
 ```
-From the root kafka folder, Create a topic “adImpressionsTopic”:
+From the root kafka folder, Create a topic "adImpressionsTopic":
 ```
 bin/kafka-topics.sh --create --zookeeper localhost:2181 --partitions 4 --topic adImpressionsTopic --replication-factor=1
 ```
-Please download binary for SnappyData POC first release from here: https://github.com/SnappyDataInc/snappy-poc/releases/download/v0.1/snappydata-poc-0.1-bin.tar.gz
-Unzip it and the latest product with AD analytics will be inside "snappydata-poc-0.1" directory (referred to as the installation directory henceforth).
+
+Next download binary for first release of snappy-poc from [here](
+https://github.com/SnappyDataInc/snappy-poc/releases/download/v0.1/snappydata-poc-0.1-bin.tar.gz)
+
+The build contains the binaries for snappydata product with Ad analytics example of this repository.
+Unzip it. The binaries will be inside "snappydata-poc-0.1" directory.
 
 In conf subdirectory of the installation, create two files spark-env.sh and servers.
-
-In spark-env.sh, set classpath as mentioned below. Replace your snappy-poc checkout path in the following line
+In conf/spark-env.sh, set classpath as mentioned below. Replace your installation path in the following line
 ```
-SPARK_DIST_CLASSPATH=absolute_path_to_snappy-poc-checkout/build/snappydata-poc/lib/AdImpressionLogAggr-0.1-assembly.jar
+SPARK_DIST_CLASSPATH=absolute_path_to_installation_directory/lib/AdImpressionLogAggr-0.1-assembly.jar
 ```
 
-Edit 'servers' file and add following two lines to create two servers 
+Edit 'conf/servers' file and add following two lines to create two servers 
 ```
 localhost
 localhost 
 ```
 
-Start SnappyData cluster using following command from sbin sub-directory
+Start SnappyData cluster using following command from installation directory
 
 ```
-./snappy-start-all.sh 
+./sbin/snappy-start-all.sh 
 ```
 
 This will start one locator, 2 servers and a lead node.
+
+Next from the checkout `/snappy-poc/` directory, build the example
+```
+./gradlew assemble
+```
 
 Start aggregation from the `/snappy-poc/` folder
 ```
@@ -125,7 +131,7 @@ Start generating and publishing logs to Kafka from the `/snappy-poc/` folder
 We can even verify if the data is getting stored in the aggrAdImpressions column table by using snappy-shell.
 ```
 snappydata-poc-0.1/bin $ ./snappy-shell
-SnappyData version 2.0-BETA
+SnappyData version 1.5.0-SNAPSHOT
 snappy> connect client 'localhost:1527';
 Using CONNECTION0
 snappy> select count(*) from aggrAdImpressions;
