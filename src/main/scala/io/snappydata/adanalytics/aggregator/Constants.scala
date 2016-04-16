@@ -23,7 +23,7 @@ object Constants {
 
   val kafkaTopic ="adImpressionsTopic"
 
-  val brokerList = "localhost:9092,localhost:9093"
+  val brokerList = "localhost:9092"
 
   val kafkaParams: Map[String, String] = Map(
     "metadata.broker.list" -> brokerList

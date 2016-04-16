@@ -58,30 +58,11 @@ To setup kafka cluster, start Zookeeper first from the root kafka folder with de
 bin/zookeeper-server-start.sh config/zookeeper.properties
 ```
 
-To start a Kafka broker with default properties:
+Start one Kafka broker with default properties:
 ```
 bin/kafka-server-start.sh config/server.properties &
 ```
 
-You can configure multiple Kafka brokers by simply having more copies of the /kafkaroot/config/server.properties file.
-For example, duplicate server.properties as server1.properties to start another broker.
-
-```
-cp config/server.properties config/server1.properties &
-```
-
-You need to then specify different broker.id, log.dir and port in the file to make them unique.
-In config/server1.properties change:
-```
-     broker.id=1
-     port=9093
-     log.dir=/tmp/kafka-logs-1
-```
-Start the second broker from the root kafka folder with following command
-
-```
-bin/kafka-server-start.sh config/server1.properties
-```
 From the root kafka folder, Create a topic "adImpressionsTopic":
 ```
 bin/kafka-topics.sh --create --zookeeper localhost:2181 --partitions 4 --topic adImpressionsTopic --replication-factor=1

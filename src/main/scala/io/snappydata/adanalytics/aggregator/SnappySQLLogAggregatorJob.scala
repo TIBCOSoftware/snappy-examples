@@ -41,7 +41,7 @@ class SnappySQLLogAggregatorJob extends SnappyStreamingJob {
       " using directkafka_stream options" +
       " (storagelevel 'MEMORY_AND_DISK_SER_2'," +
       " rowConverter 'io.snappydata.adanalytics.aggregator.AdImpressionToRowsConverter' ," +
-      " kafkaParams 'metadata.broker.list->localhost:9092,localhost:9093'," +
+      " kafkaParams 'metadata.broker.list->localhost:9092'," +
       s" topics '$kafkaTopic'," +
       " K 'java.lang.String'," +
       " V 'io.snappydata.adanalytics.aggregator.AdImpressionLog', " +
