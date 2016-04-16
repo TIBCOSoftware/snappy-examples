@@ -33,7 +33,7 @@ class SocketAdImpressionGenerator extends AdImpressionGenerator {
   val ser = new KryoSerializer(new SparkConf()).newInstance()
   val serStream = ser.serializeStream(bufferStream)
   while (bufferStream.size < blockSize) {
-    serStream.writeObject(generateAdImpression)
+    serStream.writeObject(generateAdImpression())
   }
   val array = bufferStream.toByteArray
   val countBuf = ByteBuffer.wrap(new Array[Byte](4))

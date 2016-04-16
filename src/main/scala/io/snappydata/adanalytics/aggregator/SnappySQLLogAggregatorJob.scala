@@ -26,7 +26,7 @@ import spark.jobserver.{SparkJobValid, SparkJobValidation}
 class SnappySQLLogAggregatorJob extends SnappyStreamingJob {
 
   override def runJob(snsc: C, jobConfig: Config): Any = {
-    snsc.sql("set spark.sql.shuffle.partitions=4")
+    snsc.sql("set spark.sql.shuffle.partitions=8")
     snsc.sql("drop table if exists adImpressionStream")
     snsc.sql("drop table if exists aggrAdImpressions")
 
@@ -50,7 +50,7 @@ class SnappySQLLogAggregatorJob extends SnappyStreamingJob {
 
     snsc.sql("create table aggrAdImpressions(time_stamp timestamp, publisher string," +
       " geo string, avg_bid double, imps long, uniques long) " +
-      "using column options(buckets '29')")
+      "using column options(buckets '11')")
 
     snsc.registerCQ("select time_stamp, publisher, geo, avg(bid) as avg_bid," +
       " count(*) as imps , count(distinct(cookie)) as uniques" +
@@ -61,7 +61,7 @@ class SnappySQLLogAggregatorJob extends SnappyStreamingJob {
         df.write.insertInto("aggrAdImpressions")
       })
 
-    snsc.start
+    snsc.start()
     snsc.awaitTermination()
   }
 

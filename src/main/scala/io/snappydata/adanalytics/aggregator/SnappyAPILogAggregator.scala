@@ -36,10 +36,17 @@ object SnappyAPILogAggregator extends App {
     .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
     .registerAvroSchemas(AdImpressionLog.getClassSchema)
 
+  // add the "assembly" jar to executor classpath
+  val assemblyJar = System.getenv("PROJECT_ASSEMBLY_JAR")
+  if (assemblyJar != null) {
+    conf.set("spark.driver.extraClassPath", assemblyJar)
+    conf.set("spark.executor.extraClassPath", assemblyJar)
+  }
+
   val sc = new SparkContext(conf)
   val ssc = new SnappyStreamingContext(sc, batchDuration)
 
-  ssc.sql("set spark.sql.shuffle.partitions=4")
+  ssc.sql("set spark.sql.shuffle.partitions=8")
 
   // stream of (topic, ImpressionLog)
   val messages = KafkaUtils.createDirectStream

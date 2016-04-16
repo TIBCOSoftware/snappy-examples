@@ -16,12 +16,12 @@
  */
 package io.snappydata.adanalytics.aggregator
 
-import Constants._
+import io.snappydata.adanalytics.aggregator.Constants._
 
 import scala.util.Random
 
 class AdImpressionGenerator {
-  def generateAdImpression() = {
+  def generateAdImpression(): AdImpressionLog = {
     val random = new Random()
     val timestamp = System.currentTimeMillis()
     val publisher = Publishers(random.nextInt(NumPublishers))

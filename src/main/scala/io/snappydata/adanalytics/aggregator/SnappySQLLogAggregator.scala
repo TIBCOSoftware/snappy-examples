@@ -33,10 +33,17 @@ object SnappySQLLogAggregator extends App {
     .set("spark.ui.port", "4041")
     // .set("spark.streaming.kafka.maxRatePerPartition", "100")
 
+  // add the "assembly" jar to executor classpath
+  val assemblyJar = System.getenv("PROJECT_ASSEMBLY_JAR")
+  if (assemblyJar != null) {
+    sparkConf.set("spark.driver.extraClassPath", assemblyJar)
+    sparkConf.set("spark.executor.extraClassPath", assemblyJar)
+  }
+
   val sc = new SparkContext(sparkConf)
   val snsc = new SnappyStreamingContext(sc, batchDuration)
 
-  snsc.sql("set spark.sql.shuffle.partitions=4")
+  snsc.sql("set spark.sql.shuffle.partitions=8")
   snsc.sql("drop table if exists aggrAdImpressions")
   snsc.sql("drop table if exists adImpressionStream")
 
@@ -60,7 +67,7 @@ object SnappySQLLogAggregator extends App {
 
    snsc.sql("create table aggrAdImpressions(time_stamp timestamp, publisher string," +
     " geo string, avg_bid double, imps long, uniques long) " +
-    "using column options(buckets '29')")
+    "using column options(buckets '11')")
 
 //    snsc.sql("CREATE SAMPLE TABLE sampledAdImpressions (publisher string, geo string, avg_bid double, imps long, uniques long)" +
 //    " OPTIONS(qcs 'publisher', fraction '0.03', strataReservoirSize '50')")
@@ -75,6 +82,6 @@ object SnappySQLLogAggregator extends App {
       //df.write.insertInto("sampledAdImpressions")
     })
 
-  snsc.start
-  snsc.awaitTermination
+  snsc.start()
+  snsc.awaitTermination()
 }
