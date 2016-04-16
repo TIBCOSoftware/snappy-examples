@@ -41,7 +41,7 @@ So the aggregation will look something like:
 |2013-01-28 13:22:00 |     pub2 |    CA |  0.0007  | 137| 19    |
 
 ### Let's get this going
-In order to run this example, we need to install the followings:
+In order to run this example, we need to install the following:
 
 1. [Apache Kafka 0.8.2.2](http://kafka.apache.org/downloads.html)
 2. [SnappyData POC 0.2.2 Release](https://github.com/SnappyDataInc/snappy-poc/releases/download/v0.2.2/snappydata-poc-0.2.2-bin.tar.gz)
@@ -53,6 +53,7 @@ git clone https://github.com/SnappyDataInc/snappy-poc.git
 ```
 
 Note that the instructions for kafka configuration below are for 0.8.x version of Kafka.
+
 To setup kafka cluster, start Zookeeper first from the root kafka folder with default zookeeper.properties:
 ```
 bin/zookeeper-server-start.sh config/zookeeper.properties
@@ -60,7 +61,7 @@ bin/zookeeper-server-start.sh config/zookeeper.properties
 
 Start one Kafka broker with default properties:
 ```
-bin/kafka-server-start.sh config/server.properties &
+bin/kafka-server-start.sh config/server.properties
 ```
 
 From the root kafka folder, Create a topic "adImpressionsTopic":
