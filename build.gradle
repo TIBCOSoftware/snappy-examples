@@ -135,7 +135,7 @@ task product(type: Exec) {
 
   def productDir = "${rootProject.buildDir}/snappydata-poc"
   def snappyData = System.env.SNAPPYDATA
-  if (snappyData == null || snappyData.length == 0) {
+  if (snappyData == null || snappyData.length() == 0) {
     snappyData = "${projectDir}/../snappydata"
   }
 
