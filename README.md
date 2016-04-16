@@ -103,15 +103,32 @@ Start generating and publishing logs to Kafka from the `/snappy-poc/` folder
 ```
 ./gradlew generateAdImpressions
 ```
-We can even verify if the data is getting stored in the aggrAdImpressions column table by using snappy-shell.
-```
-snappydata-poc-0.2.2 $ ./bin/snappy-shell
+Now, we can run some interactive analytic queries on the pre-aggregated data. 
+```sql
+snappydata-poc-0.2.2 $ ./bin/snappy-shell   -- This is the interactive SQL shell
 SnappyData version 1.5.0-SNAPSHOT
-snappy> connect client 'localhost:1527';
+snappy> connect client 'localhost:1527';   -- This is the host:port where the snappydata locator is running
 Using CONNECTION0
-snappy> select count(*) from aggrAdImpressions;
-c0                 
---------------------
-134510
+snappy> set spark.sql.shuffle.partitions=7;  -- Set the partitions for spark shuffles low. We don't have too much data.
+snappy> elapsedtime on; -- lets print the time taken for SQL commands
+
+-- You can find out if we have the ingested data?
+snappy> select count(*) from AggrAdImpressions;
+
+-- If the kafka producer is still on, we can even directly query the stream
+snappy> select count(*) from AdImpressionStream;
+
+-- Now, some Analytic queries on column table
+
+-- Find Top 20 geographies with the most Ad impressions.
+snappy> select count(*) AS adCount, geo from aggradimpressions group by geo order by adCount desc limit 20;
+-- Find total uniques for a certain AD grouped on geography 
+snappy> select sum(uniques) AS totalUniques, geo from aggrAdImpressions where publisher='publisher11' group by geo order by totalUniques desc limit 20;
+```
+
+Finally, you can stop the SnappyData cluster using ...
+
+```
+./sbin/snappy-stop-all.sh
 ```
 
