@@ -41,10 +41,74 @@ So the aggregation will look something like:
 |2013-01-28 13:22:00 |     pub2 |    CA |  0.0007  | 137| 19    |
 
 ### Code highlights
-#### generating the logs 
-#### Spark stream as SQL table and Continuous query
-#### Ingesting into Column table
+#### Generating the AdImpression logs 
+We have [KafkaAdImpressionGenerator](src/main/scala/io/snappydata/adanalytics/aggregator/KafkaAdImpressionGenerator.scala) which simulates Adservers and generates random AdImpressionLogs that are sent to a Kafka broker. AdImpressionLog is an Avro obejct using [adimpressionlog.avsc](src/avro/adimpressionlog.avsc) schema
+  ```scala
+  val props = new Properties()
+  props.put("serializer.class", "io.snappydata.adanalytics.aggregator.AdImpressionLogAvroEncoder")
+  props.put("partitioner.class", "kafka.producer.DefaultPartitioner")
+  props.put("key.serializer.class", "kafka.serializer.StringEncoder")
+  props.put("metadata.broker.list", brokerList)
+  val config = new ProducerConfig(props)
+  val producer = new Producer[String, AdImpressionLog](config)
+  sendToKafka(generateAdImpression())
 
+  def generateAdImpression(): AdImpressionLog = {
+    val random = new Random()
+    val timestamp = System.currentTimeMillis()
+    val publisher = Publishers(random.nextInt(NumPublishers))
+    val advertiser = Advertisers(random.nextInt(NumAdvertisers))
+    val website = s"website_${random.nextInt(Constants.NumWebsites)}.com"
+    val cookie = s"cookie_${random.nextInt(Constants.NumCookies)}"
+    val geo = Geos(random.nextInt(Geos.size))
+    val bid = math.abs(random.nextDouble()) % 1
+    val log = new AdImpressionLog()
+  }
+  
+  def sendToKafka(log: AdImpressionLog) = {
+    producer.send(new KeyedMessage[String, AdImpressionLog](
+      Constants.kafkaTopic, log.getTimestamp.toString, log))
+  }
+  ```
+#### Spark stream as SQL table and Continuous query
+ [SnappySQLLogAggregator](src/main/scala/io/snappydata/adanalytics/aggregator/SnappySQLLogAggregator.scala) creates a stream over the Kafka source. The messages are converted to Row objects using [AdImpressionToRowsConverter](src/main/scala/io/snappydata/adanalytics/aggregator/AdImpressionToRowsConverter.scala) comply with the schema defined in the 'create stream table' below. This is mostly just a SQL veneer over Spark Streaming. The stream table is also automatically registered with the SnappyData catalog so external clients can see this stream as a table
+```scala
+  val sc = new SparkContext(sparkConf)
+  val snsc = new SnappyStreamingContext(sc, batchDuration)
+
+  snsc.sql("create stream table adImpressionStream (" +
+    " time_stamp timestamp," +
+    " publisher string," +
+    " advertiser string," +
+    " website string," +
+    " geo string," +
+    " bid double," +
+    " cookie string) " +
+    " using directkafka_stream options" +
+    " (storagelevel 'MEMORY_AND_DISK_SER_2'," +
+    " rowConverter 'io.snappydata.adanalytics.aggregator.AdImpressionToRowsConverter' ," +
+    s" kafkaParams 'metadata.broker.list->$brokerList'," +
+    s" topics '$kafkaTopic'," +
+    " K 'java.lang.String'," +
+    " V 'io.snappydata.adanalytics.aggregator.AdImpressionLog', " +
+    " KD 'kafka.serializer.StringDecoder', " +
+    " VD 'io.snappydata.adanalytics.aggregator.AdImpressionLogAvroDecoder')")
+    
+    val resultStream : SchemaDStream = snsc.registerCQ(
+    "select time_stamp, publisher, geo, avg(bid) as avg_bid," +
+    " count(*) as imps , count(distinct(cookie)) as uniques" +
+    " from adImpressionStream window (duration 1 seconds, slide 1 seconds)"+
+    " where geo != 'unknown' group by publisher, geo, time_stamp")
+```
+#### Ingesting into Column table
+Next, create the Column table and ingest result of continious query of aggregating AdImpressionLogs. Here we use the Spark Data Source API to write to the aggrAdImpressions table. This will automatically localize the partitions in the data store without shuffling.the data
+```scala
+   snsc.sql("create table aggrAdImpressions(time_stamp timestamp, publisher string," +
+    " geo string, avg_bid double, imps long, uniques long) " +
+     "using column options(buckets '11')")
+     
+  resultStream.foreachDataFrame(_.write.insertInto("aggrAdImpressions"))
+```
 ### Let's get this going
 In order to run this example, we need to install the following:
 

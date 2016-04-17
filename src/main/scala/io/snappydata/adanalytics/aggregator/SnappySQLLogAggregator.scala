@@ -19,6 +19,7 @@ package io.snappydata.adanalytics.aggregator
 
 import Constants._
 import org.apache.spark.SparkContext
+import org.apache.spark.sql.streaming.SchemaDStream
 import org.apache.spark.streaming.SnappyStreamingContext
 
 /**
@@ -60,6 +61,7 @@ object SnappySQLLogAggregator extends App {
 
   //Spark tip : Keep shuffle count low when data volume is low.
   snsc.sql("set spark.sql.shuffle.partitions=8")
+
   snsc.sql("drop table if exists aggrAdImpressions")
   snsc.sql("drop table if exists adImpressionStream")
 
@@ -81,7 +83,7 @@ object SnappySQLLogAggregator extends App {
     " using directkafka_stream options" +
     " (storagelevel 'MEMORY_AND_DISK_SER_2'," +
     " rowConverter 'io.snappydata.adanalytics.aggregator.AdImpressionToRowsConverter' ," +
-    s" kafkaParams 'metadata.broker.list->localhost:9092'," +
+    s" kafkaParams 'metadata.broker.list->$brokerList'," +
     s" topics '$kafkaTopic'," +
     " K 'java.lang.String'," +
     " V 'io.snappydata.adanalytics.aggregator.AdImpressionLog', " +
@@ -99,15 +101,13 @@ object SnappySQLLogAggregator extends App {
 //    " OPTIONS(qcs 'publisher', fraction '0.03', strataReservoirSize '50')")
 
   // Execute this query once every second. Output is a SchemaDStream.
-  snsc.registerCQ("select time_stamp, publisher, geo, avg(bid) as avg_bid," +
+  val resultStream : SchemaDStream = snsc.registerCQ(
+    "select time_stamp, publisher, geo, avg(bid) as avg_bid," +
     " count(*) as imps , count(distinct(cookie)) as uniques" +
     " from adImpressionStream window (duration 1 seconds, slide 1 seconds)"+
     " where geo != 'unknown' group by publisher, geo, time_stamp")
 
-    .foreachDataFrame(df => {
-      df.write.insertInto("aggrAdImpressions")
-      //df.write.insertInto("sampledAdImpressions")
-    })
+  resultStream.foreachDataFrame(_.write.insertInto("aggrAdImpressions"))
   // Above we use the Spark Data Source API to write to our Column table.
   // This will automatically localize the partitions in the data store. No
   // Shuffling.

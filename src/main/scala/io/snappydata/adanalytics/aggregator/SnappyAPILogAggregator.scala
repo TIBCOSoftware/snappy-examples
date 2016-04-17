@@ -20,6 +20,7 @@ package io.snappydata.adanalytics.aggregator
 import io.snappydata.adanalytics.aggregator.Constants._
 import kafka.serializer.StringDecoder
 import org.apache.spark.sql.Row
+import org.apache.spark.sql.streaming.SchemaDStream
 import org.apache.spark.sql.types._
 import org.apache.spark.streaming.kafka.KafkaUtils
 import org.apache.spark.streaming.{Duration, SnappyStreamingContext}
@@ -68,7 +69,7 @@ object SnappyAPILogAggregator extends App {
   val rows = logs.map(v => Row(new java.sql.Timestamp(v.getTimestamp), v.getPublisher.toString,
     v.getAdvertiser.toString, v.getWebsite.toString, v.getGeo.toString, v.getBid, v.getCookie.toString))
 
-  val logStreamAsTable = ssc.createSchemaDStream(rows, getAdImpressionSchema)
+  val logStreamAsTable : SchemaDStream = ssc.createSchemaDStream(rows, getAdImpressionSchema)
 
   import org.apache.spark.sql.functions._
 

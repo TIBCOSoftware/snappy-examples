@@ -21,9 +21,9 @@ import com.typesafe.config.Config
 import io.snappydata.adanalytics.aggregator.Constants._
 import kafka.serializer.StringDecoder
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.streaming.SnappyStreamingJob
+import org.apache.spark.sql.streaming.{SchemaDStream, SnappyStreamingJob}
 import org.apache.spark.sql.types._
-import org.apache.spark.streaming.Duration
+import org.apache.spark.streaming.Seconds
 import org.apache.spark.streaming.kafka.KafkaUtils
 import spark.jobserver.{SparkJobValid, SparkJobValidation}
 
@@ -36,25 +36,31 @@ import spark.jobserver.{SparkJobValid, SparkJobValidation}
  * on RDDs. This is similar to what we will see in Spark 2.0 (Structured
  * streaming).
  *
- * Run this program using bin/snappy-submit
+ * Run this program using bin/snappy-job.sh
  */
 class SnappyAPILogAggregatorJob extends SnappyStreamingJob {
 
+  /** contains the implementation of the Job, Snappy uses this as
+    * an entry point to execute Snappy job
+    */
   override def runJob(snsc: C, jobConfig: Config): Any = {
+
+    // The volumes are low. Optimize Spark shuffle by reducing the partition count
     snsc.sql("set spark.sql.shuffle.partitions=8")
+
     // stream of (topic, ImpressionLog)
     val messages = KafkaUtils.createDirectStream
       [String, AdImpressionLog, StringDecoder, AdImpressionLogAvroDecoder](snsc, kafkaParams, topics)
 
-    // Filter out bad messages ...use a 2 second window
+    // Filter out bad messages ...use a 1 second window
     val logs = messages.map(_._2).filter(_.getGeo != Constants.UnknownGeo)
-      .window(Duration.apply(2000), Duration.apply(2000))
+      .window(Seconds(1), Seconds(1))
 
     // Best to operate stream as a DataFrame/Table ... easy to run analytics on stream
     val rows = logs.map(v => Row(new java.sql.Timestamp(v.getTimestamp), v.getPublisher.toString,
       v.getAdvertiser.toString, v.getWebsite.toString, v.getGeo.toString, v.getBid, v.getCookie.toString))
 
-    val logStreamAsTable = snsc.createSchemaDStream(rows, getAdImpressionSchema)
+    val logStreamAsTable : SchemaDStream = snsc.createSchemaDStream(rows, getAdImpressionSchema)
 
     import org.apache.spark.sql.functions._
 
