@@ -40,11 +40,17 @@ So the aggregation will look something like:
 |2013-01-28 13:22:00 |     pub1 |    NY |  0.0001  | 190| 98    |
 |2013-01-28 13:22:00 |     pub2 |    CA |  0.0007  | 137| 19    |
 
+### Code highlights
+#### generating the logs 
+#### Spark stream as SQL table and Continuous query
+#### Ingesting into Column table
+
 ### Let's get this going
 In order to run this example, we need to install the following:
 
 1. [Apache Kafka 0.8.2.2](http://kafka.apache.org/downloads.html)
-2. [SnappyData POC 0.2.2 Release](https://github.com/SnappyDataInc/snappy-poc/releases/download/v0.2.2/snappydata-poc-0.2.2-bin.tar.gz)
+2. [SnappyData POC 0.2.2 Release](https://github.com/SnappyDataInc/snappy-poc/releases/download/v0.2.2/snappydata-poc-0.2.2-bin.tar.gz). The build contains the binaries for snappydata product as required by the Ad analytics example of this repository.
+Unzip it. The binaries will be inside "snappydata-poc-0.2.2" directory.
 3. JDK 7.0 or JDK 8
 
 Then checkout the Ad analytics example
@@ -69,40 +75,42 @@ From the root kafka folder, Create a topic "adImpressionsTopic":
 bin/kafka-topics.sh --create --zookeeper localhost:2181 --partitions 4 --topic adImpressionsTopic --replication-factor=1
 ```
 
-Next download binary for snappydata product from [here](
-https://github.com/SnappyDataInc/snappy-poc/releases/download/v0.2.2/snappydata-poc-0.2.2-bin.tar.gz)
-
-The build contains the binaries for snappydata product as required by the Ad analytics example of this repository.
-Unzip it. The binaries will be inside "snappydata-poc-0.2.2" directory.
-
-In conf subdirectory of the installation, create a file named "servers". Add following two lines to create two servers.
+Goto the SnappyData product install home directory.
+In conf subdirectory, create a file named "servers". Add following two lines to start two servers.
 ```
 localhost
 localhost
 ```
 
-Start SnappyData cluster using following command from installation directory
+Start SnappyData cluster using following command from installation directory. 
 
 ```
 ./sbin/snappy-start-all.sh
 ```
 
-This will start one locator, 2 servers and a lead node.
+This will start one locator, 2 servers and a lead node. You can understand the roles of these nodes [here](https://github.com/SnappyDataInc/snappydata/blob/master/docs/GettingStarted.md#snappydata-cluster-explanation)
 
 Next from the checkout `/snappy-poc/` directory, build the example
 ```
 ./gradlew assemble
 ```
 
-Start aggregation from the `/snappy-poc/` folder
+Submit the streaming job to the cluster and start it. From the product install directory ..
+(DOUBLE CHECK THE APP JAR PATH ... WRONG?)
 ```
-./gradlew aggeregateAdImpressions_SQL
+./bin/snappy-job.sh submit --lead localhost:8090 --app-name AdAnalytics --class io.snappydata.adanalytics.aggregator.SnappySQLLogAggregatorJob --app-jar <product install home>/snappydata-poc-0.2.2/lib/AdImpressionLogAggr-0.1-assembly.jar --stream
 ```
+
+
+SnappyData supports "Managed Spark Drivers" by running these in Lead nodes. So, if the driver were to fail, it can automatically re-start on a standby node. While the Lead node starts the streaming job, the actual work of parallel processing from kafka, etc is done in the Snappydata servers. Servers execute Spark Executors collocated with the data. 
 
 Start generating and publishing logs to Kafka from the `/snappy-poc/` folder
 ```
 ./gradlew generateAdImpressions
 ```
+
+You can see the Spark streaming processing batches of data once every second in the [Spark console](http://localhost:4040/streaming/). It is important that our stream processing keeps up with the input rate. So, we note that the 'Scheduling Delay' doesn't keep increasing and 'Processing time' remains less than a second.
+
 Now, we can run some interactive analytic queries on the pre-aggregated data. 
 ```sql
 snappydata-poc-0.2.2 $ ./bin/snappy-shell   -- This is the interactive SQL shell
@@ -115,10 +123,10 @@ snappy> elapsedtime on; -- lets print the time taken for SQL commands
 -- You can find out if we have the ingested data?
 snappy> select count(*) from AggrAdImpressions;
 
--- If the kafka producer is still on, we can even directly query the stream
+-- If the kafka producer is still producing, we can even directly query the stream
 snappy> select count(*) from AdImpressionStream;
 
--- Now, some Analytic queries on column table
+-- Now, run Analytic queries on column table
 
 -- Find Top 20 geographies with the most Ad impressions.
 snappy> select count(*) AS adCount, geo from aggradimpressions group by geo order by adCount desc limit 20;
