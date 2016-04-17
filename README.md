@@ -42,7 +42,7 @@ So the aggregation will look something like:
 
 ### Code highlights
 #### Generating the AdImpression logs 
-We have [KafkaAdImpressionGenerator](src/main/scala/io/snappydata/adanalytics/aggregator/KafkaAdImpressionGenerator.scala) which simulates Adservers and generates random AdImpressionLogs that are sent to a Kafka broker. AdImpressionLog is an Avro obejct using [adimpressionlog.avsc](src/avro/adimpressionlog.avsc) schema
+We have [KafkaAdImpressionGenerator](src/main/scala/io/snappydata/adanalytics/aggregator/KafkaAdImpressionGenerator.scala) which simulates Adservers and generates random AdImpressionLogs that are sent to a Kafka broker. AdImpressionLog is an Avro object using [adimpressionlog.avsc](src/avro/adimpressionlog.avsc) schema.
   ```scala
   val props = new Properties()
   props.put("serializer.class", "io.snappydata.adanalytics.aggregator.AdImpressionLogAvroEncoder")
@@ -71,7 +71,8 @@ We have [KafkaAdImpressionGenerator](src/main/scala/io/snappydata/adanalytics/ag
   }
   ```
 #### Spark stream as SQL table and Continuous query
- [SnappySQLLogAggregator](src/main/scala/io/snappydata/adanalytics/aggregator/SnappySQLLogAggregator.scala) creates a stream over the Kafka source. The messages are converted to Row objects using [AdImpressionToRowsConverter](src/main/scala/io/snappydata/adanalytics/aggregator/AdImpressionToRowsConverter.scala) comply with the schema defined in the 'create stream table' below. This is mostly just a SQL veneer over Spark Streaming. The stream table is also automatically registered with the SnappyData catalog so external clients can see this stream as a table
+ [SnappySQLLogAggregator](src/main/scala/io/snappydata/adanalytics/aggregator/SnappySQLLogAggregator.scala) creates a stream over the Kafka source. The messages are converted to Row objects using [AdImpressionToRowsConverter](src/main/scala/io/snappydata/adanalytics/aggregator/AdImpressionToRowsConverter.scala) comply with the schema defined in the 'create stream table' below.
+This is mostly just a SQL veneer over Spark Streaming. The stream table is also automatically registered with the SnappyData catalog so external clients can see this stream as a table.
 ```scala
   val sc = new SparkContext(sparkConf)
   val snsc = new SnappyStreamingContext(sc, batchDuration)
@@ -101,7 +102,7 @@ We have [KafkaAdImpressionGenerator](src/main/scala/io/snappydata/adanalytics/ag
     " where geo != 'unknown' group by publisher, geo, time_stamp")
 ```
 #### Ingesting into Column table
-Next, create the Column table and ingest result of continious query of aggregating AdImpressionLogs. Here we use the Spark Data Source API to write to the aggrAdImpressions table. This will automatically localize the partitions in the data store without shuffling.the data
+Next, create the Column table and ingest result of continuous query of aggregating AdImpressionLogs. Here we use the Spark Data Source API to write to the aggrAdImpressions table. This will automatically localize the partitions in the data store without shuffling the data.
 ```scala
    snsc.sql("create table aggrAdImpressions(time_stamp timestamp, publisher string," +
     " geo string, avg_bid double, imps long, uniques long) " +
