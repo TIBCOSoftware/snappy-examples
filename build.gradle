@@ -8,7 +8,7 @@ archivesBaseName = 'AdImpressionLogAggr'
 
 allprojects {
 
-  version = '0.1'
+  version = '0.2'
 
   repositories {
     mavenCentral()
@@ -57,6 +57,10 @@ allprojects {
     sparkVersion = '1.6.1'
   }
 
+  configurations.all {
+    resolutionStrategy.cacheChangingModulesFor 4, 'hours'
+  }
+
   dependencies {
     compile 'org.scala-lang:scala-library:2.10.6'
     compile 'org.scala-lang:scala-reflect:2.10.6'
@@ -88,35 +92,42 @@ compileJava.source(generateAvro.outputs)
 
 avro.stringType = "charSequence"
 
+def assemblyJar = tasks.getByPath(':assembly:shadowJar').outputs
+
 task generateAdImpressions(type: JavaExec, dependsOn: classes) {
   main = 'io.snappydata.adanalytics.aggregator.KafkaAdImpressionGenerator'
   classpath sourceSets.test.runtimeClasspath
+  environment 'PROJECT_ASSEMBLY_JAR', assemblyJar
 }
 
 task aggeregateAdImpressions_API(type: JavaExec, dependsOn: classes) {
   main = 'io.snappydata.adanalytics.aggregator.SnappyAPILogAggregator'
-  classpath sourceSets.test.runtimeClasspath
   jvmArgs = ['-XX:MaxPermSize=512m']
+  classpath sourceSets.test.runtimeClasspath
+  environment 'PROJECT_ASSEMBLY_JAR', assemblyJar
 }
 
 task aggeregateAdImpressions_SQL(type: JavaExec, dependsOn: classes) {
   main = 'io.snappydata.adanalytics.aggregator.SnappySQLLogAggregator'
-  classpath sourceSets.test.runtimeClasspath
   jvmArgs = ['-XX:MaxPermSize=512m']
+  classpath sourceSets.test.runtimeClasspath
+  environment 'PROJECT_ASSEMBLY_JAR', assemblyJar
 }
 
 task startSnappyIngestionPerf_Kafka(type: JavaExec, dependsOn: classes) {
   main = 'io.snappydata.adanalytics.benchmark.KafkaSnappyIngestionPerf'
-  classpath sourceSets.test.runtimeClasspath
   jvmArgs = ['-XX:MaxPermSize=512m']
   maxHeapSize = "8196m"
+  classpath sourceSets.test.runtimeClasspath
+  environment 'PROJECT_ASSEMBLY_JAR', assemblyJar
 }
 
 task startSnappyIngestionPerf_Socket(type: JavaExec, dependsOn: classes) {
   main = 'io.snappydata.adanalytics.benchmark.SocketSnappyIngestionPerf'
-  classpath sourceSets.test.runtimeClasspath
   jvmArgs = ['-XX:MaxPermSize=512m']
   maxHeapSize = "8196m"
+  classpath sourceSets.test.runtimeClasspath
+  environment 'PROJECT_ASSEMBLY_JAR', assemblyJar
 }
 
 task product(type: Exec) {
@@ -124,7 +135,7 @@ task product(type: Exec) {
 
   def productDir = "${rootProject.buildDir}/snappydata-poc"
   def snappyData = System.env.SNAPPYDATA
-  if (snappyData == null || snappyData.length == 0) {
+  if (snappyData == null || snappyData.length() == 0) {
     snappyData = "${projectDir}/../snappydata"
   }
 
@@ -140,7 +151,7 @@ task product(type: Exec) {
   // lastly copy own assembly fat jar in product lib dir
   doLast {
     copy {
-      from project(':assembly').shadowJar.outputs
+      from assemblyJar
       into "${productDir}/lib"
     }
   }

@@ -65,9 +65,9 @@ object KafkaAdImpressionGenerator extends AdImpressionGenerator {
 
 final class Worker extends Runnable {
   def run() {
-    for (i <- 0 until totalNumLogs) {
-      sendToKafka(generateAdImpression)
-      if (i > 0 && (i % 1000000) == 0) {
+    for (i <- 1 to totalNumLogs) {
+      sendToKafka(generateAdImpression())
+      if ((i % 1000000) == 0) {
         println(s"Sent $i Kafka messages of topic $kafkaTopic")
       }
     }

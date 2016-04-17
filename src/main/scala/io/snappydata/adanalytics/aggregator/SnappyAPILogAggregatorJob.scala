@@ -41,6 +41,7 @@ import spark.jobserver.{SparkJobValid, SparkJobValidation}
 class SnappyAPILogAggregatorJob extends SnappyStreamingJob {
 
   override def runJob(snsc: C, jobConfig: Config): Any = {
+    snsc.sql("set spark.sql.shuffle.partitions=8")
     // stream of (topic, ImpressionLog)
     val messages = KafkaUtils.createDirectStream
       [String, AdImpressionLog, StringDecoder, AdImpressionLogAvroDecoder](snsc, kafkaParams, topics)
@@ -70,7 +71,8 @@ class SnappyAPILogAggregatorJob extends SnappyStreamingJob {
       df1.show()
     })
 
-    snsc.start
+    snsc.start()
+    snsc.awaitTermination()
   }
 
   private def getAdImpressionSchema: StructType = {

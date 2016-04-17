@@ -48,11 +48,18 @@ object SnappySQLLogAggregator extends App {
     .set("spark.ui.port", "4041")
     // .set("spark.streaming.kafka.maxRatePerPartition", "100")
 
+  // add the "assembly" jar to executor classpath
+  val assemblyJar = System.getenv("PROJECT_ASSEMBLY_JAR")
+  if (assemblyJar != null) {
+    sparkConf.set("spark.driver.extraClassPath", assemblyJar)
+    sparkConf.set("spark.executor.extraClassPath", assemblyJar)
+  }
+
   val sc = new SparkContext(sparkConf)
   val snsc = new SnappyStreamingContext(sc, batchDuration)
 
   //Spark tip : Keep shuffle count low when data volume is low.
-  snsc.sql("set spark.sql.shuffle.partitions=4")
+  snsc.sql("set spark.sql.shuffle.partitions=8")
   snsc.sql("drop table if exists aggrAdImpressions")
   snsc.sql("drop table if exists adImpressionStream")
 
@@ -74,7 +81,7 @@ object SnappySQLLogAggregator extends App {
     " using directkafka_stream options" +
     " (storagelevel 'MEMORY_AND_DISK_SER_2'," +
     " rowConverter 'io.snappydata.adanalytics.aggregator.AdImpressionToRowsConverter' ," +
-    s" kafkaParams 'metadata.broker.list->localhost:9092,localhost:9093'," +
+    s" kafkaParams 'metadata.broker.list->localhost:9092'," +
     s" topics '$kafkaTopic'," +
     " K 'java.lang.String'," +
     " V 'io.snappydata.adanalytics.aggregator.AdImpressionLog', " +
@@ -84,7 +91,7 @@ object SnappySQLLogAggregator extends App {
   // Next, create the Column table where we ingest all our data into.
    snsc.sql("create table aggrAdImpressions(time_stamp timestamp, publisher string," +
     " geo string, avg_bid double, imps long, uniques long) " +
-    "using column options(buckets '29')")
+     "using column options(buckets '11')")
   // You can make these tables persistent, add partitioned keys, replicate
   // for HA, overflow to HDFS, etc, etc. ... Read the docs.
 
@@ -105,6 +112,6 @@ object SnappySQLLogAggregator extends App {
   // This will automatically localize the partitions in the data store. No
   // Shuffling.
 
-  snsc.start
-  snsc.awaitTermination
+  snsc.start()
+  snsc.awaitTermination()
 }
