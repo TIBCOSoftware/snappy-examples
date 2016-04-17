@@ -109,7 +109,7 @@ Start generating and publishing logs to Kafka from the `/snappy-poc/` folder
 ./gradlew generateAdImpressions
 ```
 
-You can see the Spark streaming processing batches of data once every second in the [Spark console](http://localhost:4040/streaming/). It is important that our stream processing keeps up with the input rate. So, we note that the 'Scheduling Delay' doesn't keep increasing and 'Processing time' remains less than a second.
+You can see the Spark streaming processing batches of data once every second in the [Spark console](http://localhost:4041/streaming/). It is important that our stream processing keeps up with the input rate. So, we note that the 'Scheduling Delay' doesn't keep increasing and 'Processing time' remains less than a second.
 
 Now, we can run some interactive analytic queries on the pre-aggregated data. 
 ```sql
@@ -121,16 +121,16 @@ snappy> set spark.sql.shuffle.partitions=7;  -- Set the partitions for spark shu
 snappy> elapsedtime on; -- lets print the time taken for SQL commands
 
 -- You can find out if we have the ingested data?
-snappy> select count(*) from AggrAdImpressions;
+snappy> select count(*) from aggrAdImpressions;
 
 -- If the kafka producer is still producing, we can even directly query the stream
-snappy> select count(*) from AdImpressionStream;
+snappy> select count(*) from adImpressionStream;
 
 -- Now, run Analytic queries on column table
 
 -- Find Top 20 geographies with the most Ad impressions.
-snappy> select count(*) AS adCount, geo from aggradimpressions group by geo order by adCount desc limit 20;
--- Find total uniques for a certain AD grouped on geography 
+snappy> select count(*) AS adCount, geo from aggrAdImpressions group by geo order by adCount desc limit 20;
+-- Find total uniques for a certain Ad grouped on geography 
 snappy> select sum(uniques) AS totalUniques, geo from aggrAdImpressions where publisher='publisher11' group by geo order by totalUniques desc limit 20;
 ```
 
