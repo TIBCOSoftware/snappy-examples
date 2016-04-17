@@ -8,6 +8,13 @@ import org.apache.spark.SparkConf
 import org.apache.spark.streaming.kafka.KafkaUtils
 import org.apache.spark.streaming.{Seconds, StreamingContext}
 
+/**
+ * Vanilla Spark implementation with no Snappy extensions being used.
+ * Code is from https://chimpler.wordpress.com/2014/07/01/implementing-a-real-time-data-pipeline-with-spark-streaming/
+ * This implementation uses a HyperLogLog to find uniques. We skip this
+ * probabilistic structure in our implementation as we can easily extract the
+ * exact distinct count for such small time windows.
+ **/
 object SparkLogAggregator extends App {
 
   val sc = new SparkConf()

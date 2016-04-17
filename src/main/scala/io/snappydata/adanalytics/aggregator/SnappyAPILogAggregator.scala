@@ -25,6 +25,11 @@ import org.apache.spark.streaming.kafka.KafkaUtils
 import org.apache.spark.streaming.{Duration, SnappyStreamingContext}
 import org.apache.spark.{SparkConf, SparkContext}
 
+/**
+ * Example using Spark API + Snappy extension to model a Stream as a DataFrame.
+ * The Spark driver and executors run in local mode and simply use Snappy
+ * cluster as the data store.
+ */
 object SnappyAPILogAggregator extends App {
 
   val conf = new SparkConf()
@@ -39,17 +44,20 @@ object SnappyAPILogAggregator extends App {
   val sc = new SparkContext(conf)
   val ssc = new SnappyStreamingContext(sc, batchDuration)
 
+  // The volumes are low. Optimize Spark shuffle by reducing the partition count
   ssc.sql("set spark.sql.shuffle.partitions=4")
 
   // stream of (topic, ImpressionLog)
   val messages = KafkaUtils.createDirectStream
     [String, AdImpressionLog, StringDecoder, AdImpressionLogAvroDecoder](ssc, kafkaParams, topics)
 
-  // Filter out bad messages ...use a 2 second window
+  // Filter out bad messages ...use a second window
   val logs = messages.map(_._2).filter(_.getGeo != Constants.UnknownGeo)
     .window(Duration(1000), Duration(1000))
 
-  // Best to operate stream as a DataFrame/Table ... easy to run analytics on stream
+  // We want to process the stream as a DataFrame/Table ... easy to run
+  // analytics on stream ...will be standard part of Spark 2.0 (Structured
+  // streaming)
   val rows = logs.map(v => Row(new java.sql.Timestamp(v.getTimestamp), v.getPublisher.toString,
     v.getAdvertiser.toString, v.getWebsite.toString, v.getGeo.toString, v.getBid, v.getCookie.toString))
 

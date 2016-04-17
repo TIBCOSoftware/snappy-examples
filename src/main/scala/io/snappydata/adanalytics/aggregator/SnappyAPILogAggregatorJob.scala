@@ -27,6 +27,17 @@ import org.apache.spark.streaming.Duration
 import org.apache.spark.streaming.kafka.KafkaUtils
 import spark.jobserver.{SparkJobValid, SparkJobValidation}
 
+/**
+ * Same as SnappyAPILogAggregator except this streaming job runs in the data
+ * store cluster. By implementing a SnappyStreamingJob we allow this program
+ * to run managed in the snappy cluster.
+ * Here we use Snappy SQL extensions to process a stream as
+ * micro-batches of DataFrames instead of using the Spark Streaming API based
+ * on RDDs. This is similar to what we will see in Spark 2.0 (Structured
+ * streaming).
+ *
+ * Run this program using bin/snappy-submit
+ */
 class SnappyAPILogAggregatorJob extends SnappyStreamingJob {
 
   override def runJob(snsc: C, jobConfig: Config): Any = {
