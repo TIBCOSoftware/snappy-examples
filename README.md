@@ -142,8 +142,8 @@ Next, create the Column table and ingest result of continuous query of aggregati
 In order to run this example, we need to install the following:
 
 1. [Apache Kafka 0.8.2.2](http://kafka.apache.org/downloads.html)
-2. [SnappyData POC 0.2.2 Release](https://github.com/SnappyDataInc/snappy-poc/releases/download/v0.2.2/snappydata-poc-0.2.2-bin.tar.gz). The build contains the binaries for snappydata product as required by the Ad analytics example of this repository.
-Unzip it. The binaries will be inside "snappydata-poc-0.2.2" directory.
+2. [SnappyData 0.2.2 build](https://github.com/SnappyDataInc/snappy-poc/releases/download/v0.2.2/snappydata-0.2.2-bin.tar.gz). The build contains the binaries for snappydata product as required by the Ad analytics example of this repository.
+Unzip it. The binaries will be inside "snappydata-0.2.2-bin" directory.
 3. JDK 7.0 or JDK 8
 
 Then checkout the Ad analytics example
@@ -185,18 +185,17 @@ This will start one locator, 2 servers and a lead node. You can understand the r
 
 Next from the checkout `/snappy-poc/` directory, build the example
 ```
+-- Build and create a jar having all dependencies in assembly/build/libs
 ./gradlew assemble
 
 -- Generate a IntelliJ IDEA project using
 ./gradlew idea
 ```
 
-Submit the streaming job to the cluster and start it. From the product install directory ..
-(DOUBLE CHECK THE APP JAR PATH ... WRONG?)
+Submit the streaming job to the cluster and start it.
 ```
-./bin/snappy-job.sh submit --lead localhost:8090 --app-name AdAnalytics --class io.snappydata.adanalytics.aggregator.SnappySQLLogAggregatorJob --app-jar <product install home>/snappydata-poc-0.2.2/lib/AdImpressionLogAggr-0.1-assembly.jar --stream
+./bin/snappy-job.sh submit --lead localhost:8090 --app-name AdAnalytics --class io.snappydata.adanalytics.aggregator.SnappySQLLogAggregatorJob --app-jar <snappy-poc>/assembly/build/libs/AdImpressionLogAggr-0.1-assembly.jar --stream
 ```
-
 
 SnappyData supports "Managed Spark Drivers" by running these in Lead nodes. So, if the driver were to fail, it can automatically re-start on a standby node. While the Lead node starts the streaming job, the actual work of parallel processing from kafka, etc is done in the Snappydata servers. Servers execute Spark Executors collocated with the data. 
 
@@ -209,7 +208,7 @@ You can see the Spark streaming processing batches of data once every second in 
 
 Now, we can run some interactive analytic queries on the pre-aggregated data. 
 ```sql
-snappydata-poc-0.2.2 $ ./bin/snappy-shell   -- This is the interactive SQL shell
+snappydata-0.2.2-bin $ ./bin/snappy-shell   -- This is the interactive SQL shell
 SnappyData version 1.5.0-SNAPSHOT
 snappy> connect client 'localhost:1527';   -- This is the host:port where the snappydata locator is running
 Using CONNECTION0
