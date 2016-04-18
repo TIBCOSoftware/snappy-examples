@@ -175,6 +175,9 @@ This will start one locator, 2 servers and a lead node. You can understand the r
 Next from the checkout `/snappy-poc/` directory, build the example
 ```
 ./gradlew assemble
+
+-- Generate a IntelliJ IDEA project using
+./gradlew idea
 ```
 
 Submit the streaming job to the cluster and start it. From the product install directory ..
