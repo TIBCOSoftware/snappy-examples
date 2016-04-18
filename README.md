@@ -1,3 +1,14 @@
+***This repo has a corresponding blog post here: [link]***
+
+### Table of Contents
+1. [Introduction](#introduction)
+2. [Purpose](#purpose)
+3. [Ad Analytics use case](#ad-impression-analytics-use-case)
+4. [Code highlights](#code-highlights)
+5. [Steps to run code](#lets-get-this-going)
+6. [Slack/Gitter/Stackoverflow](#community-discussion)
+
+### Introduction
 SnappyData aims to deliver interactive speed analytics with modest investments in cluster infrastructure and far less complexity than today. SnappyData, fulfills this promise by
 - enabling streaming, transactions and interactive analytics in a single unifying system rather than stitching different solutions—and
 - delivering true interactive speeds via a state-of-the-art approximate query engine that can leverage a multitude of synopses as well as the full dataset. SnappyData implements this by deeply integrating an in-memory database into Spark.
@@ -225,3 +236,6 @@ Finally, you can stop the SnappyData cluster using ...
 ./sbin/snappy-stop-all.sh
 ```
 
+### Community Discussion
+
+[Stackoverflow](http://stackoverflow.com/questions/tagged/snappydata) ![Stackoverflow](http://i.imgur.com/LPIdp12.png)    [Slack](http://snappydata-slackin.herokuapp.com/)![Slack](http://i.imgur.com/h3sc6GM.png)        [Gitter](https://gitter.im/SnappyDataInc/snappydata) ![Gitter](http://i.imgur.com/jNAJeOn.jpg)          [IRC](http://webchat.freenode.net/?randomnick=1&channels=%23snappydata&uio=d4) ![IRC](http://i.imgur.com/vbH3Zdx.png)             [Reddit](https://www.reddit.com/r/snappydata) ![Reddit](http://i.imgur.com/AB3cVtj.png)          JIRA (coming soon) ![JIRA](http://i.imgur.com/E92zntA.png)
