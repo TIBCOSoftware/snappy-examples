@@ -5,16 +5,16 @@ SnappyData aims to deliver interactive speed analytics with modest investments i
 ### Purpose
 Here we use a simplified Ad Analytics example streaming in [AdImpression](https://en.wikipedia.org/wiki/Impression_(online_media)) logs, pre-aggregating the logs and ingesting into the built-in in-memory columnar store (where the data is stored both in 'exact' form as well as a stratified sample).
 We showcase the following aspects of this unified cluster:
-- Simplicity of using SQL to model streams in spark.
-- using SQL (as continuous queries) to pre-aggregate AdImpression logs rather than map-reduce (it is faster and lot easier to incorporate more complex analytics).
-- Highly efficient, yet simple way to ingest this pre-aggregated into the columnar store. While the store itself provides a rich set of features like hybrid row+column store,eager replication, WAN replicas, HA, choice of memory-only, HDFS, native disk persistence, eviction, etc we only work with a colum table in this simple example.
+- Simplicity of using SQL or the DataFrame API to model streams in spark.
+- using SQL/SchemaDStream API (as continuous queries) to pre-aggregate AdImpression logs rather than map-reduce (it is faster and lot easier to incorporate more complex analytics).
+- Save this pre-aggregated into the columnar store with high efficiency(Store, Spark share the same partitioning policy). While the store itself provides a rich set of features like hybrid row+column store,eager replication, WAN replicas, HA, choice of memory-only, HDFS, native disk persistence, eviction, etc we only work with a colum table in this simple example.
 - Run OLAP queries from any SQL client both on the full data set as well as Sampled data (showcasing sub-second interactive query speeds). The stratified sample allows us to manage an infinitely growing data set at a fraction of the cost otherwise required.
 
 ### Ad Impression Analytics use case
 We borrow our use case implementation from this [blog](https://chimpler.wordpress.com/2014/07/01/implementing-a-real-time-data-pipeline-with-spark-streaming/) - We more or less use the same data structure and aggregation logic but adapted this to showcase the SnappyData programming model extensions to Spark. We retain the native Spark example for comparison.
 Our architecture is depicted in the figure below.
 We consider an adnetwork where adservers log impressions in Apache Kafka (distributed publish-subscribe messaging system). These impressions are then aggregated by Spark Streaming into the SnappyData Store. External clients connect to the same cluster using JDBC/ODBC and run arbitrary OLAP queries.
-As AdServers could feed logs from many websites and given that each AdImpression log message represents a single Ad viewed by a user, you can expect thousands of messages every second. It is crucial that ingestion logic keeps up with the stream. To accomplish this, Snappydata colocates the store partitions with partitions created by Spark streaming. i.e. a batch of data from the stream in each Spark executor is transformed into a compressed column batch and stored in the same JVM, avoiding redundant shuffles(except for HA).
+As AdServers could feed logs from many websites and given that each AdImpression log message represents a single Ad viewed by a user, you can expect thousands of messages every second. It is crucial that ingestion logic keeps up with the stream. To accomplish this, Snappydata collocates the store partitions with partitions created by Spark streaming. i.e. a batch of data from the stream in each Spark executor is transformed into a compressed column batch and stored in the same JVM, avoiding redundant shuffles(except for HA).
 
 The incoming AdImpression log is formatted as depicted below.
 
@@ -25,7 +25,7 @@ The incoming AdImpression log is formatted as depicted below.
 |2013-01-28 13:21:14 |     pub2 |     adv20|   xyz.com| CA| 0.0003|  4321|
 |2013-01-28 13:21:15 |     pub2 |     adv20|   xyz.com| CA| 0.0001|  5675|
 
-We pre-aggregate these logs by publisher and geo, and compute the average bid, the number of impressions and the number of uniques(the number of unique users that viewed the Ad) every 2 seconds. We want to maintain the last day’s worth of data in memory for interactive queries.
+We pre-aggregate these logs by publisher and geo, and compute the average bid, the number of impressions and the number of uniques(the number of unique users that viewed the Ad) every 2 seconds. We want to maintain the last day’s worth of data in memory for interactive analytics from external clients.
 Some examples of interactive queries:
 - Find total uniques for a certain AD grouped on geography;
 - Impression trends for advertisers over time;
@@ -41,8 +41,13 @@ So the aggregation will look something like:
 |2013-01-28 13:22:00 |     pub2 |    CA |  0.0007  | 137| 19    |
 
 ### Code highlights
+We implemented the ingestion logic using 3 methods mentioned below but only describe the SQL approach for brevity here.
+- [Vanilla Spark API](https://github.com/SnappyDataInc/snappy-poc/blob/master/src/main/scala/io/snappydata/adanalytics/aggregator/SparkLogAggregator.scala) (from the original blog).
+- [Spark API with Snappy extensions](https://github.com/SnappyDataInc/snappy-poc/blob/master/src/main/scala/io/snappydata/adanalytics/aggregator/SnappyAPILogAggregator.scala) to work with the stream as a sequence of DataFrames. (btw, SQL based access to streams is also the theme behind [Structured streaming](https://issues.apache.org/jira/browse/SPARK-8360) being introduced in Spark 2.0 )
+- [SQL based](https://github.com/SnappyDataInc/snappy-poc/blob/master/src/main/scala/io/snappydata/adanalytics/aggregator/SnappySQLLogAggregator.scala) - described below.
+
 #### Generating the AdImpression logs 
-We have [KafkaAdImpressionGenerator](src/main/scala/io/snappydata/adanalytics/aggregator/KafkaAdImpressionGenerator.scala) which simulates Adservers and generates random AdImpressionLogs that are sent to a Kafka broker. AdImpressionLog is an Avro object using [adimpressionlog.avsc](src/avro/adimpressionlog.avsc) schema.
+A [KafkaAdImpressionGenerator](src/main/scala/io/snappydata/adanalytics/aggregator/KafkaAdImpressionGenerator.scala) simulates Adservers and generates random [AdImpressionLogs](src/avro/adimpressionlog.avsc)(Avro formatted objects) in batches to Kafka. 
   ```scala
   val props = new Properties()
   props.put("serializer.class", "io.snappydata.adanalytics.aggregator.AdImpressionLogAvroEncoder")
@@ -71,12 +76,16 @@ We have [KafkaAdImpressionGenerator](src/main/scala/io/snappydata/adanalytics/ag
   }
   ```
 #### Spark stream as SQL table and Continuous query
- [SnappySQLLogAggregator](src/main/scala/io/snappydata/adanalytics/aggregator/SnappySQLLogAggregator.scala) creates a stream over the Kafka source. The messages are converted to Row objects using [AdImpressionToRowsConverter](src/main/scala/io/snappydata/adanalytics/aggregator/AdImpressionToRowsConverter.scala) comply with the schema defined in the 'create stream table' below.
-This is mostly just a SQL veneer over Spark Streaming. The stream table is also automatically registered with the SnappyData catalog so external clients can see this stream as a table.
+ [SnappySQLLogAggregator](src/main/scala/io/snappydata/adanalytics/aggregator/SnappySQLLogAggregator.scala) creates a stream over the Kafka source. The messages are converted to [Row](https://spark.apache.org/docs/latest/api/java/org/apache/spark/sql/Row.html) objects using [AdImpressionToRowsConverter](src/main/scala/io/snappydata/adanalytics/aggregator/AdImpressionToRowsConverter.scala) comply with the schema defined in the 'create stream table' below.
+This is mostly just a SQL veneer over Spark Streaming. The stream table is also automatically registered with the SnappyData catalog so external clients can access this stream as a table.
 ```scala
   val sc = new SparkContext(sparkConf)
   val snsc = new SnappyStreamingContext(sc, batchDuration)
 
+  /**
+  * AdImpressionStream presents the stream as a Table. It is registered with the Snappy catalog and hence queriable. 
+  * Underneath the covers, this is an abstraction over a DStream. DStream batches are emitted as DataFrames here.
+  */
   snsc.sql("create stream table adImpressionStream (" +
     " time_stamp timestamp," +
     " publisher string," +
@@ -95,6 +104,9 @@ This is mostly just a SQL veneer over Spark Streaming. The stream table is also 
     " KD 'kafka.serializer.StringDecoder', " +
     " VD 'io.snappydata.adanalytics.aggregator.AdImpressionLogAvroDecoder')")
     
+    // Aggregate metrics for each publisher, geo every few seconds. Just 1 second in this example.
+    // With the stream registered as a table, we can execute arbitrary queries.
+    // These queries run each time a batch is emitted by the stream. A continuous query.
     val resultStream : SchemaDStream = snsc.registerCQ(
     "select time_stamp, publisher, geo, avg(bid) as avg_bid," +
     " count(*) as imps , count(distinct(cookie)) as uniques" +
@@ -107,9 +119,14 @@ Next, create the Column table and ingest result of continuous query of aggregati
    snsc.sql("create table aggrAdImpressions(time_stamp timestamp, publisher string," +
     " geo string, avg_bid double, imps long, uniques long) " +
      "using column options(buckets '11')")
-     
+     //Simple in-memory partitioned, columnar table with 11 partitions. 
+     //Other table types, options to replicate, persist, overflow, etc are defined 
+     // here -> http://snappydatainc.github.io/snappydata/rowAndColumnTables/
+  
+  //  Persist using the Spark DataSource API 
   resultStream.foreachDataFrame(_.write.insertInto("aggrAdImpressions"))
 ```
+
 ### Let's get this going
 In order to run this example, we need to install the following:
 
