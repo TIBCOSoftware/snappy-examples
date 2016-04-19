@@ -9,7 +9,7 @@
 6. [Slack/Gitter/Stackoverflow](#community-discussion)
 
 ### Introduction
-SnappyData aims to deliver interactive speed analytics with modest investments in cluster infrastructure and far less complexity than today. SnappyData, fulfills this promise by
+[SnappyData](https://github.com/SnappyDataInc/snappydata) aims to deliver interactive speed analytics with modest investments in cluster infrastructure and far less complexity than today. SnappyData, fulfills this promise by
 - enabling streaming, transactions and interactive analytics in a single unifying system rather than stitching different solutions—and
 - delivering true interactive speeds via a state-of-the-art approximate query engine that can leverage a multitude of synopses as well as the full dataset. SnappyData implements this by deeply integrating an in-memory database into Spark.
 
@@ -18,14 +18,14 @@ Here we use a simplified Ad Analytics example streaming in [AdImpression](https:
 We showcase the following aspects of this unified cluster:
 - Simplicity of using SQL or the DataFrame API to model streams in spark.
 - using SQL/SchemaDStream API (as continuous queries) to pre-aggregate AdImpression logs rather than map-reduce (it is faster and lot easier to incorporate more complex analytics).
-- Save this pre-aggregated into the columnar store with high efficiency(Store, Spark share the same partitioning policy). While the store itself provides a rich set of features like hybrid row+column store,eager replication, WAN replicas, HA, choice of memory-only, HDFS, native disk persistence, eviction, etc we only work with a colum table in this simple example.
+- Save this pre-aggregated into the columnar store with high efficiency (Store, Spark share the same partitioning policy). While the store itself provides a rich set of features like hybrid row+column store, eager replication, WAN replicas, HA, choice of memory-only, HDFS, native disk persistence, eviction, etc we only work with a colum table in this simple example.
 - Run OLAP queries from any SQL client both on the full data set as well as Sampled data (showcasing sub-second interactive query speeds). The stratified sample allows us to manage an infinitely growing data set at a fraction of the cost otherwise required.
 
 ### Ad Impression Analytics use case
-We borrow our use case implementation from this [blog](https://chimpler.wordpress.com/2014/07/01/implementing-a-real-time-data-pipeline-with-spark-streaming/) - We more or less use the same data structure and aggregation logic but adapted this to showcase the SnappyData programming model extensions to Spark. We retain the native Spark example for comparison.
+We borrow our use case implementation from this [blog](https://chimpler.wordpress.com/2014/07/01/implementing-a-real-time-data-pipeline-with-spark-streaming/) - We more or less use the same data structure and aggregation logic but adapted this code to showcase the SnappyData programming model extensions to Spark. We retain the native Spark example for comparison.
 Our architecture is depicted in the figure below.
-We consider an adnetwork where adservers log impressions in Apache Kafka (distributed publish-subscribe messaging system). These impressions are then aggregated by Spark Streaming into the SnappyData Store. External clients connect to the same cluster using JDBC/ODBC and run arbitrary OLAP queries.
-As AdServers could feed logs from many websites and given that each AdImpression log message represents a single Ad viewed by a user, you can expect thousands of messages every second. It is crucial that ingestion logic keeps up with the stream. To accomplish this, Snappydata collocates the store partitions with partitions created by Spark streaming. i.e. a batch of data from the stream in each Spark executor is transformed into a compressed column batch and stored in the same JVM, avoiding redundant shuffles(except for HA).
+We consider an adnetwork where adservers log impressions in [Apache Kafka](http://kafka.apache.org/) (distributed publish-subscribe messaging system). These impressions are then aggregated by [Spark Streaming](http://spark.apache.org/streaming/) into the SnappyData Store. External clients connect to the same cluster using JDBC/ODBC and run arbitrary OLAP queries.
+As AdServers could feed logs from many websites and given that each AdImpression log message represents a single Ad viewed by a user, you can expect thousands of messages every second. It is crucial that ingestion logic keeps up with the stream. To accomplish this, SnappyData collocates the store partitions with partitions created by Spark Streaming. i.e. a batch of data from the stream in each Spark executor is transformed into a compressed column batch and stored in the same JVM, avoiding redundant shuffles (except for HA).
 
 The incoming AdImpression log is formatted as depicted below.
 
@@ -36,11 +36,11 @@ The incoming AdImpression log is formatted as depicted below.
 |2013-01-28 13:21:14 |     pub2 |     adv20|   xyz.com| CA| 0.0003|  4321|
 |2013-01-28 13:21:15 |     pub2 |     adv20|   xyz.com| CA| 0.0001|  5675|
 
-We pre-aggregate these logs by publisher and geo, and compute the average bid, the number of impressions and the number of uniques(the number of unique users that viewed the Ad) every 2 seconds. We want to maintain the last day’s worth of data in memory for interactive analytics from external clients.
+We pre-aggregate these logs by publisher and geo, and compute the average bid, the number of impressions and the number of uniques (the number of unique users that viewed the Ad) every 2 seconds. We want to maintain the last day’s worth of data in memory for interactive analytics from external clients.
 Some examples of interactive queries:
-- Find total uniques for a certain AD grouped on geography;
-- Impression trends for advertisers over time;
-- Top ads based on uniques count for each Geo.
+- **Find total uniques for a certain AD grouped on geography;**
+- **Impression trends for advertisers over time;**
+- **Top ads based on uniques count for each Geo.**
 
 So the aggregation will look something like:
 
@@ -142,7 +142,7 @@ Next, create the Column table and ingest result of continuous query of aggregati
 In order to run this example, we need to install the following:
 
 1. [Apache Kafka 0.8.2.2](http://kafka.apache.org/downloads.html)
-2. [SnappyData 0.2.2 build](https://github.com/SnappyDataInc/snappy-poc/releases/download/v0.2.2/snappydata-0.2.2-bin.tar.gz). The build contains the binaries for snappydata product as required by the Ad analytics example of this repository.
+2. [SnappyData 0.2.2 build](https://github.com/SnappyDataInc/snappy-poc/releases). The build contains the binaries for SnappyData product as required by the Ad analytics example of this repository.
 Unzip it. The binaries will be inside "snappydata-0.2.2-bin" directory.
 3. JDK 7.0 or JDK 8
 
