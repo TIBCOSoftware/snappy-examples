@@ -21,7 +21,6 @@ import io.snappydata.adanalytics.aggregator.Constants._
 import kafka.serializer.StringDecoder
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.streaming.SchemaDStream
-import org.apache.spark.sql.types._
 import org.apache.spark.streaming.kafka.KafkaUtils
 import org.apache.spark.streaming.{Duration, SnappyStreamingContext}
 import org.apache.spark.{SparkConf, SparkContext}
@@ -89,15 +88,4 @@ object SnappyAPILogAggregator extends App {
   // start rolling!
   ssc.start
   ssc.awaitTermination
-
-  private def getAdImpressionSchema: StructType = {
-    StructType(Array(
-      StructField("timestamp", TimestampType, true),
-      StructField("publisher", StringType, true),
-      StructField("advertiser", StringType, true),
-      StructField("website", StringType, true),
-      StructField("geo", StringType, true),
-      StructField("bid", DoubleType, true),
-      StructField("cookie", StringType, true)))
-  }
 }

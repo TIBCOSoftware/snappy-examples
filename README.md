@@ -130,12 +130,12 @@ Next, create the Column table and ingest result of continuous query of aggregati
    snsc.sql("create table aggrAdImpressions(time_stamp timestamp, publisher string," +
     " geo string, avg_bid double, imps long, uniques long) " +
      "using column options(buckets '11')")
-     //Simple in-memory partitioned, columnar table with 11 partitions. 
-     //Other table types, options to replicate, persist, overflow, etc are defined 
-     // here -> http://snappydatainc.github.io/snappydata/rowAndColumnTables/
+   //Simple in-memory partitioned, columnar table with 11 partitions. 
+   //Other table types, options to replicate, persist, overflow, etc are defined 
+   // here -> http://snappydatainc.github.io/snappydata/rowAndColumnTables/
   
-  //  Persist using the Spark DataSource API 
-  resultStream.foreachDataFrame(_.write.insertInto("aggrAdImpressions"))
+   //Persist using the Spark DataSource API 
+   resultStream.foreachDataFrame(_.write.insertInto("aggrAdImpressions"))
 ```
 
 ### Let's get this going

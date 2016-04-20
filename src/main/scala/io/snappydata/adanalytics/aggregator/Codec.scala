@@ -19,9 +19,11 @@ package io.snappydata.adanalytics.aggregator
 
 import com.miguno.kafka.avro.{AvroDecoder, AvroEncoder}
 import kafka.utils.VerifiableProperties
+import org.apache.avro.io.DecoderFactory
+import org.apache.avro.specific.SpecificDatumReader
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.streaming.StreamToRowsConverter
+import org.apache.spark.sql.streaming.{StreamConverter, StreamToRowsConverter}
 
 class AdImpressionLogAvroEncoder(props: VerifiableProperties = null)
   extends AvroEncoder[AdImpressionLog](props, AdImpressionLog.getClassSchema)
@@ -61,4 +63,32 @@ class AdImpressionLogToRowRDD extends Serializable {
         log.getCookie.toString)
     })
   }
+}
+
+
+class AvroStreamConverter extends StreamConverter with Serializable {
+  override def convert(inputStream: java.io.InputStream): Iterator[AdImpressionLog] = {
+    val reader = new SpecificDatumReader[AdImpressionLog](AdImpressionLog.getClassSchema)
+    val decoder = DecoderFactory.get().binaryDecoder(inputStream, null)
+    new Iterator[AdImpressionLog] {
+
+      val log: AdImpressionLog = new AdImpressionLog()
+      var nextVal = log
+      nextVal = reader.read(nextVal, decoder)
+
+      override def hasNext: Boolean = nextVal != null
+
+      override def next(): AdImpressionLog = {
+        val n = nextVal
+        if (n ne null) {
+          nextVal = reader.read(nextVal, decoder)
+          n
+        } else {
+          throw new NoSuchElementException()
+        }
+      }
+    }
+  }
+
+  override def getTargetType: scala.Predef.Class[_] = classOf[AdImpressionLog]
 }

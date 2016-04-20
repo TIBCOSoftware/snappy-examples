@@ -22,7 +22,6 @@ import io.snappydata.adanalytics.aggregator.Constants._
 import kafka.serializer.StringDecoder
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.streaming.{SchemaDStream, SnappyStreamingJob}
-import org.apache.spark.sql.types._
 import org.apache.spark.streaming.Seconds
 import org.apache.spark.streaming.kafka.KafkaUtils
 import spark.jobserver.{SparkJobValid, SparkJobValidation}
@@ -79,17 +78,6 @@ class SnappyAPILogAggregatorJob extends SnappyStreamingJob {
 
     snsc.start()
     snsc.awaitTermination()
-  }
-
-  private def getAdImpressionSchema: StructType = {
-    StructType(Array(
-      StructField("timestamp", TimestampType, true),
-      StructField("publisher", StringType, true),
-      StructField("advertiser", StringType, true),
-      StructField("website", StringType, true),
-      StructField("geo", StringType, true),
-      StructField("bid", DoubleType, true),
-      StructField("cookie", StringType, true)))
   }
 
   override def validate(snsc: C, config: Config): SparkJobValidation = {

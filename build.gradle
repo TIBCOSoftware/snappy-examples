@@ -114,16 +114,22 @@ task aggeregateAdImpressions_SQL(type: JavaExec, dependsOn: classes) {
   environment 'PROJECT_ASSEMBLY_JAR', assemblyJar
 }
 
-task startSnappyIngestionPerf_Kafka(type: JavaExec, dependsOn: classes) {
-  main = 'io.snappydata.adanalytics.benchmark.KafkaSnappyIngestionPerf'
-  jvmArgs = ['-XX:MaxPermSize=512m']
-  maxHeapSize = "8196m"
+task generateAdImpressions_Socket(type: JavaExec, dependsOn: classes) {
+  main = 'io.snappydata.adanalytics.aggregator.SocketAdImpressionGenerator'
   classpath sourceSets.test.runtimeClasspath
   environment 'PROJECT_ASSEMBLY_JAR', assemblyJar
 }
 
 task startSnappyIngestionPerf_Socket(type: JavaExec, dependsOn: classes) {
   main = 'io.snappydata.adanalytics.benchmark.SocketSnappyIngestionPerf'
+  jvmArgs = ['-XX:MaxPermSize=512m']
+  maxHeapSize = "8196m"
+  classpath sourceSets.test.runtimeClasspath
+  environment 'PROJECT_ASSEMBLY_JAR', assemblyJar
+}
+
+task startSnappyIngestionPerf_Kafka(type: JavaExec, dependsOn: classes) {
+  main = 'io.snappydata.adanalytics.benchmark.KafkaSnappyIngestionPerf'
   jvmArgs = ['-XX:MaxPermSize=512m']
   maxHeapSize = "8196m"
   classpath sourceSets.test.runtimeClasspath

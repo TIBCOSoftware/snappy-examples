@@ -17,17 +17,34 @@
 
 package io.snappydata.adanalytics.aggregator
 
+import org.apache.spark.sql.types._
 import org.apache.spark.streaming.Seconds
 
 object Constants {
 
-  val kafkaTopic ="adImpressionsTopic"
+
+  def getAdImpressionSchema: StructType = {
+    StructType(Array(
+      StructField("timestamp", TimestampType, true),
+      StructField("publisher", StringType, true),
+      StructField("advertiser", StringType, true),
+      StructField("website", StringType, true),
+      StructField("geo", StringType, true),
+      StructField("bid", DoubleType, true),
+      StructField("cookie", StringType, true)))
+  }
+
+  val kafkaTopic = "adImpressionsTopic"
 
   val brokerList = "localhost:9092"
 
   val kafkaParams: Map[String, String] = Map(
     "metadata.broker.list" -> brokerList
   )
+
+  val hostname = "localhost"
+
+  val port = 9002
 
   val NumPublishers = 50
 

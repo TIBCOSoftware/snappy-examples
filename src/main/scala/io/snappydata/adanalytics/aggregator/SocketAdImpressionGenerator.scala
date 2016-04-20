@@ -18,44 +18,53 @@ package io.snappydata.adanalytics.aggregator
 
 import java.io.{ByteArrayOutputStream, IOException}
 import java.net.ServerSocket
-import java.nio.ByteBuffer
 
-import org.apache.spark.SparkConf
-import org.apache.spark.serializer.KryoSerializer
+import org.apache.avro.io.EncoderFactory
+import org.apache.avro.specific.SpecificDatumWriter
 import org.apache.spark.streaming.StreamUtils
+
 /**
   * A Simple program which writes Avro objects to socket stream
   */
-class SocketAdImpressionGenerator extends AdImpressionGenerator {
-  val bytesPerSec = 10000000
-  val blockSize = bytesPerSec / 10
-  val bufferStream = new ByteArrayOutputStream(blockSize + 1000)
-  val ser = new KryoSerializer(new SparkConf()).newInstance()
-  val serStream = ser.serializeStream(bufferStream)
-  while (bufferStream.size < blockSize) {
-    serStream.writeObject(generateAdImpression())
-  }
-  val array = bufferStream.toByteArray
-  val countBuf = ByteBuffer.wrap(new Array[Byte](4))
-  countBuf.putInt(array.length)
-  countBuf.flip()
+object SocketAdImpressionGenerator extends AdImpressionGenerator {
+  def main(args: Array[String]) {
+    val bytesPerSec = 100000000
+    val blockSize = bytesPerSec / 10
+    val bufferStream = new ByteArrayOutputStream(blockSize + 1000)
+    val encoder = EncoderFactory.get.binaryEncoder(bufferStream, null)
+    val writer = new SpecificDatumWriter[AdImpressionLog](
+      AdImpressionLog.getClassSchema)
+    while (bufferStream.size < blockSize) {
+      writer.write(generateAdImpression(), encoder)
+    }
+    /*
+    val ser = new KryoSerializer(new SparkConf()).newInstance()
+    val serStream = ser.serializeStream(bufferStream)
+    while (bufferStream.size < blockSize) {
+      serStream.writeObject(generateAdImpression())
+    }
+    val array = bufferStream.toByteArray
+    val countBuf = ByteBuffer.wrap(new Array[Byte](4))
+    countBuf.putInt(array.length)
+    countBuf.flip()
+    */
 
-  val serverSocket = new ServerSocket(9002)
-  println("Listening on port " + 9002)
+    val serverSocket = new ServerSocket(9002)
+    println("Listening on port " + 9002)
 
-  while (true) {
-    val socket = serverSocket.accept()
-    println("Got a new connection")
-    val out = StreamUtils.getRateLimitedOutputStream(socket.getOutputStream, bytesPerSec)
-    try {
-      while (true) {
-       out.write(countBuf.array)
-       out.write(array)
+    while (true) {
+      val socket = serverSocket.accept()
+      println("Got a new connection")
+      val out = StreamUtils.getRateLimitedOutputStream(socket.getOutputStream, bytesPerSec)
+      try {
+        while (true) {
+          out.write(bufferStream.toByteArray)
+        }
+      } catch {
+        case e: IOException =>
+          println("Client disconnected")
+          socket.close()
       }
-    } catch {
-      case e: IOException =>
-        println("Client disconnected")
-        socket.close()
     }
   }
 }
