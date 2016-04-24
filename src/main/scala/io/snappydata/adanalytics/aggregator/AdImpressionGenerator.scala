@@ -18,17 +18,17 @@ package io.snappydata.adanalytics.aggregator
 
 import io.snappydata.adanalytics.aggregator.Constants._
 
-import scala.util.Random
+import java.util.Random
 
-class AdImpressionGenerator {
+object AdImpressionGenerator {
   def generateAdImpression(): AdImpressionLog = {
     val random = new Random()
     val timestamp = System.currentTimeMillis()
-    val publisher = Publishers(random.nextInt(NumPublishers))
-    val advertiser = Advertisers(random.nextInt(NumAdvertisers))
-    val website = s"website_${random.nextInt(Constants.NumWebsites)}.com"
-    val cookie = s"cookie_${random.nextInt(Constants.NumCookies)}"
-    val geo = Geos(random.nextInt(Geos.size))
+    val publisher = publishers(random.nextInt(numPublishers-10+1)+10)
+    val advertiser = advertisers(random.nextInt(numAdvertisers-10+1)+10)
+    val website = websites(random.nextInt(numWebsites-100+1)+100)
+    val cookie = cookies(random.nextInt(numCookies-100+1)+100)
+    val geo = geos(random.nextInt(geos.size))
     val bid = math.abs(random.nextDouble()) % 1
 
     val log = new AdImpressionLog()

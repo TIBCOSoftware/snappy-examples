@@ -1,20 +1,21 @@
 package io.snappydata.adanalytics.aggregator
 
-import com.twitter.algebird.HyperLogLogMonoid
+import com.twitter.algebird.{HLL, HyperLogLogMonoid}
 import io.snappydata.adanalytics.aggregator.Constants._
 import kafka.serializer.StringDecoder
 import org.apache.commons.io.Charsets
 import org.apache.spark.SparkConf
 import org.apache.spark.streaming.kafka.KafkaUtils
 import org.apache.spark.streaming.{Seconds, StreamingContext}
+import org.joda.time.DateTime
 
 /**
- * Vanilla Spark implementation with no Snappy extensions being used.
- * Code is from https://chimpler.wordpress.com/2014/07/01/implementing-a-real-time-data-pipeline-with-spark-streaming/
- * This implementation uses a HyperLogLog to find uniques. We skip this
- * probabilistic structure in our implementation as we can easily extract the
- * exact distinct count for such small time windows.
- **/
+  * Vanilla Spark implementation with no Snappy extensions being used.
+  * Code is from https://chimpler.wordpress.com/2014/07/01/implementing-a-real-time-data-pipeline-with-spark-streaming/
+  * This implementation uses a HyperLogLog to find uniques. We skip this
+  * probabilistic structure in our implementation as we can easily extract the
+  * exact distinct count for such small time windows.
+  **/
 object SparkLogAggregator extends App {
 
   val sc = new SparkConf()
@@ -64,3 +65,9 @@ object SparkLogAggregator extends App {
     )
   }
 }
+
+case class AggregationLog(timestamp: Long, sumBids: Double, imps: Int = 1, uniquesHll: HLL)
+
+case class AggregationResult(date: DateTime, publisher: String, geo: String, imps: Int, uniques: Int, avgBids: Double)
+
+case class PublisherGeoKey(publisher: String, geo: String)

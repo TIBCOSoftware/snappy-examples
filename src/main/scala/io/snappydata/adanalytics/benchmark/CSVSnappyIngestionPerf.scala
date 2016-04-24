@@ -14,30 +14,27 @@
  * permissions and limitations under the License. See accompanying
  * LICENSE file.
  */
-
 package io.snappydata.adanalytics.benchmark
 
+import java.io.FileReader
+
+import com.opencsv.CSVReader
+import io.snappydata.adanalytics.aggregator.AdImpressionLog
 import io.snappydata.adanalytics.aggregator.Constants._
-import io.snappydata.adanalytics.aggregator.{AdImpressionLog, AvroSocketStreamConverter}
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Row
-import org.apache.spark.storage.StorageLevel
 import org.apache.spark.streaming.{Duration, SnappyStreamingContext}
 import org.apache.spark.{SparkConf, SparkContext}
 
-/**
-  * Simple Snappy streaming program which pulls log messages
-  * from socket and ingest those log messages to Snappy store.
-  */
-object SocketSnappyIngestionPerf extends App {
+import scala.collection.mutable.Queue
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
+
+object CSVSnappyIngestionPerf extends App {
 
   val sparkConf = new SparkConf()
     .setAppName(getClass.getSimpleName)
     .setMaster("local[*]")
-    //.setMaster("snappydata://localhost:10334")
-    .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
-    .set("spark.executor.extraJavaOptions",
-      " -XX:+UseCompressedOops -XX:+UseConcMarkSweepGC -XX:+AggressiveOpts -XX:FreqInlineSize=300 -XX:MaxInlineSize=300 ")
-    .set("spark.streaming.blockInterval", "50")
 
   val assemblyJar = System.getenv("PROJECT_ASSEMBLY_JAR")
   if (assemblyJar != null) {
@@ -51,9 +48,9 @@ object SocketSnappyIngestionPerf extends App {
 
   snsc.snappyContext.dropTable("adImpressions", ifExists = true)
 
-  val converter = new AvroSocketStreamConverter
+  val rddQueue = Queue[RDD[AdImpressionLog]]()
 
-  val logStream = snsc.socketStream[AdImpressionLog](hostname, port, converter.convert, StorageLevel.MEMORY_AND_DISK_2)
+  val logStream = snsc.queueStream(rddQueue)
 
   val rows = logStream.map(v => Row(new java.sql.Timestamp(v.getTimestamp), v.getPublisher.toString,
     v.getAdvertiser.toString, v.getWebsite.toString, v.getGeo.toString, v.getBid, v.getCookie.toString))
@@ -67,4 +64,25 @@ object SocketSnappyIngestionPerf extends App {
 
   snsc.start()
   snsc.awaitTermination()
+
+  val csvReader = Future {
+    import collection.JavaConverters._
+
+    val csvFile = new CSVReader(new FileReader("adimpressions.csv"))
+    csvFile.iterator.asScala
+      .map { fields =>
+        val log = new AdImpressionLog()
+        log.setTimestamp(fields(0).toLong)
+        log.setPublisher(fields(1))
+        log.setAdvertiser(fields(2))
+        log.setWebsite(fields(3))
+        log.setGeo(fields(4))
+        log.setBid(fields(5).toDouble)
+        log.setCookie(fields(6))
+        log
+      }.grouped(40000).foreach { logs =>
+        val logRDD = sc.parallelize(logs, 12)
+        rddQueue += logRDD
+      }
+  }
 }

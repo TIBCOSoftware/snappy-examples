@@ -22,7 +22,6 @@ import org.apache.spark.streaming.Seconds
 
 object Constants {
 
-
   def getAdImpressionSchema: StructType = {
     StructType(Array(
       StructField("timestamp", TimestampType, true),
@@ -44,29 +43,37 @@ object Constants {
 
   val hostname = "localhost"
 
-  val port = 9002
+  val port = 9000
+  //  val port1 = 9000
+  //  val port2 = 9001
+  //  val port3 = 9002
+  //  val port4 = 9003
 
-  val NumPublishers = 50
+  val numPublishers = 50
 
-  val NumAdvertisers = 30
+  val numAdvertisers = 30
 
-  val Publishers = (0 to NumPublishers).map("publisher" +)
+  val publishers = (0 to numPublishers).map("publisher" +)
 
-  val Advertisers = (0 to NumAdvertisers).map("advertiser" +)
+  val advertisers = (0 to numAdvertisers).map("advertiser" +)
 
   val numProducerThreads = 1
 
-  val UnknownGeo = "unknown"
+  val UnknownGeo = "un"
 
-  val Geos = Seq("AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL",
+  val geos = Seq("AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL",
     "GA", "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD",
     "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM",
     "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN",
     "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY", UnknownGeo)
 
-  val NumWebsites = 10000
+  val numWebsites = 999
 
-  val NumCookies = 10000
+  val numCookies = 999
+
+  val websites = (0 to numWebsites).map("website" +)
+
+  val cookies = (0 to numCookies).map("cookie" +)
 
   val totalNumLogs = 10000000
 

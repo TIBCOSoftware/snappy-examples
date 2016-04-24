@@ -81,6 +81,7 @@ dependencies {
   compile 'com.twitter:algebird-core_2.10:0.1.11'
   compile 'com.googlecode.javaewah:JavaEWAH:1.1.5'
   compile 'org.joda:joda-convert:1.2'
+  compile 'com.opencsv:opencsv:3.3'
 }
 
 task generateAvro(type: com.commercehub.gradle.plugin.avro.GenerateAvroJavaTask) {
@@ -115,13 +116,30 @@ task aggeregateAdImpressions_SQL(type: JavaExec, dependsOn: classes) {
 }
 
 task generateAdImpressions_Socket(type: JavaExec, dependsOn: classes) {
-  main = 'io.snappydata.adanalytics.aggregator.SocketAdImpressionGenerator'
+  main = 'io.snappydata.adanalytics.benchmark.SocketAdImpressionGenerator'
   classpath sourceSets.test.runtimeClasspath
   environment 'PROJECT_ASSEMBLY_JAR', assemblyJar
+  maxHeapSize = "8196m"
 }
 
 task startSnappyIngestionPerf_Socket(type: JavaExec, dependsOn: classes) {
   main = 'io.snappydata.adanalytics.benchmark.SocketSnappyIngestionPerf'
+  jvmArgs = ['-XX:MaxPermSize=512m']
+  maxHeapSize = "8196m"
+  classpath sourceSets.test.runtimeClasspath
+  environment 'PROJECT_ASSEMBLY_JAR', assemblyJar
+}
+
+task startSnappyIngestionPerf_CustomReceiver(type: JavaExec, dependsOn: classes) {
+  main = 'io.snappydata.adanalytics.benchmark.CustomReceiverSnappyIngestionPerf'
+  jvmArgs = ['-XX:MaxPermSize=512m']
+  maxHeapSize = "8196m"
+  classpath sourceSets.test.runtimeClasspath
+  environment 'PROJECT_ASSEMBLY_JAR', assemblyJar
+}
+
+task startSnappyIngestionPerf_CSV(type: JavaExec, dependsOn: classes) {
+  main = 'io.snappydata.adanalytics.benchmark.CSVSnappyIngestionPerf'
   jvmArgs = ['-XX:MaxPermSize=512m']
   maxHeapSize = "8196m"
   classpath sourceSets.test.runtimeClasspath

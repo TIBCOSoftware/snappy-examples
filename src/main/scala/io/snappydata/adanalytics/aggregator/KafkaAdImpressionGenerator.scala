@@ -28,7 +28,7 @@ import kafka.producer.{KeyedMessage, Producer, ProducerConfig}
   * ad impression log messages and sends it to Kafka broker.
   * This program generates and sends 10 million messages.
   */
-object KafkaAdImpressionGenerator extends AdImpressionGenerator {
+object KafkaAdImpressionGenerator{
 
   val props = new Properties()
   props.put("producer.type", "async")
@@ -66,7 +66,7 @@ object KafkaAdImpressionGenerator extends AdImpressionGenerator {
 final class Worker extends Runnable {
   def run() {
     for (i <- 1 to totalNumLogs) {
-      sendToKafka(generateAdImpression())
+      sendToKafka(AdImpressionGenerator.generateAdImpression)
       if ((i % 1000000) == 0) {
         println(s"Sent $i Kafka messages of topic $kafkaTopic")
       }

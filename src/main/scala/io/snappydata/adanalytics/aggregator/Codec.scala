@@ -66,10 +66,10 @@ class AdImpressionLogToRowRDD extends Serializable {
 }
 
 
-class AvroStreamConverter extends StreamConverter with Serializable {
+class AvroSocketStreamConverter extends StreamConverter with Serializable {
   override def convert(inputStream: java.io.InputStream): Iterator[AdImpressionLog] = {
     val reader = new SpecificDatumReader[AdImpressionLog](AdImpressionLog.getClassSchema)
-    val decoder = DecoderFactory.get().binaryDecoder(inputStream, null)
+    val decoder = DecoderFactory.get().directBinaryDecoder(inputStream, null)
     new Iterator[AdImpressionLog] {
 
       val log: AdImpressionLog = new AdImpressionLog()
