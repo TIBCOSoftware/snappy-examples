@@ -33,8 +33,8 @@ object KafkaSnappyIngestionPerf extends App {
     .set("spark.sql.inMemoryColumnarStorage.compressed", "false")
     .set("spark.sql.inMemoryColumnarStorage.batchSize", "2000")
     .set("spark.streaming.kafka.maxRatePerPartition" , "500")
-    .setMaster("local[*]")
-    //.setMaster("snappydata://localhost:10334")
+    //.setMaster("local[*]")
+    .setMaster(s"$locatorUrl")
 
   val sc = new SparkContext(sparkConf)
   val snsc = new SnappyStreamingContext(sc, batchDuration)
@@ -44,7 +44,7 @@ object KafkaSnappyIngestionPerf extends App {
 
   // Create a stream of AdImpressionLog which will pull the log messages
   // from Kafka broker
-  snsc.sql(s"create stream table adImpressionStream (" +
+  snsc.sql("create stream table adImpressionStream (" +
     " timestamp long," +
     " publisher string," +
     " advertiser string," +

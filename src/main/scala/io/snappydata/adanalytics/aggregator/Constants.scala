@@ -49,6 +49,8 @@ object Constants {
   //  val port3 = 9002
   //  val port4 = 9003
 
+  val locatorUrl = "snappydata://localhost:10334"
+
   val numPublishers = 50
 
   val numAdvertisers = 30
