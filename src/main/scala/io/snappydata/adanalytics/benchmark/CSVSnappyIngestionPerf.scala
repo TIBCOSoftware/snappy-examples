@@ -27,14 +27,17 @@ import org.apache.spark.streaming.{Duration, SnappyStreamingContext}
 import org.apache.spark.{SparkConf, SparkContext}
 
 import scala.collection.mutable.Queue
-import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+import scala.util.{Failure, Success}
 
 object CSVSnappyIngestionPerf extends App {
 
   val sparkConf = new SparkConf()
     .setAppName(getClass.getSimpleName)
     .setMaster("local[*]")
+    .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+
 
   val assemblyJar = System.getenv("PROJECT_ASSEMBLY_JAR")
   if (assemblyJar != null) {
@@ -62,15 +65,13 @@ object CSVSnappyIngestionPerf extends App {
 
   logStreamAsTable.foreachDataFrame(_.write.insertInto("adImpressions"))
 
-  snsc.start()
-  snsc.awaitTermination()
-
   val csvReader = Future {
     import collection.JavaConverters._
 
-    val csvFile = new CSVReader(new FileReader("adimpressions.csv"))
+    val csvFile = new CSVReader(new FileReader("/home/ymahajan/git/" +
+      "snappy-poc/src/main/scala/io/snappydata/adanalytics/benchmark/adimpressions.csv"))
     csvFile.iterator.asScala
-      .map { fields =>
+      .map { fields => {
         val log = new AdImpressionLog()
         log.setTimestamp(fields(0).toLong)
         log.setPublisher(fields(1))
@@ -80,9 +81,19 @@ object CSVSnappyIngestionPerf extends App {
         log.setBid(fields(5).toDouble)
         log.setCookie(fields(6))
         log
-      }.grouped(40000).foreach { logs =>
-        val logRDD = sc.parallelize(logs, 12)
-        rddQueue += logRDD
       }
+      }.grouped(100000).foreach { logs =>
+      val logRDD = sc.parallelize(logs, 8)
+      rddQueue += logRDD
+    }
   }
+
+  csvReader.onComplete {
+    case Success(value) =>
+    case Failure(e) => e.printStackTrace
+  }
+
+  snsc.start()
+  snsc.awaitTermination()
+
 }

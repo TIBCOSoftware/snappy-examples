@@ -53,7 +53,7 @@ object KafkaSnappyIngestionPerf extends App {
     " bid double," +
     " cookie string) " +
     " using directkafka_stream options (" +
-    " storagelevel 'MEMORY_AND_DISK_SER_2'," +
+    " storagelevel 'MEMORY_ONLY'," +
     " rowConverter 'io.snappydata.adanalytics.aggregator.AdImpressionToRowsConverter' ," +
     s" kafkaParams 'metadata.broker.list->$brokerList'," +
     s" topics '$kafkaTopic'," +
@@ -62,27 +62,14 @@ object KafkaSnappyIngestionPerf extends App {
     " KD 'kafka.serializer.StringDecoder', " +
     " VD 'io.snappydata.adanalytics.aggregator.AdImpressionLogAvroDecoder')")
 
-//  snsc.sql("create table adImpressionsRow(timestamp bigint, publisher varchar(15), " +
-//    "advertiser varchar(15), website varchar(20), geo varchar(8), bid double, cookie varchar(20), primary key(timestamp)) " +
-//    "using row " +
-//    "options ( PARTITION_BY 'PRIMARY KEY', BUCKETS '40')")
-
   snsc.sql("create table adImpressions(timestamp long, publisher string, " +
     "advertiser string, website string, geo string, bid double, cookie string) " +
     "using column " +
-    "options ( BUCKETS '29')")
-
-//  snsc.sql("create sample table adImpressionsSample on adImpressions OPTIONS(buckets '3', qcs 'geo', " +
-//    "fraction '0.03', strataReservoirSize '50', persistent '') as (select * from adImpressions)")
-//
-//  snsc.sql("CREATE SAMPLE TABLE adImpressionsSample2 (timestamp long, publisher string, " +
-//    "advertiser string, website string, geo string, bid double, cookie string)" +
-//    " OPTIONS(qcs 'publisher', fraction '0.03', strataReservoirSize '50')")
+    "options ( buckets '29', persistent asynchronous)")
 
   // Save the streaming data to snappy store per second (btachDuration)
-  snsc.getSchemaDStream("adImpressionStream").foreachDataFrame(df => {
-    df.write.insertInto("adImpression")
-  })
+  snsc.getSchemaDStream("adImpressionStream")
+    .foreachDataFrame(_.write.insertInto("adImpressions"))
 
   snsc.start
   snsc.awaitTermination
