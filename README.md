@@ -144,6 +144,9 @@ In order to run this example, we need to install the following:
 1. [Apache Kafka 0.8.2.2](http://kafka.apache.org/downloads.html)
 2. [SnappyData 0.2.2 build](https://github.com/SnappyDataInc/snappy-poc/releases). The build contains the binaries for SnappyData product as required by the Ad analytics example of this repository.
 Unzip it. The binaries will be inside "snappydata-0.2.2-bin" directory.
+
+This build is of revision a3c7001 of [snappydata master](https://github.com/SnappyDataInc/snappydata).
+
 3. JDK 7.0 or JDK 8
 
 Then checkout the Ad analytics example
@@ -194,7 +197,7 @@ Next from the checkout `/snappy-poc/` directory, build the example
 
 Submit the streaming job to the cluster and start it.
 ```
-./bin/snappy-job.sh submit --lead localhost:8090 --app-name AdAnalytics --class io.snappydata.adanalytics.aggregator.SnappySQLLogAggregatorJob --app-jar <snappy-poc>/assembly/build/libs/AdImpressionLogAggr-0.1-assembly.jar --stream
+./bin/snappy-job.sh submit --lead localhost:8090 --app-name AdAnalytics --class io.snappydata.adanalytics.aggregator.SnappySQLLogAggregatorJob --app-jar <snappy-poc>/assembly/build/libs/AdImpressionLogAggr-0.2-assembly.jar --stream
 ```
 
 SnappyData supports "Managed Spark Drivers" by running these in Lead nodes. So, if the driver were to fail, it can automatically re-start on a standby node. While the Lead node starts the streaming job, the actual work of parallel processing from kafka, etc is done in the Snappydata servers. Servers execute Spark Executors collocated with the data. 
