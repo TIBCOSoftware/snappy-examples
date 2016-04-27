@@ -36,6 +36,12 @@ object KafkaSnappyIngestionPerf extends App {
     //.setMaster("local[*]")
     .setMaster(s"$locatorUrl")
 
+  val assemblyJar = System.getenv("PROJECT_ASSEMBLY_JAR")
+  if (assemblyJar != null) {
+    sparkConf.set("spark.driver.extraClassPath", assemblyJar)
+    sparkConf.set("spark.executor.extraClassPath", assemblyJar)
+  }
+
   val sc = new SparkContext(sparkConf)
   val snsc = new SnappyStreamingContext(sc, batchDuration)
 
@@ -45,7 +51,7 @@ object KafkaSnappyIngestionPerf extends App {
   // Create a stream of AdImpressionLog which will pull the log messages
   // from Kafka broker
   snsc.sql("create stream table adImpressionStream (" +
-    " timestamp long," +
+    " time_stamp timestamp," +
     " publisher string," +
     " advertiser string," +
     " website string," +
@@ -58,14 +64,14 @@ object KafkaSnappyIngestionPerf extends App {
     s" kafkaParams 'metadata.broker.list->$brokerList'," +
     s" topics '$kafkaTopic'," +
     " K 'java.lang.String'," +
-    " V 'io.snappydata.examples.adanalytics.AdImpressionLog', " +
+    " V 'io.snappydata.adanalytics.aggregator.AdImpressionLog', " +
     " KD 'kafka.serializer.StringDecoder', " +
     " VD 'io.snappydata.adanalytics.aggregator.AdImpressionLogAvroDecoder')")
 
-  snsc.sql("create table adImpressions(timestamp long, publisher string, " +
+  snsc.sql("create table adImpressions(times_tamp timestamp, publisher string, " +
     "advertiser string, website string, geo string, bid double, cookie string) " +
     "using column " +
-    "options ( buckets '29', persistent asynchronous)")
+    "options ( buckets '29', persistent 'asynchronous')")
 
   // Save the streaming data to snappy store per second (btachDuration)
   snsc.getSchemaDStream("adImpressionStream")

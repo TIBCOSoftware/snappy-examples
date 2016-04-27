@@ -10,7 +10,8 @@ dependencies {
 
 task startCassandraIngestionPerf(type: JavaExec, dependsOn: classes) {
   main = 'io.snappydata.adanalytics.benchmark.CassandraIngestionPerf'
-  classpath sourceSets.main.runtimeClasspath
-  classpath configurations.runtime
-  jvmArgs = ['-XX:MaxPermSize=512m']
+  def filterGuava = sourceSets.test.runtimeClasspath.findAll { !it.getName().contains('guava-14') }
+  def guava16 = sourceSets.test.runtimeClasspath.findAll { it.getName().contains('guava-16') }
+  classpath filterGuava
+  environment 'PROJECT_ASSEMBLY_JAR', "${guava16[0]}:${assemblyJar.files.asPath}"
 }

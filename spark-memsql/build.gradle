@@ -11,6 +11,8 @@ dependencies {
 
 task startMemSqlIngestionPerf(type: JavaExec, dependsOn: classes) {
   main = 'io.snappydata.adanalytics.benchmark.MemSqlIngestionPerf'
-  classpath sourceSets.main.runtimeClasspath
-  classpath configurations.runtime
+  def filterGuava = sourceSets.test.runtimeClasspath.findAll { !it.getName().contains('guava-14') }
+  def guava19 = sourceSets.test.runtimeClasspath.findAll { it.getName().contains('guava-19') }
+  classpath filterGuava
+  environment 'PROJECT_ASSEMBLY_JAR', "${guava19[0]}:${assemblyJar.files.asPath}"
 }

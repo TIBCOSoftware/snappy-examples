@@ -41,6 +41,13 @@ object CassandraIngestionPerf extends App {
     .set("spark.cassandra.auth.username" , "cassandra")
     .set("spark.cassandra.auth.password" , "cassandra")
     .set("spark.streaming.kafka.maxRatePerPartition" , "40000")
+
+  val assemblyJar = System.getenv("PROJECT_ASSEMBLY_JAR")
+  if (assemblyJar != null) {
+    conf.set("spark.driver.extraClassPath", assemblyJar)
+    conf.set("spark.executor.extraClassPath", assemblyJar)
+  }
+
   val sc = new SparkContext("local[*]", getClass.getSimpleName, conf)
 
   CassandraConnector(conf).withSessionDo { session =>

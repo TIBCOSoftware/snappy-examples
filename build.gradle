@@ -93,32 +93,36 @@ compileJava.source(generateAvro.outputs)
 
 avro.stringType = "charSequence"
 
+ext {
+  assemblyJar = rootProject.tasks.getByPath(':assembly:shadowJar').outputs
+}
+
 def assemblyJar = tasks.getByPath(':assembly:shadowJar').outputs
 
 task generateAdImpressions(type: JavaExec, dependsOn: classes) {
   main = 'io.snappydata.adanalytics.aggregator.KafkaAdImpressionGenerator'
   classpath sourceSets.test.runtimeClasspath
-  environment 'PROJECT_ASSEMBLY_JAR', assemblyJar
+  environment 'PROJECT_ASSEMBLY_JAR', assemblyJar.files.asPath
 }
 
 task aggeregateAdImpressions_API(type: JavaExec, dependsOn: classes) {
   main = 'io.snappydata.adanalytics.aggregator.SnappyAPILogAggregator'
   jvmArgs = ['-XX:MaxPermSize=512m']
   classpath sourceSets.test.runtimeClasspath
-  environment 'PROJECT_ASSEMBLY_JAR', assemblyJar
+  environment 'PROJECT_ASSEMBLY_JAR', assemblyJar.files.asPath
 }
 
 task aggeregateAdImpressions_SQL(type: JavaExec, dependsOn: classes) {
   main = 'io.snappydata.adanalytics.aggregator.SnappySQLLogAggregator'
   jvmArgs = ['-XX:MaxPermSize=512m']
   classpath sourceSets.test.runtimeClasspath
-  environment 'PROJECT_ASSEMBLY_JAR', assemblyJar
+  environment 'PROJECT_ASSEMBLY_JAR', assemblyJar.files.asPath
 }
 
 task generateAdImpressions_Socket(type: JavaExec, dependsOn: classes) {
   main = 'io.snappydata.adanalytics.benchmark.SocketAdImpressionGenerator'
   classpath sourceSets.test.runtimeClasspath
-  environment 'PROJECT_ASSEMBLY_JAR', assemblyJar
+  environment 'PROJECT_ASSEMBLY_JAR', assemblyJar.files.asPath
   maxHeapSize = "8196m"
 }
 
@@ -127,7 +131,7 @@ task startSnappyIngestionPerf_Socket(type: JavaExec, dependsOn: classes) {
   jvmArgs = ['-XX:MaxPermSize=512m']
   maxHeapSize = "8196m"
   classpath sourceSets.test.runtimeClasspath
-  environment 'PROJECT_ASSEMBLY_JAR', assemblyJar
+  environment 'PROJECT_ASSEMBLY_JAR', assemblyJar.files.asPath
 }
 
 task startSnappyIngestionPerf_CustomReceiver(type: JavaExec, dependsOn: classes) {
@@ -135,7 +139,7 @@ task startSnappyIngestionPerf_CustomReceiver(type: JavaExec, dependsOn: classes)
   jvmArgs = ['-XX:MaxPermSize=512m']
   maxHeapSize = "8196m"
   classpath sourceSets.test.runtimeClasspath
-  environment 'PROJECT_ASSEMBLY_JAR', assemblyJar
+  environment 'PROJECT_ASSEMBLY_JAR', assemblyJar.files.asPath
 }
 
 task startSnappyIngestionPerf_CSV(type: JavaExec, dependsOn: classes) {
@@ -143,7 +147,7 @@ task startSnappyIngestionPerf_CSV(type: JavaExec, dependsOn: classes) {
   jvmArgs = ['-XX:MaxPermSize=512m']
   maxHeapSize = "8196m"
   classpath sourceSets.test.runtimeClasspath
-  environment 'PROJECT_ASSEMBLY_JAR', assemblyJar
+  environment 'PROJECT_ASSEMBLY_JAR', assemblyJar.files.asPath
 }
 
 task startSnappyIngestionPerf_Kafka(type: JavaExec, dependsOn: classes) {
@@ -151,7 +155,7 @@ task startSnappyIngestionPerf_Kafka(type: JavaExec, dependsOn: classes) {
   jvmArgs = ['-XX:MaxPermSize=512m']
   maxHeapSize = "8196m"
   classpath sourceSets.test.runtimeClasspath
-  environment 'PROJECT_ASSEMBLY_JAR', assemblyJar
+  environment 'PROJECT_ASSEMBLY_JAR', assemblyJar.files.asPath
 }
 
 task product(type: Exec) {

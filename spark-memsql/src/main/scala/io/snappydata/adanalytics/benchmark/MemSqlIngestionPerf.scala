@@ -39,6 +39,14 @@ object MemSqlIngestionPerf extends App {
   val conf = new SparkConf()
     .setAppName(getClass.getSimpleName)
     .setMaster("local[*]")
+
+  val assemblyJar = System.getenv("PROJECT_ASSEMBLY_JAR")
+  if (assemblyJar != null) {
+    conf.set("spark.driver.extraClassPath", assemblyJar)
+    conf.set("spark.executor.extraClassPath", assemblyJar)
+  }
+  conf.set("memsql.defaultDatabase", "adLogs")
+
   val sc = new SparkContext(conf)
   val msc = new MemSQLContext(sc)
 
