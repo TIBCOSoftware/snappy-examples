@@ -5,8 +5,8 @@
 3. [Ad Analytics use case](#ad-impression-analytics-use-case)
 4. [Code highlights](#code-highlights)
 5. [Just want to get it running](#lets-get-this-going)
-6. [Interact with the data](#community-discussion)
-7. [Like it, comment, question it](#community-discussion)
+6. [Interact with the data](#next-interact-with-the-data-fast)
+7. [Slack/Gitter/Stackoverflow discussion](#ask-questions-start-a-discussion)
 
 ### Introduction
 [SnappyData](https://github.com/SnappyDataInc/snappydata) aims to deliver interactive speed analytics with modest investments in cluster infrastructure and far less complexity than today. SnappyData, fulfills this promise by
