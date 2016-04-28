@@ -23,9 +23,14 @@ We showcase the following aspects of this unified cluster:
 
 ### Ad Impression Analytics use case
 We borrow our use case implementation from this [blog](https://chimpler.wordpress.com/2014/07/01/implementing-a-real-time-data-pipeline-with-spark-streaming/) - We more or less use the same data structure and aggregation logic but adapted this code to showcase the SnappyData programming model extensions to Spark. We retain the native Spark example for comparison.
+
 Our architecture is depicted in the figure below.
+
 We consider an adnetwork where adservers log impressions in [Apache Kafka](http://kafka.apache.org/) (distributed publish-subscribe messaging system). These impressions are then aggregated by [Spark Streaming](http://spark.apache.org/streaming/) into the SnappyData Store. External clients connect to the same cluster using JDBC/ODBC and run arbitrary OLAP queries.
 As AdServers could feed logs from many websites and given that each AdImpression log message represents a single Ad viewed by a user, you can expect thousands of messages every second. It is crucial that ingestion logic keeps up with the stream. To accomplish this, SnappyData collocates the store partitions with partitions created by Spark Streaming. i.e. a batch of data from the stream in each Spark executor is transformed into a compressed column batch and stored in the same JVM, avoiding redundant shuffles (except for HA).
+
+![Architecture Kinda](AdAnalytics_Architecture.png)
+
 
 The incoming AdImpression log is formatted as depicted below.
 
