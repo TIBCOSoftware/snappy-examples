@@ -1,12 +1,12 @@
-***This repo has a corresponding blog post here: [link]***
 
 ### Table of Contents
 1. [Introduction](#introduction)
 2. [Purpose](#purpose)
 3. [Ad Analytics use case](#ad-impression-analytics-use-case)
 4. [Code highlights](#code-highlights)
-5. [Steps to run code](#lets-get-this-going)
-6. [Slack/Gitter/Stackoverflow](#community-discussion)
+5. [Just want to get it running](#lets-get-this-going)
+6. [Interact with the data](#community-discussion)
+7. [Like it, comment, question it](#community-discussion)
 
 ### Introduction
 [SnappyData](https://github.com/SnappyDataInc/snappydata) aims to deliver interactive speed analytics with modest investments in cluster infrastructure and far less complexity than today. SnappyData, fulfills this promise by
@@ -214,6 +214,7 @@ Start generating and publishing logs to Kafka from the `/snappy-poc/` folder
 
 You can see the Spark streaming processing batches of data once every second in the [Spark console](http://localhost:4041/streaming/). It is important that our stream processing keeps up with the input rate. So, we note that the 'Scheduling Delay' doesn't keep increasing and 'Processing time' remains less than a second.
 
+### Next, interact with the data. Fast.
 Now, we can run some interactive analytic queries on the pre-aggregated data. 
 ```sql
 snappydata-0.2.2-bin $ ./bin/snappy-shell   -- This is the interactive SQL shell
@@ -243,6 +244,10 @@ Finally, you can stop the SnappyData cluster using ...
 ./sbin/snappy-stop-all.sh
 ```
 
-### Community Discussion
+### So, what was the point again?
+Hopefully we showed you how simple yet flexible it is to use the power of spark streaming to parallely ingest and process using SQL and continuous queries, store in a column table and interactively query it. All in a single unified cluster. 
+A second part of this exercise will walk through a simple benchmark where we compare SnappyData to other alternatives. Coming soon. 
+
+### Ask questions, start a Discussion
 
 [Stackoverflow](http://stackoverflow.com/questions/tagged/snappydata) ![Stackoverflow](http://i.imgur.com/LPIdp12.png)    [Slack](http://snappydata-slackin.herokuapp.com/)![Slack](http://i.imgur.com/h3sc6GM.png)        [Gitter](https://gitter.im/SnappyDataInc/snappydata) ![Gitter](http://i.imgur.com/jNAJeOn.jpg)          [IRC](http://webchat.freenode.net/?randomnick=1&channels=%23snappydata&uio=d4) ![IRC](http://i.imgur.com/vbH3Zdx.png)             [Reddit](https://www.reddit.com/r/snappydata) ![Reddit](http://i.imgur.com/AB3cVtj.png)          JIRA (coming soon) ![JIRA](http://i.imgur.com/E92zntA.png)
