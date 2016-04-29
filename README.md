@@ -177,7 +177,7 @@ bin/kafka-topics.sh --create --zookeeper localhost:2181 --partitions 4 --topic a
 ```
 
 Goto the SnappyData product install home directory.
-In conf subdirectory, create a file named "servers". Add following two lines to start two servers.
+In conf subdirectory, create a file named "servers". This file lists the nodes where we start SnappyData servers. Add following two lines to start two servers.
 ```
 localhost
 localhost
@@ -245,8 +245,8 @@ Finally, you can stop the SnappyData cluster using ...
 ```
 
 ### So, what was the point again?
-Hopefully we showed you how simple yet flexible it is to use the power of spark streaming to parallely ingest and process using SQL and continuous queries, store in a column table and interactively query it. All in a single unified cluster. 
-A second part of this exercise will walk through a simple benchmark where we compare SnappyData to other alternatives. Coming soon. 
+Hopefully we showed you how simple yet flexible it is to parallely ingest, process using SQL, run continuous queries, store in a column table and interactively query it. All in a single unified cluster. 
+We will soon release Part B of this exercise - a benchmark of this use case where we compare SnappyData to other alternatives. Coming soon. 
 
 ### Ask questions, start a Discussion
 
