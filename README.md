@@ -176,13 +176,6 @@ From the root kafka folder, Create a topic "adImpressionsTopic":
 bin/kafka-topics.sh --create --zookeeper localhost:2181 --partitions 4 --topic adImpressionsTopic --replication-factor=1
 ```
 
-Goto the SnappyData product install home directory.
-In conf subdirectory, create a file named "servers". This file lists the nodes where we start SnappyData servers. Add following two lines to start two servers.
-```
-localhost
-localhost
-```
-
 Start SnappyData cluster using following command from installation directory. 
 
 ```
@@ -196,9 +189,16 @@ Next from the checkout `/snappy-poc/` directory, build the example
 -- Build and create a jar having all dependencies in assembly/build/libs
 ./gradlew assemble
 
--- Generate a IntelliJ IDEA project using
-./gradlew idea
+-- If you use IntelliJ as your IDE, you can generate the project files using
+./gradlew idea    (Try ./gradlew tasks for a list of all available tasks)
 ```
+
+Goto the SnappyData product install home directory.
+In conf subdirectory, create file "spark-env.sh"(copy spark-env.sh.template) and add this line ...
+
+SPARK_DIST_CLASSPATH= SNAPPY_POC_HOME/assembly/build/libs/AdImpressionLogAggr-0.2-assembly.jar
+> Make sure you set the SNAPPY_POC_HOME directory appropriately above
+
 
 Submit the streaming job to the cluster and start it.
 ```
@@ -223,6 +223,7 @@ snappy> connect client 'localhost:1527';   -- This is the host:port where the sn
 Using CONNECTION0
 snappy> set spark.sql.shuffle.partitions=7;  -- Set the partitions for spark shuffles low. We don't have too much data.
 snappy> elapsedtime on; -- lets print the time taken for SQL commands
+snappy> show members; -- List all the members in the cluster
 
 -- You can find out if we have the ingested data?
 snappy> select count(*) from aggrAdImpressions;
@@ -251,3 +252,9 @@ We will soon release Part B of this exercise - a benchmark of this use case wher
 ### Ask questions, start a Discussion
 
 [Stackoverflow](http://stackoverflow.com/questions/tagged/snappydata) ![Stackoverflow](http://i.imgur.com/LPIdp12.png)    [Slack](http://snappydata-slackin.herokuapp.com/)![Slack](http://i.imgur.com/h3sc6GM.png)        [Gitter](https://gitter.im/SnappyDataInc/snappydata) ![Gitter](http://i.imgur.com/jNAJeOn.jpg)          [IRC](http://webchat.freenode.net/?randomnick=1&channels=%23snappydata&uio=d4) ![IRC](http://i.imgur.com/vbH3Zdx.png)             [Reddit](https://www.reddit.com/r/snappydata) ![Reddit](http://i.imgur.com/AB3cVtj.png)          JIRA (coming soon) ![JIRA](http://i.imgur.com/E92zntA.png)
+
+### Source code, docs
+[product source](https://github.com/SnappyDataInc/snappydata)
+[Product Docs](http://snappydatainc.github.io/snappydata/)
+[This Example](https://github.com/SnappyDataInc/snappy-poc)
+
