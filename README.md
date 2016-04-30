@@ -255,6 +255,9 @@ We will soon release Part B of this exercise - a benchmark of this use case wher
 
 ### Source code, docs
 [product source](https://github.com/SnappyDataInc/snappydata)
+
 [Product Docs](http://snappydatainc.github.io/snappydata/)
-[This Example](https://github.com/SnappyDataInc/snappy-poc)
+
+[This Example Source](https://github.com/SnappyDataInc/snappy-poc)
+
 
