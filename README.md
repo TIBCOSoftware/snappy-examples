@@ -176,14 +176,6 @@ From the root kafka folder, Create a topic "adImpressionsTopic":
 bin/kafka-topics.sh --create --zookeeper localhost:2181 --partitions 4 --topic adImpressionsTopic --replication-factor=1
 ```
 
-Start SnappyData cluster using following command from installation directory. 
-
-```
-./sbin/snappy-start-all.sh
-```
-
-This will start one locator, 2 servers and a lead node. You can understand the roles of these nodes [here](https://github.com/SnappyDataInc/snappydata/blob/master/docs/GettingStarted.md#snappydata-cluster-explanation)
-
 Next from the checkout `/snappy-poc/` directory, build the example
 ```
 -- Build and create a jar having all dependencies in assembly/build/libs
@@ -199,8 +191,17 @@ In conf subdirectory, create file "spark-env.sh"(copy spark-env.sh.template) and
 SPARK_DIST_CLASSPATH= SNAPPY_POC_HOME/assembly/build/libs/AdImpressionLogAggr-0.2-assembly.jar
 > Make sure you set the SNAPPY_POC_HOME directory appropriately above
 
+Start SnappyData cluster using following command from installation directory. 
 
-Submit the streaming job to the cluster and start it.
+```
+./sbin/snappy-start-all.sh
+```
+
+This will start one locator, 2 servers and a lead node. You can understand the roles of these nodes [here](https://github.com/SnappyDataInc/snappydata/blob/master/docs/GettingStarted.md#snappydata-cluster-explanation)
+
+
+
+Submit the streaming job to the cluster and start it (consume the stream, aggregate and store).
 ```
 ./bin/snappy-job.sh submit --lead localhost:8090 --app-name AdAnalytics --class io.snappydata.adanalytics.aggregator.SnappySQLLogAggregatorJob --app-jar <snappy-poc>/assembly/build/libs/AdImpressionLogAggr-0.2-assembly.jar --stream
 ```
