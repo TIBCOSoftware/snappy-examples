@@ -18,7 +18,7 @@
 package io.snappydata.adanalytics.aggregator
 
 import com.typesafe.config.Config
-import io.snappydata.adanalytics.aggregator.Constants._
+import io.snappydata.adanalytics.aggregator.Configs._
 import org.apache.spark.sql.streaming.{SchemaDStream, SnappyStreamingJob}
 import spark.jobserver.{SparkJobValid, SparkJobValidation}
 
@@ -41,6 +41,8 @@ class SnappySQLLogAggregatorJob extends SnappyStreamingJob {
 
     snsc.sql("drop table if exists adImpressionStream")
     snsc.sql("drop table if exists aggrAdImpressions")
+    snsc.sql("drop table if exists sampledAdImpressions")
+    snsc.sql("drop table if exists sampledAggrAdImpressions")
 
     snsc.sql("create stream table adImpressionStream (" +
       " time_stamp timestamp," +
@@ -50,8 +52,7 @@ class SnappySQLLogAggregatorJob extends SnappyStreamingJob {
       " geo string," +
       " bid double," +
       " cookie string) " +
-      " using directkafka_stream options" +
-      " (storagelevel 'MEMORY_AND_DISK_SER_2'," +
+      " using directkafka_stream options(" +
       " rowConverter 'io.snappydata.adanalytics.aggregator.AdImpressionToRowsConverter' ," +
       s" kafkaParams 'metadata.broker.list->$brokerList'," +
       s" topics '$kafkaTopic'," +
@@ -65,6 +66,13 @@ class SnappySQLLogAggregatorJob extends SnappyStreamingJob {
       " geo string, avg_bid double, imps long, uniques long) " +
       "using column options(buckets '11')")
 
+    snsc.sql("CREATE SAMPLE TABLE sampledAdImpressions (time_stamp timestamp, publisher string," +
+      " geo string, avg_bid double, imps long, uniques long)" +
+      " OPTIONS(qcs 'publisher', fraction '0.03', strataReservoirSize '50')")
+
+    snsc.sql("CREATE SAMPLE TABLE sampledAggrAdImpressions" +
+      " OPTIONS(qcs 'publisher', fraction '0.03', strataReservoirSize '50', baseTable 'aggrAdImpressions')")
+
     // Execute this query once every second. Output is a SchemaDStream.
     val resultStream : SchemaDStream = snsc.registerCQ(
       "select time_stamp, publisher, geo, avg(bid) as avg_bid," +
@@ -72,7 +80,10 @@ class SnappySQLLogAggregatorJob extends SnappyStreamingJob {
       " from adImpressionStream window (duration 1 seconds, slide 1 seconds)"+
       " where geo != 'unknown' group by publisher, geo, time_stamp")
 
-    resultStream.foreachDataFrame(_.write.insertInto("aggrAdImpressions"))
+    resultStream.foreachDataFrame( df => {
+      df.write.insertInto("aggrAdImpressions")
+      df.write.insertInto("sampledAdImpressions")
+    })
 
     snsc.start()
     snsc.awaitTermination()

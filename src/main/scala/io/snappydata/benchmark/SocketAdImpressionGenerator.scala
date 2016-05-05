@@ -14,7 +14,7 @@
  * permissions and limitations under the License. See accompanying
  * LICENSE file.
  */
-package io.snappydata.adanalytics.benchmark
+package io.snappydata.benchmark
 
 import java.io.{ByteArrayOutputStream, IOException}
 import java.net.ServerSocket
@@ -23,7 +23,7 @@ import io.snappydata.adanalytics.aggregator.{AdImpressionGenerator, AdImpression
 import org.apache.avro.io.EncoderFactory
 import org.apache.avro.specific.SpecificDatumWriter
 import org.apache.spark.streaming.StreamUtils
-import io.snappydata.adanalytics.aggregator.Constants._
+import io.snappydata.adanalytics.aggregator.Configs._
 
 /**
   * A Simple program which writes Avro objects to socket stream
@@ -42,8 +42,8 @@ object SocketAdImpressionGenerator extends App {
 //  encoder.flush
 //  bufferStream.close
 
-  val serverSocket = new ServerSocket(port)
-  println("Listening on port " + port)
+  val serverSocket = new ServerSocket(socketPort)
+  println("Listening on port " + socketPort)
 
   while (true) {
     val socket = serverSocket.accept()

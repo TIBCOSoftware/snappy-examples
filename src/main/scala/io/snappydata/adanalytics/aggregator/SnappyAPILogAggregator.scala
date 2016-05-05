@@ -17,7 +17,7 @@
 
 package io.snappydata.adanalytics.aggregator
 
-import io.snappydata.adanalytics.aggregator.Constants._
+import io.snappydata.adanalytics.aggregator.Configs._
 import kafka.serializer.StringDecoder
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.streaming.SchemaDStream
@@ -34,9 +34,8 @@ object SnappyAPILogAggregator extends App {
 
   val conf = new SparkConf()
     .setAppName(getClass.getSimpleName)
-    // .setMaster(s"spark://$hostName:7077") //split
-    .setMaster("local[*]") // local split
-    .set("snappydata.store.locators", "localhost:10334")
+    .setMaster(s"$sparkMasterURL") // local split
+    .set("snappydata.store.locators", s"$snappyLocators")
     .set("spark.ui.port", "4041")
     .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
     .registerAvroSchemas(AdImpressionLog.getClassSchema)
@@ -59,7 +58,7 @@ object SnappyAPILogAggregator extends App {
     [String, AdImpressionLog, StringDecoder, AdImpressionLogAvroDecoder](ssc, kafkaParams, topics)
 
   // Filter out bad messages ...use a second window
-  val logs = messages.map(_._2).filter(_.getGeo != Constants.UnknownGeo)
+  val logs = messages.map(_._2).filter(_.getGeo != Configs.UnknownGeo)
     .window(Duration(1000), Duration(1000))
 
   // We want to process the stream as a DataFrame/Table ... easy to run

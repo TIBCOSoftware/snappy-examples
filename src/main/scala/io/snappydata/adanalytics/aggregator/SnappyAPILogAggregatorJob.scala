@@ -18,7 +18,7 @@
 package io.snappydata.adanalytics.aggregator
 
 import com.typesafe.config.Config
-import io.snappydata.adanalytics.aggregator.Constants._
+import io.snappydata.adanalytics.aggregator.Configs._
 import kafka.serializer.StringDecoder
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.streaming.{SchemaDStream, SnappyStreamingJob}
@@ -52,7 +52,7 @@ class SnappyAPILogAggregatorJob extends SnappyStreamingJob {
       [String, AdImpressionLog, StringDecoder, AdImpressionLogAvroDecoder](snsc, kafkaParams, topics)
 
     // Filter out bad messages ...use a 1 second window
-    val logs = messages.map(_._2).filter(_.getGeo != Constants.UnknownGeo)
+    val logs = messages.map(_._2).filter(_.getGeo != Configs.UnknownGeo)
       .window(Seconds(1), Seconds(1))
 
     // Best to operate stream as a DataFrame/Table ... easy to run analytics on stream

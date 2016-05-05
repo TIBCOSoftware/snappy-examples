@@ -19,7 +19,7 @@ package io.snappydata.adanalytics.aggregator
 
 import java.util.Properties
 
-import io.snappydata.adanalytics.aggregator.Constants._
+import io.snappydata.adanalytics.aggregator.Configs._
 import io.snappydata.adanalytics.aggregator.KafkaAdImpressionGenerator._
 import kafka.producer.{KeyedMessage, Producer, ProducerConfig}
 
@@ -59,7 +59,7 @@ object KafkaAdImpressionGenerator{
 
   def sendToKafka(log: AdImpressionLog) = {
     producer.send(new KeyedMessage[String, AdImpressionLog](
-      Constants.kafkaTopic, log.getTimestamp.toString, log))
+      Configs.kafkaTopic, log.getTimestamp.toString, log))
   }
 }
 

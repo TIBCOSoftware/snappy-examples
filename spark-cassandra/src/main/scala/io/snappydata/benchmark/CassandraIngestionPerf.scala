@@ -15,13 +15,12 @@
  * LICENSE file.
  */
 
-package io.snappydata.adanalytics.benchmark
+package io.snappydata.benchmark
 
 import com.datastax.spark.connector.cql.CassandraConnector
-import io.snappydata.adanalytics.aggregator.Constants._
+import io.snappydata.adanalytics.aggregator.Configs._
 import io.snappydata.adanalytics.aggregator.{AdImpressionLog, AdImpressionLogAvroDecoder}
 import kafka.serializer.StringDecoder
-import org.apache.log4j.{Level, Logger}
 import org.apache.spark.streaming.StreamingContext
 import org.apache.spark.streaming.kafka.KafkaUtils
 import org.apache.spark.{SparkConf, SparkContext}
@@ -34,21 +33,20 @@ import org.apache.spark.{SparkConf, SparkContext}
   */
 object CassandraIngestionPerf extends App {
 
-  Logger.getRootLogger().setLevel(Level.ERROR)
-
   val conf = new SparkConf(true)
-    .set("spark.cassandra.connection.host" , "127.0.0.1")
+    .setAppName(getClass.getSimpleName)
+    .set("spark.cassandra.connection.host" , s"$cassandraHost")
     .set("spark.cassandra.auth.username" , "cassandra")
     .set("spark.cassandra.auth.password" , "cassandra")
-    .set("spark.streaming.kafka.maxRatePerPartition" , "40000")
+    .set("spark.streaming.kafka.maxRatePerPartition" , s"$maxRatePerPartition")
+    .setMaster(s"$sparkMasterURL")
 
   val assemblyJar = System.getenv("PROJECT_ASSEMBLY_JAR")
   if (assemblyJar != null) {
     conf.set("spark.driver.extraClassPath", assemblyJar)
     conf.set("spark.executor.extraClassPath", assemblyJar)
   }
-
-  val sc = new SparkContext("local[*]", getClass.getSimpleName, conf)
+  val sc = new SparkContext(conf)
 
   CassandraConnector(conf).withSessionDo { session =>
     // Create keysapce and table in Cassandra

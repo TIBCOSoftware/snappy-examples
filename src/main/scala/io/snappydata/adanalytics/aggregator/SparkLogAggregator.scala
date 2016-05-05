@@ -1,7 +1,7 @@
 package io.snappydata.adanalytics.aggregator
 
 import com.twitter.algebird.{HLL, HyperLogLogMonoid}
-import io.snappydata.adanalytics.aggregator.Constants._
+import io.snappydata.adanalytics.aggregator.Configs._
 import kafka.serializer.StringDecoder
 import org.apache.commons.io.Charsets
 import org.apache.spark.SparkConf
@@ -31,7 +31,7 @@ object SparkLogAggregator extends App {
   lazy val hyperLogLog = new HyperLogLogMonoid(12)
 
   // we filter out non resolved geo (unknown) and map (pub, geo) -> AggLog that will be reduced
-  val logsByPubGeo = messages.map(_._2).filter(_.getGeo != Constants.UnknownGeo).map {
+  val logsByPubGeo = messages.map(_._2).filter(_.getGeo != Configs.UnknownGeo).map {
     log =>
       val key = PublisherGeoKey(log.getPublisher.toString, log.getGeo.toString)
       val agg = AggregationLog(

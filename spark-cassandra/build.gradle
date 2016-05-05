@@ -1,17 +1,27 @@
 dependencies {
-  provided "org.apache.spark:spark-core_2.10:${sparkVersion}"
-  provided "org.apache.spark:spark-streaming_2.10:${sparkVersion}"
-  provided "org.apache.spark:spark-streaming-kafka_2.10:${sparkVersion}"
-  provided "org.apache.spark:spark-sql_2.10:${sparkVersion}"
+  provided "org.apache.spark:spark-core_2.10:1.6.0"
+  provided "org.apache.spark:spark-streaming_2.10:1.6.0"
+  provided "org.apache.spark:spark-streaming-kafka_2.10:1.6.0"
+  provided "org.apache.spark:spark-sql_2.10:1.6.0"
 
   compile project(':')
   compile 'com.datastax.spark:spark-cassandra-connector_2.10:1.6.0-M2'
 }
 
 task startCassandraIngestionPerf(type: JavaExec, dependsOn: classes) {
-  main = 'io.snappydata.adanalytics.benchmark.CassandraIngestionPerf'
+  main = 'io.snappydata.benchmark.adanalytics.CassandraIngestionPerf'
   def filterGuava = sourceSets.test.runtimeClasspath.findAll { !it.getName().contains('guava-14') }
   def guava16 = sourceSets.test.runtimeClasspath.findAll { it.getName().contains('guava-16') }
   classpath filterGuava
   environment 'PROJECT_ASSEMBLY_JAR', "${guava16[0]}:${assemblyJar.files.asPath}"
 }
+
+task startCHBenchApp(type: JavaExec, dependsOn: classes) {
+  main = 'io.snappydata.benchmark.chbench.CHBenchApp'
+  maxHeapSize = "8196m"
+  def filterGuava = sourceSets.test.runtimeClasspath.findAll { !it.getName().contains('guava-14') }
+  def guava16 = sourceSets.test.runtimeClasspath.findAll { it.getName().contains('guava-16') }
+  classpath filterGuava
+  environment 'PROJECT_ASSEMBLY_JAR', "${guava16[0]}:${assemblyJar.files.asPath}"
+}
+

@@ -8,7 +8,7 @@ archivesBaseName = 'AdImpressionLogAggr'
 
 allprojects {
 
-  version = '0.2'
+  version = '0.3'
 
   repositories {
     mavenCentral()
@@ -69,13 +69,13 @@ allprojects {
 }
 
 dependencies {
-  provided 'io.snappydata:snappy-core_2.10:0.2-SNAPSHOT'
-  provided 'io.snappydata:snappy-cluster_2.10:0.2-SNAPSHOT'
+  provided 'io.snappydata:snappy-core_2.10:0.3.0-PREVIEW'
+  provided 'io.snappydata:snappy-cluster_2.10:0.3.0-PREVIEW'
   provided "io.snappydata:snappy-spark-core_2.10:${sparkVersion}"
   provided "io.snappydata:snappy-spark-catalyst_2.10:${sparkVersion}"
   provided "io.snappydata:snappy-spark-sql_2.10:${sparkVersion}"
   provided "io.snappydata:snappy-spark-streaming_2.10:${sparkVersion}"
-  // provided 'io.snappydata:snappy-aqp:0.2-SNAPSHOT'
+  provided 'io.snappydata:snappy-aqp_2.10:0.3.0-PREVIEW'
   compile 'com.miguno:kafka-avro-codec_2.10:0.1.1-SNAPSHOT'
   compile 'org.apache.kafka:kafka_2.10:0.8.2.1'
   compile 'com.twitter:algebird-core_2.10:0.1.11'
@@ -120,14 +120,14 @@ task aggeregateAdImpressions_SQL(type: JavaExec, dependsOn: classes) {
 }
 
 task generateAdImpressions_Socket(type: JavaExec, dependsOn: classes) {
-  main = 'io.snappydata.adanalytics.benchmark.SocketAdImpressionGenerator'
+  main = 'io.snappydata.benchmark.SocketAdImpressionGenerator'
   classpath sourceSets.test.runtimeClasspath
   environment 'PROJECT_ASSEMBLY_JAR', assemblyJar.files.asPath
   maxHeapSize = "8196m"
 }
 
 task startSnappyIngestionPerf_Socket(type: JavaExec, dependsOn: classes) {
-  main = 'io.snappydata.adanalytics.benchmark.SocketSnappyIngestionPerf'
+  main = 'io.snappydata.benchmark.SocketSnappyIngestionPerf'
   jvmArgs = ['-XX:MaxPermSize=512m']
   maxHeapSize = "8196m"
   classpath sourceSets.test.runtimeClasspath
@@ -135,7 +135,7 @@ task startSnappyIngestionPerf_Socket(type: JavaExec, dependsOn: classes) {
 }
 
 task startSnappyIngestionPerf_CustomReceiver(type: JavaExec, dependsOn: classes) {
-  main = 'io.snappydata.adanalytics.benchmark.CustomReceiverSnappyIngestionPerf'
+  main = 'io.snappydata.benchmark.CustomReceiverSnappyIngestionPerf'
   jvmArgs = ['-XX:MaxPermSize=512m']
   maxHeapSize = "8196m"
   classpath sourceSets.test.runtimeClasspath
@@ -143,7 +143,7 @@ task startSnappyIngestionPerf_CustomReceiver(type: JavaExec, dependsOn: classes)
 }
 
 task startSnappyIngestionPerf_CSV(type: JavaExec, dependsOn: classes) {
-  main = 'io.snappydata.adanalytics.benchmark.CSVSnappyIngestionPerf'
+  main = 'io.snappydata.benchmark.CSVSnappyIngestionPerf'
   jvmArgs = ['-XX:MaxPermSize=512m']
   maxHeapSize = "8196m"
   classpath sourceSets.test.runtimeClasspath
@@ -151,14 +151,14 @@ task startSnappyIngestionPerf_CSV(type: JavaExec, dependsOn: classes) {
 }
 
 task startSnappyIngestionPerf_Kafka(type: JavaExec, dependsOn: classes) {
-  main = 'io.snappydata.adanalytics.benchmark.KafkaSnappyIngestionPerf'
+  main = 'io.snappydata.benchmark.KafkaSnappyIngestionPerf'
   jvmArgs = ['-XX:MaxPermSize=512m']
   maxHeapSize = "8196m"
   classpath sourceSets.test.runtimeClasspath
   environment 'PROJECT_ASSEMBLY_JAR', assemblyJar.files.asPath
 }
 
-task product(type: Exec) {
+/*task product(type: Exec) {
   dependsOn ':assembly:shadowJar'
 
   def productDir = "${rootProject.buildDir}/snappydata-poc"
@@ -183,4 +183,4 @@ task product(type: Exec) {
       into "${productDir}/lib"
     }
   }
-}
+}*/

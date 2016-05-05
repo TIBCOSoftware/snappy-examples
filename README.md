@@ -150,11 +150,8 @@ Next, create the Column table and ingest result of continuous query of aggregati
 In order to run this example, we need to install the following:
 
 1. [Apache Kafka 0.8.2.2](http://kafka.apache.org/downloads.html)
-2. [SnappyData 0.2.2 build](https://github.com/SnappyDataInc/snappy-poc/releases). The build contains the binaries for SnappyData product as required by the Ad analytics example of this repository.
-Unzip it. The binaries will be inside "snappydata-0.2.2-bin" directory.
-
-This build is of revision a3c7001 of [snappydata master](https://github.com/SnappyDataInc/snappydata).
-
+2. [SnappyData 0.3 PREVIEW release](https://github.com/SnappyDataInc/snappydata/releases/tag/v0.3-preview). Download the binary snappydata-0.3.0-PREVIEW-bin.tar.gz and Unzip it. 
+The binaries will be inside "snappydata-0.3.0-PREVIEW-bin" directory.
 3. JDK 7.0 or JDK 8
 
 Then checkout the Ad analytics example
@@ -191,7 +188,7 @@ Next from the checkout `/snappy-poc/` directory, build the example
 Goto the SnappyData product install home directory.
 In conf subdirectory, create file "spark-env.sh"(copy spark-env.sh.template) and add this line ...
 
-SPARK_DIST_CLASSPATH= SNAPPY_POC_HOME/assembly/build/libs/AdImpressionLogAggr-0.2-assembly.jar
+SPARK_DIST_CLASSPATH= SNAPPY_POC_HOME/assembly/build/libs/AdImpressionLogAggr-0.3-assembly.jar
 > Make sure you set the SNAPPY_POC_HOME directory appropriately above
 
 Start SnappyData cluster using following command from installation directory. 
@@ -206,7 +203,7 @@ This will start one locator, 2 servers and a lead node. You can understand the r
 
 Submit the streaming job to the cluster and start it (consume the stream, aggregate and store).
 ```
-./bin/snappy-job.sh submit --lead localhost:8090 --app-name AdAnalytics --class io.snappydata.adanalytics.aggregator.SnappySQLLogAggregatorJob --app-jar <snappy-poc>/assembly/build/libs/AdImpressionLogAggr-0.2-assembly.jar --stream
+./bin/snappy-job.sh submit --lead localhost:8090 --app-name AdAnalytics --class io.snappydata.adanalytics.aggregator.SnappySQLLogAggregatorJob --app-jar <snappy-poc>/assembly/build/libs/AdImpressionLogAggr-0.3-assembly.jar --stream
 ```
 
 SnappyData supports "Managed Spark Drivers" by running these in Lead nodes. So, if the driver were to fail, it can automatically re-start on a standby node. While the Lead node starts the streaming job, the actual work of parallel processing from kafka, etc is done in the Snappydata servers. Servers execute Spark Executors collocated with the data. 
@@ -216,13 +213,13 @@ Start generating and publishing logs to Kafka from the `/snappy-poc/` folder
 ./gradlew generateAdImpressions
 ```
 
-You can see the Spark streaming processing batches of data once every second in the [Spark console](http://localhost:4041/streaming/). It is important that our stream processing keeps up with the input rate. So, we note that the 'Scheduling Delay' doesn't keep increasing and 'Processing time' remains less than a second.
+You can see the Spark streaming processing batches of data once every second in the [Spark console](http://localhost:4040/streaming/). It is important that our stream processing keeps up with the input rate. So, we note that the 'Scheduling Delay' doesn't keep increasing and 'Processing time' remains less than a second.
 
 ### Next, interact with the data. Fast.
 Now, we can run some interactive analytic queries on the pre-aggregated data. 
 ```sql
-snappydata-0.2.2-bin $ ./bin/snappy-shell   -- This is the interactive SQL shell
-SnappyData version 1.5.0-SNAPSHOT
+snappydata-0.3.0-PREVIEW-bin $ ./bin/snappy-shell   -- This is the interactive SQL shell
+SnappyData version 1.5.0-BETA.3
 snappy> connect client 'localhost:1527';   -- This is the host:port where the snappydata locator is running
 Using CONNECTION0
 snappy> set spark.sql.shuffle.partitions=7;  -- Set the partitions for spark shuffles low. We don't have too much data.
@@ -241,6 +238,11 @@ snappy> select count(*) from adImpressionStream;
 snappy> select count(*) AS adCount, geo from aggrAdImpressions group by geo order by adCount desc limit 20;
 -- Find total uniques for a certain Ad grouped on geography 
 snappy> select sum(uniques) AS totalUniques, geo from aggrAdImpressions where publisher='publisher11' group by geo order by totalUniques desc limit 20;
+-- You can also run the above queries on the sampled data (approximate queries) by specifying error and confidence clause
+snappy> select count(*) AS adCount, geo from sampledAdImpressions group by geo order by adCount desc limit 20 with error 0.10 confidence 0.95 ;
+snappy> select sum(uniques) AS totalUniques, geo from aggrAdImpressions where publisher='publisher11' group by geo order by totalUniques desc limit 20 with error 0.10 confidence 0.95 ;
+
+ 
 ```
 
 Finally, you can stop the SnappyData cluster using ...

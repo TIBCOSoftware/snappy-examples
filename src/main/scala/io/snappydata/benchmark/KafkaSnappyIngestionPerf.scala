@@ -15,10 +15,10 @@
  * LICENSE file.
  */
 
-package io.snappydata.adanalytics.benchmark
+package io.snappydata.benchmark
 
-import io.snappydata.adanalytics.aggregator.Constants
-import Constants._
+import io.snappydata.adanalytics.aggregator.Configs
+import Configs._
 import org.apache.spark.SparkContext
 import org.apache.spark.streaming.SnappyStreamingContext
 
@@ -32,9 +32,9 @@ object KafkaSnappyIngestionPerf extends App {
     .setAppName(getClass.getSimpleName)
     .set("spark.sql.inMemoryColumnarStorage.compressed", "false")
     .set("spark.sql.inMemoryColumnarStorage.batchSize", "2000")
-    .set("spark.streaming.kafka.maxRatePerPartition" , "500")
+    .set("spark.streaming.kafka.maxRatePerPartition" , s"$maxRatePerPartition")
     //.setMaster("local[*]")
-    .setMaster(s"$locatorUrl")
+    .setMaster(s"$snappyMasterURL")
 
   val assemblyJar = System.getenv("PROJECT_ASSEMBLY_JAR")
   if (assemblyJar != null) {
@@ -59,7 +59,6 @@ object KafkaSnappyIngestionPerf extends App {
     " bid double," +
     " cookie string) " +
     " using directkafka_stream options (" +
-    " storagelevel 'MEMORY_ONLY'," +
     " rowConverter 'io.snappydata.adanalytics.aggregator.AdImpressionToRowsConverter' ," +
     s" kafkaParams 'metadata.broker.list->$brokerList'," +
     s" topics '$kafkaTopic'," +

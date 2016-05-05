@@ -20,18 +20,17 @@ package io.snappydata.adanalytics.aggregator
 import org.apache.spark.sql.types._
 import org.apache.spark.streaming.Seconds
 
-object Constants {
+object Configs {
 
-  def getAdImpressionSchema: StructType = {
-    StructType(Array(
-      StructField("timestamp", TimestampType, true),
-      StructField("publisher", StringType, true),
-      StructField("advertiser", StringType, true),
-      StructField("website", StringType, true),
-      StructField("geo", StringType, true),
-      StructField("bid", DoubleType, true),
-      StructField("cookie", StringType, true)))
-  }
+  val snappyMasterURL = "snappydata://localhost:10334"
+
+  val sparkMasterURL = "spark://127.0.0.1:7077"
+
+  val cassandraHost = "127.0.0.1"
+
+  val snappyLocators = "localhost:10334"
+
+  val maxRatePerPartition = 100
 
   val kafkaTopic = "adImpressionsTopic"
 
@@ -43,13 +42,7 @@ object Constants {
 
   val hostname = "localhost"
 
-  val port = 9000
-  //  val port1 = 9000
-  //  val port2 = 9001
-  //  val port3 = 9002
-  //  val port4 = 9003
-
-  val locatorUrl = "snappydata://localhost:10334"
+  val socketPort = 9000
 
   val numPublishers = 50
 
@@ -77,9 +70,20 @@ object Constants {
 
   val cookies = (0 to numCookies).map("cookie" +)
 
-  val totalNumLogs = 10000000
+  val totalNumLogs = 40000000
 
   val batchDuration = Seconds(1)
 
   val topics = Set(kafkaTopic)
+
+  def getAdImpressionSchema: StructType = {
+    StructType(Array(
+      StructField("timestamp", TimestampType, true),
+      StructField("publisher", StringType, true),
+      StructField("advertiser", StringType, true),
+      StructField("website", StringType, true),
+      StructField("geo", StringType, true),
+      StructField("bid", DoubleType, true),
+      StructField("cookie", StringType, true)))
+  }
 }

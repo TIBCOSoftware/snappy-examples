@@ -16,7 +16,7 @@
  */
 package io.snappydata.adanalytics.aggregator
 
-import io.snappydata.adanalytics.aggregator.Constants._
+import io.snappydata.adanalytics.aggregator.Configs._
 
 import java.util.Random
 

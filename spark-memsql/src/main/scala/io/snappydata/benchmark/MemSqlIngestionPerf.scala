@@ -15,13 +15,12 @@
  * LICENSE file.
  */
 
-package io.snappydata.adanalytics.benchmark
+package io.snappydata.benchmark
 
 import com.memsql.spark.connector.MemSQLContext
-import io.snappydata.adanalytics.aggregator.Constants._
+import io.snappydata.adanalytics.aggregator.Configs._
 import io.snappydata.adanalytics.aggregator.{AdImpressionLog, AdImpressionLogAvroDecoder, AdImpressionLogToRowRDD}
 import kafka.serializer.StringDecoder
-import org.apache.log4j.{Level, Logger}
 import org.apache.spark.streaming.StreamingContext
 import org.apache.spark.streaming.kafka.KafkaUtils
 import org.apache.spark.{SparkConf, SparkContext}
@@ -34,11 +33,9 @@ import org.apache.spark.{SparkConf, SparkContext}
   */
 object MemSqlIngestionPerf extends App {
 
-  Logger.getRootLogger().setLevel(Level.ERROR)
-
   val conf = new SparkConf()
     .setAppName(getClass.getSimpleName)
-    .setMaster("local[*]")
+    .setMaster(s"$sparkMasterURL")
 
   val assemblyJar = System.getenv("PROJECT_ASSEMBLY_JAR")
   if (assemblyJar != null) {
