@@ -188,7 +188,7 @@ Next from the checkout `/snappy-poc/` directory, build the example
 Goto the SnappyData product install home directory.
 In conf subdirectory, create file "spark-env.sh"(copy spark-env.sh.template) and add this line ...
 
-SPARK_DIST_CLASSPATH= SNAPPY_POC_HOME/assembly/build/libs/AdImpressionLogAggr-0.3-assembly.jar
+SPARK_DIST_CLASSPATH=SNAPPY_POC_HOME/assembly/build/libs/AdImpressionLogAggr-0.3-assembly.jar
 > Make sure you set the SNAPPY_POC_HOME directory appropriately above
 
 Start SnappyData cluster using following command from installation directory. 
