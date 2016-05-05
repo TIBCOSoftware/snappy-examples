@@ -62,8 +62,8 @@ object SnappySQLLogAggregator extends App {
   snsc.sql("set spark.sql.shuffle.partitions=8")
 
   snsc.sql("drop table if exists aggrAdImpressions")
+  snsc.sql("drop table if exists sampledAdImpressions")
   snsc.sql("drop table if exists adImpressionStream")
-  snsc.sql("drop table if exists sampledAggrAdImpressions")
 
   /**
    * Create a stream over the Kafka source. The messages are converted to Row
@@ -96,12 +96,8 @@ object SnappySQLLogAggregator extends App {
   // You can make these tables persistent, add partitioned keys, replicate
   // for HA, overflow to HDFS, etc, etc. ... Read the docs.
 
-  snsc.sql("CREATE SAMPLE TABLE sampledAdImpressions (time_stamp timestamp, publisher string," +
-    " geo string, avg_bid double, imps long, uniques long)" +
-    " OPTIONS(qcs 'publisher', fraction '0.03', strataReservoirSize '50')")
-
-  snsc.sql("CREATE SAMPLE TABLE sampledAggrAdImpressions" +
-    " OPTIONS(qcs 'publisher', fraction '0.03', strataReservoirSize '50', baseTable 'aggrAdImpressions')")
+  snsc.sql("CREATE SAMPLE TABLE sampledAdImpressions" +
+    " OPTIONS(qcs 'geo', fraction '0.03', strataReservoirSize '50', baseTable 'aggrAdImpressions')")
 
   // Execute this query once every second. Output is a SchemaDStream.
   val resultStream : SchemaDStream = snsc.registerCQ(
@@ -112,7 +108,6 @@ object SnappySQLLogAggregator extends App {
 
   resultStream.foreachDataFrame( df => {
     df.write.insertInto("aggrAdImpressions")
-    df.write.insertInto("sampledAdImpressions")
   })
   // Above we use the Spark Data Source API to write to our Column table.
   // This will automatically localize the partitions in the data store. No

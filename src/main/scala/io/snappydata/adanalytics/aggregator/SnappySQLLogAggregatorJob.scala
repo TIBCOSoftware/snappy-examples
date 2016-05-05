@@ -40,9 +40,8 @@ class SnappySQLLogAggregatorJob extends SnappyStreamingJob {
     snsc.sql("set spark.sql.shuffle.partitions=8")
 
     snsc.sql("drop table if exists adImpressionStream")
-    snsc.sql("drop table if exists aggrAdImpressions")
     snsc.sql("drop table if exists sampledAdImpressions")
-    snsc.sql("drop table if exists sampledAggrAdImpressions")
+    snsc.sql("drop table if exists aggrAdImpressions")
 
     snsc.sql("create stream table adImpressionStream (" +
       " time_stamp timestamp," +
@@ -66,12 +65,8 @@ class SnappySQLLogAggregatorJob extends SnappyStreamingJob {
       " geo string, avg_bid double, imps long, uniques long) " +
       "using column options(buckets '11')")
 
-    snsc.sql("CREATE SAMPLE TABLE sampledAdImpressions (time_stamp timestamp, publisher string," +
-      " geo string, avg_bid double, imps long, uniques long)" +
-      " OPTIONS(qcs 'publisher', fraction '0.03', strataReservoirSize '50')")
-
-    snsc.sql("CREATE SAMPLE TABLE sampledAggrAdImpressions" +
-      " OPTIONS(qcs 'publisher', fraction '0.03', strataReservoirSize '50', baseTable 'aggrAdImpressions')")
+    snsc.sql("CREATE SAMPLE TABLE sampledAdImpressions" +
+      " OPTIONS(qcs 'geo', fraction '0.03', strataReservoirSize '50', baseTable 'aggrAdImpressions')")
 
     // Execute this query once every second. Output is a SchemaDStream.
     val resultStream : SchemaDStream = snsc.registerCQ(

@@ -53,7 +53,7 @@ object KafkaAdImpressionGenerator{
       threads(i) = thread
     }
     threads.foreach(_.join())
-    println(s"Done sending $totalNumLogs Kafka messages of topic $kafkaTopic")
+    println(s"Done sending $numLogsPerThread Kafka messages of topic $kafkaTopic")
     System.exit(0)
   }
 
@@ -65,10 +65,19 @@ object KafkaAdImpressionGenerator{
 
 final class Worker extends Runnable {
   def run() {
-    for (i <- 1 to totalNumLogs) {
-      sendToKafka(AdImpressionGenerator.generateAdImpression)
-      if ((i % 1000000) == 0) {
-        println(s"Sent $i Kafka messages of topic $kafkaTopic")
+    for (j <- 0 to numLogsPerThread by maxLogsPerSecPerThread) {
+      val start = System.currentTimeMillis()
+      for (i <- 0 to maxLogsPerSecPerThread) {
+        sendToKafka(AdImpressionGenerator.generateAdImpression)
+      }
+      // If one second hasn't elapsed wait for the remaining time
+      // before queueing more.
+      val timeRemaining = 1000 - (System.currentTimeMillis() - start)
+      if (timeRemaining > 0) {
+        Thread.sleep(timeRemaining)
+      }
+      if (j !=0 & (j % 500000) == 0) {
+        println(s"Sent $j Kafka messages of topic $kafkaTopic")
       }
     }
   }

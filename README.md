@@ -203,7 +203,7 @@ This will start one locator, 2 servers and a lead node. You can understand the r
 
 Submit the streaming job to the cluster and start it (consume the stream, aggregate and store).
 ```
-./bin/snappy-job.sh submit --lead localhost:8090 --app-name AdAnalytics --class io.snappydata.adanalytics.aggregator.SnappySQLLogAggregatorJob --app-jar <snappy-poc>/assembly/build/libs/AdImpressionLogAggr-0.3-assembly.jar --stream
+./bin/snappy-job.sh submit --lead localhost:8090 --app-name AdAnalytics --class io.snappydata.adanalytics.aggregator.SnappySQLLogAggregatorJob --app-jar SNAPPY_POC_HOME/assembly/build/libs/AdImpressionLogAggr-0.3-assembly.jar --stream
 ```
 
 SnappyData supports "Managed Spark Drivers" by running these in Lead nodes. So, if the driver were to fail, it can automatically re-start on a standby node. While the Lead node starts the streaming job, the actual work of parallel processing from kafka, etc is done in the Snappydata servers. Servers execute Spark Executors collocated with the data. 
@@ -238,9 +238,16 @@ snappy> select count(*) from adImpressionStream;
 snappy> select count(*) AS adCount, geo from aggrAdImpressions group by geo order by adCount desc limit 20;
 -- Find total uniques for a certain Ad grouped on geography 
 snappy> select sum(uniques) AS totalUniques, geo from aggrAdImpressions where publisher='publisher11' group by geo order by totalUniques desc limit 20;
--- You can also run the above queries on the sampled data (approximate queries) by specifying error and confidence clause
-snappy> select count(*) AS adCount, geo from sampledAdImpressions group by geo order by adCount desc limit 20 with error 0.10 confidence 0.95 ;
-snappy> select sum(uniques) AS totalUniques, geo from aggrAdImpressions where publisher='publisher11' group by geo order by totalUniques desc limit 20 with error 0.10 confidence 0.95 ;
+
+-- You can also run the above queries on the sampled data (approximate queries) by specifying error and confidence clause. 
+-- If error fraction exceeds 0.20, you will get an error limit exceeded exception.
+snappy> select count(*) AS adCount, geo from aggrAdImpressions group by geo order by adCount desc limit 20 with error 0.20 confidence 0.95 ;
+snappy> select sum(uniques) AS totalUniques, geo from aggrAdImpressions where publisher='publisher11' group by geo order by totalUniques desc limit 20 with error 0.20 confidence 0.95 ;
+
+-- You can still view the sample table data directly without specifying error and confidence clauses 
+snappy>  select sum(uniques) AS totalUniques, geo from sampledAdImpressions where publisher='publisher11' group by geo order by totalUniques desc;
+-- check the size of sample table
+snappy> select count(*) as sample_cnt from sampledAdImpressions;
 
  
 ```
