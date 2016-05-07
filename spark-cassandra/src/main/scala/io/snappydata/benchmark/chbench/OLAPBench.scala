@@ -65,9 +65,9 @@ object OLAPBench extends App {
             val qry = q._2.replace("?", paramVal.toString)
             cc.sql(qry).collect()
           case "Q16" | "Q20" | "Q21" =>
-            pw.println("About to run " + q._1)
+            pw.println("Not running " + q._1)
             pw.flush()
-            cc.sql(q._2).collect()
+            //cc.sql(q._2).collect()
           case _ =>
             cc.sql(q._2).collect()
         }

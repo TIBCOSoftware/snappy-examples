@@ -336,10 +336,10 @@ object HQueries {
     "item " +
     "WHERE i_id = s_i_id " +
     "AND i_data NOT LIKE 'zz%' " +
-    "AND (pmod((s_w_id * s_i_id),10000) NOT IN " +
+    "AND pmod((s_w_id * s_i_id),10000) NOT IN " +
     "(SELECT SU_SUPPKEY " +
     "FROM supplier " +
-    "WHERE su_comment LIKE '%bad%')) " +
+    "WHERE su_comment LIKE '%bad%') " +
     "" +
     "GROUP BY i_name, " +
     "substr(i_data,  1, 3), " +
