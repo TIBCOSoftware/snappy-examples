@@ -67,7 +67,7 @@ object HQueries {
     "     o_entry_d " +
     "             ORDER BY revenue DESC , o_entry_d"
 
-  val Q4: String = "SELECT o_ol_cnt, " +
+  /*val Q4: String = "SELECT o_ol_cnt, " +
     "count(*) AS order_count " +
     "FROM orders " + "WHERE exists " +
     "(SELECT * " + "FROM order_line " +
@@ -77,6 +77,15 @@ object HQueries {
     "AND ol_delivery_d >= o_entry_d) " +
     "GROUP BY o_ol_cnt " +
     "ORDER BY o_ol_cnt"
+  */
+
+  val Q4: String = "SELECT o_ol_cnt, count(*) AS order_count " +
+    "FROM orders JOIN order_line ON o_id = ol_o_id " +
+    "AND o_w_id = ol_w_id " +
+    "AND o_d_id = ol_d_id " +
+    "AND ol_delivery_d >= o_entry_d " +
+    "GROUP BY o_ol_cnt " +
+    "ORDER BY o_ol_cnt "
 
   val Q5: String = "SELECT n_name, " +
     "sum(ol_amount) AS revenue " +
@@ -222,23 +231,42 @@ object HQueries {
     "n_name " +
     "ORDER BY revenue DESC"
 
-    val Q11 = "SELECT s_i_id, " +
-      "sum(s_order_cnt) AS ordercount " +
-      "FROM stock, " +
-      "supplier, " +
-      "nation " +
-      "WHERE pmod((s_w_id * s_i_id), 10000) = su_suppkey " +
-      "AND su_nationkey = n_nationkey " +
-      "AND n_name = 'Germany' " +
-      "GROUP BY s_i_id HAVING sum(s_order_cnt) > " +
-      "(SELECT sum(s_order_cnt) * .005 " +
-      "FROM stock, " +
-      "supplier, " +
-      "nation " +
-      "WHERE pmod((s_w_id * s_i_id), 10000) = su_suppkey " +
-      "AND su_nationkey = n_nationkey " +
-      "AND n_name = 'Germany') " +
-      "ORDER BY ordercount DESC"
+  /*val Q11 = "SELECT s_i_id, " +
+    "sum(s_order_cnt) AS ordercount " +
+    "FROM stock, " +
+    "supplier, " +
+    "nation " +
+    "WHERE pmod((s_w_id * s_i_id), 10000) = su_suppkey " +
+    "AND su_nationkey = n_nationkey " +
+    "AND n_name = 'Germany' " +
+    "GROUP BY s_i_id HAVING sum(s_order_cnt) > " +
+    "(SELECT sum(s_order_cnt) * .005 " +
+    "FROM stock, " +
+    "supplier, " +
+    "nation " +
+    "WHERE pmod((s_w_id * s_i_id), 10000) = su_suppkey " +
+    "AND su_nationkey = n_nationkey " +
+    "AND n_name = 'Germany') " +
+    "ORDER BY ordercount DESC"*/
+
+  val Q11a = "SELECT sum(s_order_cnt) * .005 " +
+    "FROM stock, " +
+    "supplier, " +
+    "nation " +
+    "WHERE pmod((s_w_id * s_i_id), 10000) = su_suppkey " +
+    "AND su_nationkey = n_nationkey " +
+    "AND trim(n_name) = 'Germany'"
+
+  val Q11b = "SELECT s_i_id, " +
+    "sum(s_order_cnt) AS ordercount " +
+    "FROM stock, " +
+    "supplier, " +
+    "nation " +
+    "WHERE pmod((s_w_id * s_i_id), 10000) = su_suppkey " +
+    "AND su_nationkey = n_nationkey " +
+    "AND n_name = 'Germany' " +
+    "GROUP BY s_i_id HAVING sum(s_order_cnt) > ? " +
+    "ORDER BY ordercount DESC"
 
   val Q12 = "SELECT o_ol_cnt, " +
     "sum(CASE WHEN o_carrier_id = 1 " +
@@ -268,6 +296,7 @@ object HQueries {
     "GROUP BY c_id) AS c_orders " +
     "GROUP BY c_count " +
     "ORDER BY custdist DESC, c_count DESC"
+
   val Q14 = " SELECT (100.00 * sum(CASE WHEN i_data LIKE 'PR%' THEN ol_amount ELSE 0 END) / " +
     "(1  + sum(ol_amount))) AS promo_revenue " +
     "FROM order_line, " +
@@ -275,6 +304,29 @@ object HQueries {
     "WHERE ol_i_id = i_id " +
     "AND ol_delivery_d >= '2007-01-02 00:00:00.000000' " +
     "AND ol_delivery_d < '2020-01-02 00:00:00.000000'"
+
+  val Q15a = "SELECT " +
+    "         pmod((s_w_id * s_i_id),10000) as supplier_no, " +
+    "         sum(ol_amount) as total_revenue " +
+    "FROM " +
+    "  order_line, stock " +
+    "WHERE " +
+    "   ol_i_id = s_i_id " +
+    "   AND ol_supply_w_id = s_w_id " +
+    "   AND ol_delivery_d >= '2007-01-02 00:00:00.000000' " +
+    "GROUP BY pmod((s_w_id * s_i_id),10000)"
+
+  val Q15b = "select max(total_revenue) as mxRevenue from revenue "
+
+  val Q15c = "SELECT su_suppkey, " +
+    "              su_name, " +
+    "              su_address, " +
+    "              su_phone, " +
+    "              total_revenue " +
+    "FROM supplier, revenue " +
+    "WHERE su_suppkey = supplier_no " +
+    "  AND total_revenue = ? " +
+    "ORDER BY su_suppkey"
 
   val Q16 = "SELECT i_name, " +
     "substr(i_data,  1, 3) AS brand, " +
@@ -285,7 +337,7 @@ object HQueries {
     "WHERE i_id = s_i_id " +
     "AND i_data NOT LIKE 'zz%' " +
     "AND (pmod((s_w_id * s_i_id),10000) NOT IN " +
-    "(SELECT su_suppkey " +
+    "(SELECT SU_SUPPKEY " +
     "FROM supplier " +
     "WHERE su_comment LIKE '%bad%')) " +
     "" +
@@ -364,83 +416,71 @@ object HQueries {
     "AND n_name = 'Germany' " +
     "ORDER BY su_name"
 
-  val Q21 = "SELECT su_name, " +
-    "count(*) AS numwait " +
-    "FROM supplier, " +
-    "order_line l1, " +
-    "orders, " +
-    "stock, " +
-    "nation " +
-    "WHERE ol_o_id = o_id " +
-    "AND ol_w_id = o_w_id " +
-    "AND ol_d_id = o_d_id " +
-    "AND ol_w_id = s_w_id " +
-    "AND ol_i_id = s_i_id " +
-    "AND mod((s_w_id * s_i_id),10000) = su_suppkey " +
-    "AND l1.ol_delivery_d > o_entry_d " +
-    "AND NOT EXISTS " +
-    "(SELECT * " +
-    "FROM order_line l2 " +
-    "WHERE l2.ol_o_id = l1.ol_o_id " +
-    "AND l2.ol_w_id = l1.ol_w_id " +
-    "AND l2.ol_d_id = l1.ol_d_id " +
-    "AND l2.ol_delivery_d > l1.ol_delivery_d) " +
-    "AND su_nationkey = n_nationkey " +
-    "AND n_name = 'Germany' " +
-    "GROUP BY su_name " +
-    "ORDER BY numwait DESC, su_name"
+  val Q21 = "SELECT su_name,   " +
+    "          count(*) AS numwait   " +
+    "FROM supplier,   " +
+    "      order_line l1,   " +
+    "      orders,   " +
+    "      stock,   " +
+    "      nation   " +
+    "WHERE ol_o_id = o_id   " +
+    "  AND ol_w_id = o_w_id   " +
+    "  AND ol_d_id = o_d_id   " +
+    "  AND ol_w_id = s_w_id   " +
+    "  AND ol_i_id = s_i_id   " +
+    "  AND pmod((s_w_id * s_i_id),10000) = su_suppkey   " +
+    "  AND l1.ol_delivery_d > o_entry_d   " +
+    "  AND NOT EXISTS   " +
+    "     (SELECT *   " +
+    "      FROM order_line l2   " +
+    "      WHERE l2.ol_o_id = l1.ol_o_id   " +
+    "       AND l2.ol_w_id = l1.ol_w_id   " +
+    "       AND l2.ol_d_id = l1.ol_d_id   " +
+    "       AND l2.ol_delivery_d > l1.ol_delivery_d)   " +
+    "  AND su_nationkey = n_nationkey   " +
+    "  AND n_name = 'Germany'   " +
+    "GROUP BY su_name   " +
+    "ORDER BY numwait DESC, su_name  "
 
-  val Q22 = "SELECT substring(c_state from 1 for 1) AS country, " +
-    "count(*) AS numcust, " +
-    "sum(c_balance) AS totacctbal " +
-    "FROM customer " +
-    "WHERE substring(c_phone from 1 for 1) IN ('1', " +
-    "'2', " +
-    "'3', " +
-    "'4', " +
-    "'5', " +
-    "'6', " +
-    "'7') " +
-    "AND c_balance > " +
-    "(SELECT avg(c_balance) " +
+  val Q22a = "SELECT avg(c_balance) " +
     "FROM customer " +
     "WHERE c_balance > 0.00 " +
-    "AND substring(c_phone from 1 for 1) IN ('1', " +
-    "'2', " +
-    "'3', " +
-    "'4', " +
-    "'5', " +
-    "'6', " +
-    "'7')) " +
-    "AND NOT EXISTS " +
-    "(SELECT * " +
-    "FROM oorder " +
-    "WHERE o_c_id = c_id " +
-    "AND o_w_id = c_w_id " +
-    "AND o_d_id = c_d_id) " +
-    "GROUP BY substring(c_state from 1 for 1) " +
+    "AND substring(c_phone,1,1) IN ('1', '2', '3', '4', '5', '6', '7')"
+
+  val Q22b = "SELECT substring(c_state,1,1) AS country,   " +
+    "count(*) AS numcust,   " +
+    "sum(c_balance) AS totacctbal   " +
+    "FROM customer left outer join orders on o_c_id = c_id   " +
+    "    AND o_w_id = c_w_id   " +
+    "    AND o_d_id = c_d_id " +
+    "WHERE substring(c_phone,1,1) IN ('1','2','3','4','5','6','7')   " +
+    " AND c_balance > ? " +
+    " AND o_id is null " +
+    "GROUP BY substring(c_state,1,1)   " +
     "ORDER BY substring(c_state,1,1)"
 
   val queries = Map(
     "Q1" -> Q1,
     "Q2" -> Q2,
     "Q3" -> Q3,
+    "Q4" -> Q4,
     "Q5" -> Q5,
     "Q6" -> Q6,
     "Q7" -> Q7,
     "Q8" -> Q8,
     "Q9" -> Q9,
     "Q10" -> Q10,
-    "Q11" -> Q11,
+    "Q11" -> Q11b,
     "Q12" -> Q12,
     "Q13" -> Q13,
     "Q14" -> Q14,
+    "Q15" -> Q15c,
     "Q16" -> Q16,
     "Q17" -> Q17,
     "Q18" -> Q18,
     "Q19" -> Q19,
     "Q20" -> Q20,
     "Q21" -> Q21,
-    "Q22" -> Q22
+    "Q22" -> Q22b
   )
 }
