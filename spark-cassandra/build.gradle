@@ -16,8 +16,8 @@ task startCassandraIngestionPerf(type: JavaExec, dependsOn: classes) {
   environment 'PROJECT_ASSEMBLY_JAR', "${guava16[0]}:${assemblyJar.files.asPath}"
 }
 
-task startCHBenchApp(type: JavaExec, dependsOn: classes) {
-  main = 'io.snappydata.benchmark.chbench.CHBenchApp'
+task startOLAPBenchmark(type: JavaExec, dependsOn: classes) {
+  main = 'io.snappydata.benchmark.chbench.OLAPBench'
   maxHeapSize = "8196m"
   def filterGuava = sourceSets.test.runtimeClasspath.findAll { !it.getName().contains('guava-14') }
   def guava16 = sourceSets.test.runtimeClasspath.findAll { it.getName().contains('guava-16') }
@@ -25,3 +25,11 @@ task startCHBenchApp(type: JavaExec, dependsOn: classes) {
   environment 'PROJECT_ASSEMBLY_JAR', "${guava16[0]}:${assemblyJar.files.asPath}"
 }
 
+task startStreamingBenchmark(type: JavaExec, dependsOn: classes) {
+  main = 'io.snappydata.benchmark.chbench.StreamingBench'
+  maxHeapSize = "8196m"
+  def filterGuava = sourceSets.test.runtimeClasspath.findAll { !it.getName().contains('guava-14') }
+  def guava16 = sourceSets.test.runtimeClasspath.findAll { it.getName().contains('guava-16') }
+  classpath filterGuava
+  environment 'PROJECT_ASSEMBLY_JAR', "${guava16[0]}:${assemblyJar.files.asPath}"
+}

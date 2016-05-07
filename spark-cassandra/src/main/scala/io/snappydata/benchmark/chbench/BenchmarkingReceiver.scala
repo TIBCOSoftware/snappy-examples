@@ -4,17 +4,16 @@ import java.util.Random
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.streaming.receiver.Receiver
 
-class BenchmarkingReceiver(val maxRecPerSecond: Int,
-                           val numWarehouses: Int,
-                           val numDistrictsPerWarehouse: Int,
-                           val numCustomersPerDistrict: Int,
-                           val itemCount: Int)
-  extends Receiver[ClickStreamCustomer](StorageLevel.MEMORY_AND_DISK_2) {
+class BenchmarkingReceiver (val maxRecPerSecond: Int,
+                            val numWarehouses: Int,
+                            val numDistrictsPerWarehouse: Int,
+                            val numCustomersPerDistrict: Int,
+                            val itemCount : Int)
+  extends Receiver[ClickStreamCustomer](StorageLevel.MEMORY_ONLY) {
 
 
   var receiverThread: Thread = null
   var stopThread = false;
-
   override def onStart() {
     receiverThread = new Thread("BenchmarkingReceiver") {
       override def run() {
@@ -34,7 +33,7 @@ class BenchmarkingReceiver(val maxRecPerSecond: Int,
       var i = 0;
       for (i <- 1 to maxRecPerSecond) {
         store(generateClickStream())
-        if (!isStopped()) {
+        if (isStopped()) {
           return
         }
       }
@@ -50,15 +49,20 @@ class BenchmarkingReceiver(val maxRecPerSecond: Int,
   val rand = new Random(123)
 
   private def generateClickStream(): ClickStreamCustomer = {
+
     val warehouseID: Int = rand.nextInt(numWarehouses)
     val districtID: Int = rand.nextInt(this.numDistrictsPerWarehouse)
     val customerID: Int = rand.nextInt(this.numCustomersPerDistrict)
     val itemId: Int = rand.nextInt(this.itemCount)
-    new ClickStreamCustomer(warehouseID, districtID, customerID, itemId)
+    // timespent on website is 100 -500 seconds
+    val timespent: Int = rand.nextInt(400) + 100
+
+    new ClickStreamCustomer(warehouseID, districtID, customerID, itemId, timespent)
   }
 }
 
-class ClickStreamCustomer(val w_id: Int,
-                          val d_id: Int,
-                          val c_id: Int,
-                          val i_id: Int)
+class ClickStreamCustomer (val w_id: Int,
+                           val d_id: Int,
+                           val c_id: Int,
+                           val i_id: Int,
+                           val c_ts: Int) extends Serializable
