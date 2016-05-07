@@ -1,6 +1,7 @@
 package io.snappydata.benchmark.chbench
 
-import com.datastax.spark.connector.SomeColumns
+import java.io.PrintWriter
+
 import com.datastax.spark.connector.cql.CassandraConnector
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.Row
@@ -23,7 +24,7 @@ object StreamingBench extends App {
 
   val sc = new SparkContext(conf)
   val cc = new CassandraSQLContext(sc)
-  val ssc = new StreamingContext(sc, Duration(2000))
+  val ssc = new StreamingContext(sc, Duration(10000))
 
   CassandraConnector(conf).withSessionDo { session =>
     println("********CONNECTED TO CASSANDRA V8  *************")
@@ -31,23 +32,50 @@ object StreamingBench extends App {
   cc.sql("set spark.sql.shuffle.partitions=64")
   cc.setKeyspace("tpcc")
 
+  val stream = ssc.receiverStream[ClickStreamCustomer](
+    new BenchmarkingReceiver(10000, 1, 10, 30000, 100000))
+
   val schema = new StructType()
     .add("cs_c_w_id", IntegerType)
     .add("cs_c_d_id", IntegerType)
     .add("cs_c_id", IntegerType)
     .add("cs_i_id", IntegerType)
+    .add("cs_timespent", IntegerType)
     .add("cs_click_d", TimestampType)
 
-  val stream = ssc.receiverStream[ClickStreamCustomer](
-    new BenchmarkingReceiver(10000, 1, 10, 30000, 100000))
+  val rows = stream.map(v => Row(v.w_id,
+    v.d_id, v.c_id, v.i_id, v.c_ts, new java.sql.Timestamp(System.currentTimeMillis)))
 
-  val rows = stream.map(v => Row(new java.sql.Timestamp(System.currentTimeMillis), v.w_id, v.d_id, v.c_id, v.i_id))
-  val window_rows = rows.window(new Duration(2000), new Duration(2000))
-  //window_rows.foreachRDD(rdd => println(rdd.count))
+  val window_rows = rows.window(new Duration(10*1000), new Duration(10*1000))
 
-  import com.datastax.spark.connector.streaming._
+  window_rows.foreachRDD(rdd => {
+    val df = cc.createDataFrame(rdd, schema)
+    val outFileName = s"BenchmarkingStreamingJob-${System.currentTimeMillis()}.out"
+    val pw = new PrintWriter(outFileName)
+    val clickstreamlog = "benchmarking" + System.currentTimeMillis()
+    df.registerTempTable(clickstreamlog)
+    // Find out the items in the clickstream with
+    // price range greater than a particular amount.
+    val resultdfQ1 = cc.sql(s"select i_id, count(i_id) from " +
+      s" $clickstreamlog, item " +
+      " where i_id = cs_i_id " +
+      " AND i_price > 50 " +
+      " GROUP BY i_id ");
 
-  rows.saveToCassandra("tpcc", "clickstream", SomeColumns("cs_c_w_id","cs_c_d_id", "cs_c_id","cs_i_id","cs_click_d"))
+    // Find out which district's customer are currently more online active to
+    // stop tv commercials in those districts
+    val resultdfQ2 = cc.sql("select avg(cs_timespent) as avgtimespent , cs_c_d_id " +
+      s"from $clickstreamlog group by cs_c_d_id order by avgtimespent")
+
+    val sq1 = System.currentTimeMillis()
+    resultdfQ1.limit(10).collect().foreach(pw.println)
+    val endq1 = System.currentTimeMillis()
+    resultdfQ2.collect().foreach(pw.println)
+    val endq2 = System.currentTimeMillis()
+    val output = s"Q1 ${endq1 - sq1} Q2 ${endq2 - endq1}"
+    pw.println(s"Time taken $output")
+    pw.close()
+  })
 
   ssc.start
   ssc.awaitTermination
