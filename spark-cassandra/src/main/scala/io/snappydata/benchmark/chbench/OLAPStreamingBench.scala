@@ -4,15 +4,15 @@ import java.io.PrintWriter
 
 import com.datastax.spark.connector.cql.CassandraConnector
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.sql.Row
 import org.apache.spark.sql.cassandra.CassandraSQLContext
 import org.apache.spark.sql.types.{IntegerType, StructType, TimestampType}
+import org.apache.spark.sql.{DataFrame, Row}
 import org.apache.spark.streaming.{Duration, StreamingContext}
 import org.apache.spark.{SparkConf, SparkContext}
 
 object OLAPStreamingBench extends App {
   val rootLogger = Logger.getLogger("org");
-  rootLogger.setLevel(Level.ERROR);
+  rootLogger.setLevel(Level.WARN);
 
   val conf = new SparkConf(true)
     .setAppName(getClass.getSimpleName)
@@ -66,16 +66,20 @@ object OLAPStreamingBench extends App {
     df.registerTempTable(clickstreamlog)
     // Find out the items in the clickstream with
     // price range greater than a particular amount.
-    val resultdfQ1 = cc.sql(s"select i_id, count(i_id) from " +
-      s" $clickstreamlog, item " +
-      " where i_id = cs_i_id " +
-      " AND i_price > 50 " +
-      " GROUP BY i_id ");
+    var resultdfQ1: DataFrame = null
+    var resultdfQ2: DataFrame = null
+    cc.synchronized {
+      resultdfQ1 = cc.sql(s"select i_id, count(i_id) from " +
+        s" $clickstreamlog, item " +
+        " where i_id = cs_i_id " +
+        " AND i_price > 50 " +
+        " GROUP BY i_id ");
 
-    // Find out which district's customer are currently more online active to
-    // stop tv commercials in those districts
-    val resultdfQ2 = cc.sql("select avg(cs_timespent) as avgtimespent , cs_c_d_id " +
-      s"from $clickstreamlog group by cs_c_d_id order by avgtimespent")
+      // Find out which district's customer are currently more online active to
+      // stop tv commercials in those districts
+      resultdfQ2 = cc.sql("select avg(cs_timespent) as avgtimespent , cs_c_d_id " +
+        s"from $clickstreamlog group by cs_c_d_id order by avgtimespent")
+    }
 
     val sq1 = System.currentTimeMillis()
     resultdfQ1.limit(10).collect().foreach(pw.println)
@@ -83,7 +87,8 @@ object OLAPStreamingBench extends App {
     resultdfQ2.collect().foreach(pw.println)
     val endq2 = System.currentTimeMillis()
     val output = s"Q1 ${endq1 - sq1} Q2 ${endq2 - endq1}"
-    pw.println(s"Time taken $output")
+    val tid = Thread.currentThread()
+    pw.println(s"$tid Time taken $output")
     pw.close()
   })
 
@@ -102,40 +107,69 @@ object OLAPStreamingBench extends App {
     i = i + 1
     for (q <- HQueries.queries) {
       val start: Long = System.currentTimeMillis
+      val tid = Thread.currentThread()
       try {
         q._1 match {
           case "Q11" =>
-            val ret = cc.sql(HQueries.Q11a).collect()
+            var df : DataFrame = null
+            cc.synchronized {
+              df = cc.sql(HQueries.Q11a)
+            }
+            val ret = df.collect()
             assert(ret.length == 1)
             val paramVal = ret(0).getDecimal(0)
             val qry = q._2.replace("?", paramVal.toString)
-            cc.sql(qry).collect()
+            cc.synchronized {
+              df = cc.sql(qry)
+            }
+            df.collect()
           case "Q15" =>
-            var ret = cc.sql(HQueries.Q15a)
+            var ret : DataFrame = null
+            cc.synchronized {
+              ret = cc.sql(HQueries.Q15a)
+            }
             ret.registerTempTable("revenue")
-            val maxV = cc.sql(HQueries.Q15b).collect()
+            var df : DataFrame = null
+            cc.synchronized {
+              df = cc.sql(HQueries.Q15b)
+            }
+            val maxV = df.collect()
             val paramVal = maxV(0).getDouble(0)
             val qry = q._2.replace("?", paramVal.toString)
-            cc.sql(qry).collect()
+            cc.synchronized {
+              df = cc.sql(qry)
+            }
+            df.collect()
           case "Q22" =>
-            val ret = cc.sql(HQueries.Q22a).collect()
+            var df: DataFrame = null
+            cc.synchronized {
+              df = cc.sql(HQueries.Q22a)
+            }
+            val ret = df.collect()
             assert(ret.length == 1)
             val paramVal = ret(0).getDouble(0)
             val qry = q._2.replace("?", paramVal.toString)
-            cc.sql(qry).collect()
+            cc.synchronized {
+              df = cc.sql(qry)
+            }
+            df.collect()
           case "Q16" | "Q20" | "Q21" =>
-            pw.println("Not running " + q._1)
+            pw.println(s"$tid Not running " + q._1)
             pw.flush()
           //cc.sql(q._2).collect()
           case _ =>
-            cc.sql(q._2).collect()
+            var df: DataFrame = null
+            cc.synchronized {
+              df = cc.sql(q._2)
+            }
+            df.collect()
         }
       } catch {
-        case e: Throwable => pw.println(s"Exception for query ${q._1}:  " + e)
+        case e: Throwable => pw.println(s"$tid Exception for query ${q._1}:  " + e)
           pw.println(e.getStackTraceString)
       }
       val end: Long = System.currentTimeMillis - start
-      pw.println(s"${new java.util.Date(System.currentTimeMillis())} Time taken by ${q._1} is $end")
+      pw.println(s"${new java.util.Date(System.currentTimeMillis())} $tid Time taken by ${q._1} is $end")
       pw.flush()
     }
     pw.close()
