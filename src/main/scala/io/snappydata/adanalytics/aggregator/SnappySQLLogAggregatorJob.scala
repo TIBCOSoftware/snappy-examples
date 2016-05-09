@@ -41,8 +41,11 @@ class SnappySQLLogAggregatorJob extends SnappyStreamingJob {
 
     snsc.sql("drop table if exists adImpressionStream")
     snsc.sql("drop table if exists sampledAdImpressions")
+    snsc.sql("drop table if exists sampledAdImpressions2")
+    snsc.sql("drop table if exists sampledAdImpressions3")
+    snsc.sql("drop table if exists sampledAdImpressions4")
     snsc.sql("drop table if exists aggrAdImpressions")
-
+    
     snsc.sql("create stream table adImpressionStream (" +
       " time_stamp timestamp," +
       " publisher string," +
@@ -68,6 +71,15 @@ class SnappySQLLogAggregatorJob extends SnappyStreamingJob {
     snsc.sql("CREATE SAMPLE TABLE sampledAdImpressions" +
       " OPTIONS(qcs 'geo', fraction '0.03', strataReservoirSize '50', baseTable 'aggrAdImpressions')")
 
+    snsc.sql("CREATE SAMPLE TABLE sampledAdImpressions2" +
+      " OPTIONS(qcs 'geo', fraction '0.03', strataReservoirSize '50', baseTable 'aggrAdImpressions')")
+
+    snsc.sql("CREATE SAMPLE TABLE sampledAdImpressions3" +
+      " OPTIONS(qcs 'geo', fraction '0.03', strataReservoirSize '50', baseTable 'aggrAdImpressions')")
+
+    snsc.sql("CREATE SAMPLE TABLE sampledAdImpressions4" +
+      " OPTIONS(qcs 'geo', fraction '0.03', strataReservoirSize '50', baseTable 'aggrAdImpressions')")
+
     // Execute this query once every second. Output is a SchemaDStream.
     val resultStream : SchemaDStream = snsc.registerCQ(
       "select time_stamp, publisher, geo, avg(bid) as avg_bid," +
@@ -78,6 +90,9 @@ class SnappySQLLogAggregatorJob extends SnappyStreamingJob {
     resultStream.foreachDataFrame( df => {
       df.write.insertInto("aggrAdImpressions")
       df.write.insertInto("sampledAdImpressions")
+      df.write.insertInto("sampledAdImpressions2")
+      df.write.insertInto("sampledAdImpressions3")
+      df.write.insertInto("sampledAdImpressions4")
     })
 
     snsc.start()
