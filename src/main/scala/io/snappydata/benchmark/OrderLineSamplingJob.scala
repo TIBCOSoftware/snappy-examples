@@ -1,16 +1,18 @@
 package io.snappydata.benchmark
 
+import java.io.PrintWriter
 import com.typesafe.config.Config
 import org.apache.spark.sql.SnappySQLJob
 import spark.jobserver.{SparkJobValid, SparkJobValidation}
+import org.apache.spark.sql.{DataFrame, Row}
 
 class OrderLineSamplingJob extends SnappySQLJob {
 
   override def runJob(sc: C, jobConfig: Config): Any = {
 
-    sc.sql("drop table if exists oorder_col")
     sc.sql("drop table if exists sampled_order_line_col")
     sc.sql("drop table if exists order_line_col")
+    sc.sql("drop table if exists oorder_col")
 
     sc.sql("create table oorder_col (" +
       "o_w_id       integer," +
@@ -32,6 +34,9 @@ class OrderLineSamplingJob extends SnappySQLJob {
 //
 //    ordersDF.write.insertInto("oorder_col")
 
+    val outFileName = s"Loading-${System.currentTimeMillis()}.out"
+    val pw = new PrintWriter(outFileName)
+
     sc.sql("create table order_line_col(" +
       "ol_w_id         integer," +
       "ol_d_id         integer," +
@@ -49,14 +54,95 @@ class OrderLineSamplingJob extends SnappySQLJob {
     sc.sql("CREATE SAMPLE TABLE sampled_order_line_col" +
       " OPTIONS(qcs 'ol_number', fraction '0.01', strataReservoirSize '50', baseTable 'order_line_col')")
 
-    val orderLineDF = sc.read
+    var orderLineDF: DataFrame = sc.read
       .format("com.databricks.spark.csv")
       .option("inferSchema", "true")
-      .load("/home/ymahajan/6W/ORDER_LINE.csv")
+      .load("/export/ip-172-31-31-0/ORDER_LINE.csv")
 
     orderLineDF.write.insertInto("order_line_col")
-
     orderLineDF.write.insertInto("sampled_order_line_col")
+    pw.println("-0 done")
+    pw.flush()
+
+    orderLineDF = sc.read
+      .format("com.databricks.spark.csv")
+      .option("inferSchema", "true")
+      .load("/export/ip-172-31-31-1/ORDER_LINE.csv")
+    orderLineDF.write.insertInto("order_line_col")
+    orderLineDF.write.insertInto("sampled_order_line_col")
+
+    pw.println("-1 done")
+    pw.flush()
+
+    orderLineDF = sc.read
+      .format("com.databricks.spark.csv")
+      .option("inferSchema", "true")
+      .load("/export/ip-172-31-31-2/ORDER_LINE.csv")
+    orderLineDF.write.insertInto("order_line_col")
+    orderLineDF.write.insertInto("sampled_order_line_col")
+
+    pw.println("-2 done")
+    pw.flush()
+
+    orderLineDF = sc.read
+      .format("com.databricks.spark.csv")
+      .option("inferSchema", "true")
+      .load("/export/ip-172-31-31-3/ORDER_LINE.csv")
+    orderLineDF.write.insertInto("order_line_col")
+    orderLineDF.write.insertInto("sampled_order_line_col")
+
+    pw.println("-3 done")
+    pw.flush()
+
+    orderLineDF = sc.read
+      .format("com.databricks.spark.csv")
+      .option("inferSchema", "true")
+      .load("/export/ip-172-31-31-4/ORDER_LINE.csv")
+    orderLineDF.write.insertInto("order_line_col")
+    orderLineDF.write.insertInto("sampled_order_line_col")
+
+    pw.println("-4 done")
+    pw.flush()
+
+    orderLineDF = sc.read
+      .format("com.databricks.spark.csv")
+      .option("inferSchema", "true")
+      .load("/export/ip-172-31-31-6/ORDER_LINE.csv")
+    orderLineDF.write.insertInto("order_line_col")
+    orderLineDF.write.insertInto("sampled_order_line_col")
+
+    pw.println("-5 done")
+    pw.flush()
+
+    orderLineDF = sc.read
+      .format("com.databricks.spark.csv")
+      .option("inferSchema", "true")
+      .load("/export/ip-172-31-30-243/ORDER_LINE.csv")
+    orderLineDF.write.insertInto("order_line_col")
+    orderLineDF.write.insertInto("sampled_order_line_col")
+
+    pw.println("-6 done")
+    pw.flush()
+
+    orderLineDF = sc.read
+      .format("com.databricks.spark.csv")
+      .option("inferSchema", "true")
+      .load("/export/ip-172-31-30-244/ORDER_LINE.csv")
+    orderLineDF.write.insertInto("order_line_col")
+    orderLineDF.write.insertInto("sampled_order_line_col")
+
+    pw.println("-7 done")
+    pw.flush()
+
+    orderLineDF = sc.read
+      .format("com.databricks.spark.csv")
+      .option("inferSchema", "true")
+      .load("/export/ip-172-31-30-245/ORDER_LINE.csv")
+    orderLineDF.write.insertInto("order_line_col")
+    orderLineDF.write.insertInto("sampled_order_line_col")
+
+    pw.println("-8 done")
+    pw.flush()
   }
 
   override def validate(sc: C, config: Config): SparkJobValidation = {
