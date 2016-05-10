@@ -14,17 +14,27 @@ object OLAPStreamingBench extends App {
   val rootLogger = Logger.getLogger("org");
   rootLogger.setLevel(Level.WARN);
 
+  val host = "127.0.0.1"
+  val master = "local[*]"
+  val numWH = 10
+  val memory = "8g"
+  //val host = "172.31.13.52"
+  //val master = "spark://ip-172-31-13-48:7077"
+  //val numWH = 1000
+  //val memory = "28g"
+
   val conf = new SparkConf(true)
     .setAppName(getClass.getSimpleName)
-    //.set("spark.cassandra.connection.host", "127.0.0.1")
-    .set("spark.cassandra.connection.host" , "172.31.13.52")
+    .set(s"spark.cassandra.connection.host", host)
     .set("spark.cassandra.auth.username", "cassandra")
     .set("spark.cassandra.auth.password", "cassandra")
     .set("spark.cassandra.sql.keyspace", "tpcc")
-    .set("spark.driver.memory", "28g")
-    .set("spark.executor.memory","28g")
-    //.setMaster("local[*]")
-    .setMaster("spark://ip-172-31-13-48:7077")
+    .set("spark.driver.memory", memory)
+    .set("spark.executor.memory",memory)
+    .set("spark.executor.cores", "6")
+    .set("spark.driver.maxResultSize", "10g")
+    .set("spark.scheduler.mode", "FAIR")
+    .setMaster(master)
 
   val assemblyJar = System.getenv("PROJECT_ASSEMBLY_JAR")
   if (assemblyJar != null) {
@@ -36,14 +46,14 @@ object OLAPStreamingBench extends App {
   val cc = new CassandraSQLContext(sc)
   val ssc = new StreamingContext(sc, Duration(2000))
 
+  cc.setKeyspace("tpcc")
   CassandraConnector(conf).withSessionDo { session =>
-    println("********CONNECTED TO CASSANDRA V8  *************")
+    println("******* CONNECTED TO CASSANDRA **********")
   }
   cc.sql("set spark.sql.shuffle.partitions=64")
-  cc.setKeyspace("tpcc")
 
   val stream = ssc.receiverStream[ClickStreamCustomer](
-    new BenchmarkingReceiver(10000, 1000, 10, 30000, 100000))
+    new BenchmarkingReceiver(10000, numWH, 10, 30000, 100000))
 
   val schema = new StructType()
     .add("cs_c_w_id", IntegerType)
@@ -56,7 +66,7 @@ object OLAPStreamingBench extends App {
   val rows = stream.map(v => Row(v.w_id,
     v.d_id, v.c_id, v.i_id, v.c_ts, new java.sql.Timestamp(System.currentTimeMillis)))
 
-  val window_rows = rows.window(new Duration(20 * 1000), new Duration(20 * 1000))
+  val window_rows = rows.window(new Duration(60 * 1000), new Duration(60 * 1000))
 
   window_rows.foreachRDD(rdd => {
     val df = cc.createDataFrame(rdd, schema)
@@ -92,7 +102,7 @@ object OLAPStreamingBench extends App {
     pw.close()
   })
 
-  ssc.start
+ ssc.start
 
   def getCurrentDirectory = new java.io.File(".").getCanonicalPath
 

@@ -9,7 +9,7 @@ class BenchmarkingReceiver (val maxRecPerSecond: Int,
                             val numDistrictsPerWarehouse: Int,
                             val numCustomersPerDistrict: Int,
                             val itemCount : Int)
-  extends Receiver[ClickStreamCustomer](StorageLevel.MEMORY_ONLY) {
+  extends Receiver[ClickStreamCustomer](StorageLevel.MEMORY_AND_DISK) {
 
 
   var receiverThread: Thread = null
