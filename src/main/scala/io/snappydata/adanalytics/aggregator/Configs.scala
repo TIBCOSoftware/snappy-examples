@@ -76,7 +76,7 @@ object Configs {
 
   val topics = Set(kafkaTopic)
 
-  val maxLogsPerSecPerThread = 5000
+  val maxLogsPerSecPerThread = 50000
 
   def getAdImpressionSchema: StructType = {
     StructType(Array(
