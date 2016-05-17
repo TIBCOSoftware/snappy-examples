@@ -1,10 +1,6 @@
 dependencies {
-  provided 'io.snappydata:snappy-core_2.10:0.2-SNAPSHOT'
-  provided "io.snappydata:snappy-spark-core_2.10:${sparkVersion}"
-  provided "io.snappydata:snappy-spark-catalyst_2.10:${sparkVersion}"
-  provided "io.snappydata:snappy-spark-sql_2.10:${sparkVersion}"
-  provided "io.snappydata:snappy-spark-streaming_2.10:${sparkVersion}"
-  // provided 'com.stratio.receiver:spark-rabbitmq_1.5:0.2.0'
+  compile 'io.snappydata:snappy-cluster_2.10:0.3.0-PREVIEW'
+  compile 'io.snappydata:snappy-aqp_2.10:0.3.0-PREVIEW'
   compile 'com.rabbitmq:amqp-client:3.5.7'
   compile project(':')
 }

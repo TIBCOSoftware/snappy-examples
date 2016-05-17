@@ -47,7 +47,7 @@ public class RabbitMQPublisher {
         int totalNumLogs = 1000000;
 
         while (logCount <= totalNumLogs) {
-            AdImpressionLog log = AdImpressionGenerator.generateAdImpression();
+            AdImpressionLog log = AdImpressionGenerator.nextRandomAdImpression();
             channel.basicPublish("", QUEUE_NAME, null, getLogBytes(log));
             logCount += 1;
             if (logCount % 100000 == 0) {

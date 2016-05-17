@@ -37,7 +37,7 @@ object SocketAdImpressionGenerator extends App {
   val writer = new SpecificDatumWriter[AdImpressionLog](
     AdImpressionLog.getClassSchema)
   while (bufferStream.size < blockSize) {
-    writer.write(AdImpressionGenerator.generateAdImpression, encoder)
+    writer.write(AdImpressionGenerator.nextRandomAdImpression, encoder)
   }
 //  encoder.flush
 //  bufferStream.close

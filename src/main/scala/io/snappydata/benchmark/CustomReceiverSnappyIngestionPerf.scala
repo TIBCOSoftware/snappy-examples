@@ -75,7 +75,7 @@ final class AdImpressionReceiver extends Receiver[AdImpressionLog](StorageLevel.
 
   private def receive() {
     while (!isStopped()) {
-      store(AdImpressionGenerator.generateAdImpression())
+      store(AdImpressionGenerator.nextRandomAdImpression())
     }
   }
 }

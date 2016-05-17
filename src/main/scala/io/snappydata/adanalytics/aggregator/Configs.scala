@@ -60,23 +60,25 @@ object Configs {
     "GA", "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD",
     "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM",
     "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN",
-    "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY", UnknownGeo)
+    "TX", "UT", "VT", "VA", "WA", "WV", "WI", UnknownGeo)
 
-  val numWebsites = 999
+  val numGeos = geos.size
 
-  val numCookies = 999
+  val numWebsites = 990
+
+  val numCookies = 990
 
   val websites = (0 to numWebsites).map("website" +)
 
   val cookies = (0 to numCookies).map("cookie" +)
 
-  val numLogsPerThread = 10000000
+  val numLogsPerThread = 50000000
 
   val batchDuration = Seconds(1)
 
   val topics = Set(kafkaTopic)
 
-  val maxLogsPerSecPerThread = 5000
+  val maxLogsPerSecPerThread = 50000
 
   def getAdImpressionSchema: StructType = {
     StructType(Array(
@@ -88,5 +90,4 @@ object Configs {
       StructField("bid", DoubleType, true),
       StructField("cookie", StringType, true)))
   }
-
 }

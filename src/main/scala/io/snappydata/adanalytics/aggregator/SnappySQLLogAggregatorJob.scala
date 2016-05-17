@@ -70,10 +70,10 @@ class SnappySQLLogAggregatorJob extends SnappyStreamingJob {
 
     // Execute this query once every second. Output is a SchemaDStream.
     val resultStream : SchemaDStream = snsc.registerCQ(
-      "select time_stamp, publisher, geo, avg(bid) as avg_bid," +
+      "select min(time_stamp), publisher, geo, avg(bid) as avg_bid," +
       " count(*) as imps , count(distinct(cookie)) as uniques" +
       " from adImpressionStream window (duration 1 seconds, slide 1 seconds)"+
-      " where geo != 'unknown' group by publisher, geo, time_stamp")
+      " where geo != 'unknown' group by publisher, geo")
 
     resultStream.foreachDataFrame( df => {
       df.write.insertInto("aggrAdImpressions")
