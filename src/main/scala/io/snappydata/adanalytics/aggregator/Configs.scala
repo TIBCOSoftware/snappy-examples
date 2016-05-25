@@ -30,7 +30,7 @@ object Configs {
 
   val snappyLocators = "localhost:10334"
 
-  val maxRatePerPartition = 100
+  val maxRatePerPartition = 1000
 
   val kafkaTopic = "adImpressionsTopic"
 
@@ -61,6 +61,8 @@ object Configs {
     "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM",
     "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN",
     "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY", UnknownGeo)
+
+  val numGeos = geos.size
 
   val numWebsites = 999
 

@@ -68,7 +68,7 @@ final class Worker extends Runnable {
     for (j <- 0 to numLogsPerThread by maxLogsPerSecPerThread) {
       val start = System.currentTimeMillis()
       for (i <- 0 to maxLogsPerSecPerThread) {
-        sendToKafka(AdImpressionGenerator.generateAdImpression)
+        sendToKafka(AdImpressionGenerator.nextRandomAdImpression())
       }
       // If one second hasn't elapsed wait for the remaining time
       // before queueing more.
@@ -76,7 +76,7 @@ final class Worker extends Runnable {
       if (timeRemaining > 0) {
         Thread.sleep(timeRemaining)
       }
-      if (j !=0 & (j % 500000) == 0) {
+      if (j !=0 & (j % 200000) == 0) {
         println(s"Sent $j Kafka messages of topic $kafkaTopic")
       }
     }
