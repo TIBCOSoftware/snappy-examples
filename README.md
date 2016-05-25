@@ -34,13 +34,13 @@ As AdServers can feed logs from many websites and given that each AdImpression l
 
 The incoming AdImpression log is formatted as depicted below.
 
-|timestamp              |publisher  |advertiser  | website  |geo|bid                   |cookie   |
-|-----------------------|-----------|------------|----------|---|----------------------|---------|
-|2016-05-25 16:45:29.027|publisher44|advertiser11|website233|NJ |0.8571221527653856    |cookie210|                           
-|2016-05-25 16:45:29.027|publisher31|advertiser18|website642|WV |0.2113054635444157    |cookie985|                           
-|2016-05-25 16:45:29.027|publisher21|advertiser27|website966|ND |0.5391198505461017    |cookie923|                           
-|2016-05-25 16:45:29.027|publisher34|advertiser11|website284|WV |0.05085682981132578   |cookie416|                           
-|2016-05-25 16:45:29.027|publisher29|advertiser29|website836|WA |0.8961017733169769    |cookie781|                           
+|timestamp              |publisher  |advertiser  | website  |geo|bid     |cookie   |
+|-----------------------|-----------|------------|----------|---|--------|---------|
+|2016-05-25 16:45:29.027|publisher44|advertiser11|website233|NJ |0.857122|cookie210|                           
+|2016-05-25 16:45:29.027|publisher31|advertiser18|website642|WV |0.211305|cookie985|                           
+|2016-05-25 16:45:29.027|publisher21|advertiser27|website966|ND |0.539119|cookie923|                           
+|2016-05-25 16:45:29.027|publisher34|advertiser11|website284|WV |0.050856|cookie416|                           
+|2016-05-25 16:45:29.027|publisher29|advertiser29|website836|WA |0.896101|cookie781|                           
 
 
 We pre-aggregate these logs by publisher and geo, and compute the average bid, the number of impressions and the number of uniques (the number of unique users that viewed the Ad) every 2 seconds. We want to maintain the last day’s worth of data in memory for interactive analytics from external clients.
@@ -51,13 +51,13 @@ Some examples of interactive queries:
 
 So the aggregation will look something like:
 
-|timestamp               |publisher  |geo  | avg_bid          |imps|uniques|
-|------------------------|-----------|-----|------------------|----|-------|
-|2016-05-25 16:45:01.026 |publisher10| UT  |0.5725387931435979|30  |26     |              
-|2016-05-25 16:44:56.21  |publisher43| VA  |0.5682680168342149|22  |20     |              
-|2016-05-25 16:44:59.024 |publisher19| OH  |0.5619481767564926|5   |5      |             
-|2016-05-25 16:44:52.985 |publisher11| VA  |0.4920346523303594|28  |21     |              
-|2016-05-25 16:44:56.803 |publisher38| WI  |0.4585381957119518|40  |31     |
+|timestamp               |publisher  |geo | avg_bid          |imps|uniques|
+|------------------------|-----------|----|------------------|----|-------|
+|2016-05-25 16:45:01.026 |publisher10| UT |0.5725387931435979|30  |26     |              
+|2016-05-25 16:44:56.21  |publisher43| VA |0.5682680168342149|22  |20     |              
+|2016-05-25 16:44:59.024 |publisher19| OH |0.5619481767564926|5   |5      |             
+|2016-05-25 16:44:52.985 |publisher11| VA |0.4920346523303594|28  |21     |              
+|2016-05-25 16:44:56.803 |publisher38| WI |0.4585381957119518|40  |31     |
 
 ### Code highlights
 We implemented the ingestion logic using 3 methods mentioned below but only describe the SQL approach for brevity here.
