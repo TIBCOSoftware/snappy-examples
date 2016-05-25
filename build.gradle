@@ -158,7 +158,7 @@ task startSnappyIngestionPerf_Kafka(type: JavaExec, dependsOn: classes) {
   environment 'PROJECT_ASSEMBLY_JAR', assemblyJar.files.asPath
 }
 
-/*task product(type: Exec) {
+task product(type: Exec) {
   dependsOn ':assembly:shadowJar'
 
   def productDir = "${rootProject.buildDir}/snappydata-poc"
@@ -183,4 +183,4 @@ task startSnappyIngestionPerf_Kafka(type: JavaExec, dependsOn: classes) {
       into "${productDir}/lib"
     }
   }
-}*/
+}
