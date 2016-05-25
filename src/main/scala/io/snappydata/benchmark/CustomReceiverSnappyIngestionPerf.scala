@@ -17,8 +17,9 @@
 
 package io.snappydata.benchmark
 
-import io.snappydata.adanalytics.aggregator.Configs._
-import io.snappydata.adanalytics.aggregator.{AdImpressionGenerator, AdImpressionLog}
+import io.snappydata.adanalytics.{Configs, AdImpressionGenerator}
+import Configs._
+import io.snappydata.adanalytics.AdImpressionLog
 import org.apache.spark.sql.Row
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.streaming.SnappyStreamingContext

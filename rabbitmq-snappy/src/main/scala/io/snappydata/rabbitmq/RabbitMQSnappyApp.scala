@@ -15,9 +15,10 @@
  * LICENSE file.
  */
 
-package io.snappydata.adanalytics.aggregator
+package io.snappydata.rabbitmq
 
-import io.snappydata.adanalytics.aggregator.Configs._
+import io.snappydata.adanalytics.Configs
+import Configs._
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.streaming.SnappyStreamingContext
 import org.apache.spark.{SparkConf, SparkContext}
@@ -25,7 +26,7 @@ import org.apache.spark.{SparkConf, SparkContext}
 /**
   * A Snappy streaming program to receive RabbitMQ messages
   */
-object RabbitMQSnappyStream extends App {
+object RabbitMQSnappyApp extends App {
 
   Logger.getRootLogger().setLevel(Level.ERROR)
 
@@ -33,9 +34,6 @@ object RabbitMQSnappyStream extends App {
     .setAppName(getClass.getSimpleName)
     .setMaster(s"$sparkMasterURL")
     .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
-    .set("spark.executor.extraJavaOptions",
-      " -XX:+UseCompressedOops -XX:+UseConcMarkSweepGC -XX:+AggressiveOpts -XX:FreqInlineSize=300 -XX:MaxInlineSize=300 ")
-    .set("spark.streaming.blockInterval", "50")
 
   val sc = new SparkContext(sparkConf)
   val snsc = new SnappyStreamingContext(sc, batchDuration)

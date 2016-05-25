@@ -1,26 +1,19 @@
 dependencies {
-/*
-  provided "org.apache.spark:spark-core_2.10:${sparkVersion}"
-  provided "org.apache.spark:spark-streaming_2.10:${sparkVersion}"
-  provided "org.apache.spark:spark-streaming-kafka_2.10:${sparkVersion}"
-  provided "org.apache.spark:spark-sql_2.10:${sparkVersion}"
-  provided "org.apache.spark:spark-catalyst_2.10:${sparkVersion}"
-*/
 
-  provided "org.apache.spark:spark-core_2.10:1.5.2"
-  provided "org.apache.spark:spark-streaming_2.10:1.5.2"
-  provided "org.apache.spark:spark-streaming-kafka_2.10:1.5.2"
-  provided "org.apache.spark:spark-sql_2.10:1.5.2"
-  provided "org.apache.spark:spark-catalyst_2.10:1.5.2"
+    provided "org.apache.spark:spark-core_2.10:1.5.2"
+    provided "org.apache.spark:spark-streaming_2.10:1.5.2"
+    provided "org.apache.spark:spark-streaming-kafka_2.10:1.5.2"
+    provided "org.apache.spark:spark-sql_2.10:1.5.2"
+    provided "org.apache.spark:spark-catalyst_2.10:1.5.2"
 
-  compile project(':')
-  compile 'com.memsql:memsql-connector_2.10:1.3.2'
+    compile project(':')
+    compile 'com.memsql:memsql-connector_2.10:1.3.2'
 }
 
-task startMemSqlIngestionPerf(type: JavaExec, dependsOn: classes) {
-  main = 'io.snappydata.benchmark.adanalytics.MemSqlIngestionPerf'
-  def filterGuava = sourceSets.test.runtimeClasspath.findAll { !it.getName().contains('guava-14') }
-  def guava19 = sourceSets.test.runtimeClasspath.findAll { it.getName().contains('guava-19') }
-  classpath filterGuava
-  environment 'PROJECT_ASSEMBLY_JAR', "${guava19[0]}:${assemblyJar.files.asPath}"
+task startMemSqlStreamIngestPerf(type: JavaExec, dependsOn: classes) {
+    main = 'io.snappydata.benchmark.MemSqlStreamIngestPerf'
+    def filterGuava = sourceSets.test.runtimeClasspath.findAll { !it.getName().contains('guava-14') }
+    def guava19 = sourceSets.test.runtimeClasspath.findAll { it.getName().contains('guava-19') }
+    classpath filterGuava
+    environment 'PROJECT_ASSEMBLY_JAR', "${guava19[0]}:${assemblyJar.files.asPath}"
 }

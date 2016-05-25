@@ -15,7 +15,7 @@
  * LICENSE file.
  */
 
-package io.snappydata.adanalytics.aggregator
+package io.snappydata.adanalytics
 
 import com.miguno.kafka.avro.{AvroDecoder, AvroEncoder}
 import kafka.utils.VerifiableProperties

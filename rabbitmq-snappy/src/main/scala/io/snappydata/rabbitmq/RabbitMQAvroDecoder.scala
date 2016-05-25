@@ -1,5 +1,6 @@
-package io.snappydata.adanalytics.aggregator
+package io.snappydata.rabbitmq
 
+import io.snappydata.adanalytics.AdImpressionLog
 import org.apache.avro.io.DecoderFactory
 import org.apache.avro.specific.SpecificDatumReader
 import org.apache.spark.sql.streaming.RabbitMQDecoder

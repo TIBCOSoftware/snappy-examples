@@ -15,10 +15,10 @@
  * LICENSE file.
  */
 
-package io.snappydata.adanalytics.aggregator
+package io.snappydata.adanalytics
 
 import com.typesafe.config.Config
-import io.snappydata.adanalytics.aggregator.Configs._
+import io.snappydata.adanalytics.Configs._
 import kafka.serializer.StringDecoder
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.streaming.{SchemaDStream, SnappyStreamingJob}

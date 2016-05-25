@@ -17,8 +17,7 @@
 
 package io.snappydata.benchmark
 
-import io.snappydata.adanalytics.aggregator.Configs
-import Configs._
+import io.snappydata.adanalytics.Configs._
 import org.apache.spark.SparkContext
 import org.apache.spark.streaming.SnappyStreamingContext
 
@@ -42,6 +41,9 @@ object KafkaSnappyIngestionPerf extends App {
     sparkConf.set("spark.executor.extraClassPath", assemblyJar)
   }
 
+  sparkConf.set("spark.driver.extraJavaOptions", "-Dgemfire.tombstone-gc-threshold=5000")
+  sparkConf.set("spark.executor.extraJavaOptions", "-Dgemfire.tombstone-gc-threshold=5000")
+
   val sc = new SparkContext(sparkConf)
   val snsc = new SnappyStreamingContext(sc, batchDuration)
 
@@ -59,13 +61,13 @@ object KafkaSnappyIngestionPerf extends App {
     " bid double," +
     " cookie string) " +
     " using directkafka_stream options (" +
-    " rowConverter 'io.snappydata.adanalytics.aggregator.AdImpressionToRowsConverter' ," +
+    " rowConverter 'io.snappydata.adanalytics.AdImpressionToRowsConverter' ," +
     s" kafkaParams 'metadata.broker.list->$brokerList'," +
     s" topics '$kafkaTopic'," +
     " K 'java.lang.String'," +
-    " V 'io.snappydata.adanalytics.aggregator.AdImpressionLog', " +
+    " V 'io.snappydata.adanalytics.AdImpressionLog', " +
     " KD 'kafka.serializer.StringDecoder', " +
-    " VD 'io.snappydata.adanalytics.aggregator.AdImpressionLogAvroDecoder')")
+    " VD 'io.snappydata.adanalytics.AdImpressionLogAvroDecoder')")
 
   snsc.sql("create table adImpressions(times_tamp timestamp, publisher string, " +
     "advertiser string, website string, geo string, bid double, cookie string) " +

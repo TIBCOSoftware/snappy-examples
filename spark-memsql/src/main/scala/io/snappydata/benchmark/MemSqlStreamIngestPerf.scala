@@ -18,8 +18,9 @@
 package io.snappydata.benchmark
 
 import com.memsql.spark.connector.MemSQLContext
-import io.snappydata.adanalytics.aggregator.Configs._
-import io.snappydata.adanalytics.aggregator.{AdImpressionLog, AdImpressionLogAvroDecoder, AdImpressionLogToRowRDD}
+import io.snappydata.adanalytics.{Configs, AdImpressionLogToRowRDD, AdImpressionLogAvroDecoder}
+import Configs._
+import io.snappydata.adanalytics.AdImpressionLog
 import kafka.serializer.StringDecoder
 import org.apache.spark.streaming.StreamingContext
 import org.apache.spark.streaming.kafka.KafkaUtils
@@ -31,7 +32,7 @@ import org.apache.spark.{SparkConf, SparkContext}
   * Spark MemSql Connector. To run this program you need to
   * start an aggregator and leaf node of MemSql and run Spark in local mode.
   */
-object MemSqlIngestionPerf extends App {
+object MemSqlStreamIngestPerf extends App {
 
   val conf = new SparkConf()
     .setAppName(getClass.getSimpleName)

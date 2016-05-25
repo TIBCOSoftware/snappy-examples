@@ -1,7 +1,7 @@
-package io.snappydata.adanalytics.aggregator
+package io.snappydata.adanalytics
 
 import com.twitter.algebird.{HLL, HyperLogLogMonoid}
-import io.snappydata.adanalytics.aggregator.Configs._
+import Configs._
 import kafka.serializer.StringDecoder
 import org.apache.commons.io.Charsets
 import org.apache.spark.SparkConf

@@ -9,9 +9,9 @@ dependencies {
   compile 'com.datastax.spark:spark-cassandra-connector_2.10:1.6.0-M2'
 }
 
-task startCassandraIngestionPerf(type: JavaExec, dependsOn: classes) {
+task startCassandraStreamIngestPerf(type: JavaExec, dependsOn: classes) {
   dependsOn ':assembly:shadowJar'
-  main = 'io.snappydata.benchmark.CassandraIngestionPerf'
+  main = 'io.snappydata.benchmark.CassandraStreamIngestPerf'
   def filterGuava = sourceSets.test.runtimeClasspath.findAll { !it.getName().contains('guava-14') }
   classpath filterGuava
   environment 'PROJECT_ASSEMBLY_JAR', "~/guava-16.0.1.jar:~/AdImpressionLogAggr-0.3-assembly.jar"

@@ -14,11 +14,11 @@
  * permissions and limitations under the License. See accompanying
  * LICENSE file.
  */
-package io.snappydata.adanalytics.aggregator
+package io.snappydata.adanalytics
 
 import java.util.Random
 
-import io.snappydata.adanalytics.aggregator.Configs._
+import Configs._
 
 object AdImpressionGenerator {
 

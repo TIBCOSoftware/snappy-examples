@@ -15,10 +15,10 @@
  * LICENSE file.
  */
 
-package io.snappydata.adanalytics.aggregator
+package io.snappydata.adanalytics
 
 import com.typesafe.config.Config
-import io.snappydata.adanalytics.aggregator.Configs._
+import io.snappydata.adanalytics.Configs._
 import org.apache.spark.sql.streaming.{SchemaDStream, SnappyStreamingJob}
 import spark.jobserver.{SparkJobValid, SparkJobValidation}
 
@@ -52,13 +52,13 @@ class SnappySQLLogAggregatorJob extends SnappyStreamingJob {
       " bid double," +
       " cookie string) " +
       " using directkafka_stream options(" +
-      " rowConverter 'io.snappydata.adanalytics.aggregator.AdImpressionToRowsConverter' ," +
+      " rowConverter 'io.snappydata.adanalytics.AdImpressionToRowsConverter' ," +
       s" kafkaParams 'metadata.broker.list->$brokerList'," +
       s" topics '$kafkaTopic'," +
       " K 'java.lang.String'," +
-      " V 'io.snappydata.adanalytics.aggregator.AdImpressionLog', " +
+      " V 'io.snappydata.adanalytics.AdImpressionLog', " +
       " KD 'kafka.serializer.StringDecoder', " +
-      " VD 'io.snappydata.adanalytics.aggregator.AdImpressionLogAvroDecoder')")
+      " VD 'io.snappydata.adanalytics.AdImpressionLogAvroDecoder')")
 
     // Next, create the Column table where we ingest all our data into.
     snsc.sql("create table aggrAdImpressions(time_stamp timestamp, publisher string," +
@@ -69,13 +69,13 @@ class SnappySQLLogAggregatorJob extends SnappyStreamingJob {
       " OPTIONS(qcs 'geo', fraction '0.03', strataReservoirSize '50', baseTable 'aggrAdImpressions')")
 
     // Execute this query once every second. Output is a SchemaDStream.
-    val resultStream : SchemaDStream = snsc.registerCQ(
-      "select time_stamp, publisher, geo, avg(bid) as avg_bid," +
-      " count(*) as imps , count(distinct(cookie)) as uniques" +
-      " from adImpressionStream window (duration 1 seconds, slide 1 seconds)"+
-      " where geo != 'unknown' group by publisher, geo, time_stamp")
+    val resultStream: SchemaDStream = snsc.registerCQ(
+      "select min(time_stamp), publisher, geo, avg(bid) as avg_bid," +
+        " count(*) as imps , count(distinct(cookie)) as uniques" +
+        " from adImpressionStream window (duration 1 seconds, slide 1 seconds)" +
+        " where geo != 'unknown' group by publisher, geo")
 
-    resultStream.foreachDataFrame( df => {
+    resultStream.foreachDataFrame(df => {
       df.write.insertInto("aggrAdImpressions")
       df.write.insertInto("sampledAdImpressions")
     })

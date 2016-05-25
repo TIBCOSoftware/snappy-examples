@@ -15,11 +15,13 @@
  * LICENSE file.
  */
 
-package io.snappydata.adanalytics.aggregator;
+package io.snappydata.rabbitmq;
 
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import io.snappydata.adanalytics.AdImpressionGenerator;
+import io.snappydata.adanalytics.AdImpressionLog;
 import org.apache.avro.io.BinaryEncoder;
 import org.apache.avro.io.DatumWriter;
 import org.apache.avro.io.EncoderFactory;
@@ -63,9 +65,8 @@ public class RabbitMQPublisher {
     private static byte[] getLogBytes(AdImpressionLog log) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         BinaryEncoder encoder = EncoderFactory.get().binaryEncoder(out, null);
-        DatumWriter<AdImpressionLog> writer = new
-                SpecificDatumWriter(AdImpressionLog
-                .getClassSchema());
+        SpecificDatumWriter<AdImpressionLog> writer =
+                new SpecificDatumWriter<AdImpressionLog>(AdImpressionLog.getClassSchema());
         writer.write(log, encoder);
         encoder.flush();
         out.close();

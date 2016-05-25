@@ -19,11 +19,12 @@ package io.snappydata.benchmark
 import java.io.{ByteArrayOutputStream, IOException}
 import java.net.ServerSocket
 
-import io.snappydata.adanalytics.aggregator.{AdImpressionGenerator, AdImpressionLog}
+import io.snappydata.adanalytics.{Configs, AdImpressionGenerator}
+import io.snappydata.adanalytics.AdImpressionLog
 import org.apache.avro.io.EncoderFactory
 import org.apache.avro.specific.SpecificDatumWriter
 import org.apache.spark.streaming.StreamUtils
-import io.snappydata.adanalytics.aggregator.Configs._
+import Configs._
 
 /**
   * A Simple program which writes Avro objects to socket stream

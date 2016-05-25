@@ -58,15 +58,15 @@ So the aggregation will look something like:
 
 ### Code highlights
 We implemented the ingestion logic using 3 methods mentioned below but only describe the SQL approach for brevity here.
-- [Vanilla Spark API](https://github.com/SnappyDataInc/snappy-poc/blob/master/src/main/scala/io/snappydata/adanalytics/aggregator/SparkLogAggregator.scala) (from the original blog).
-- [Spark API with Snappy extensions](https://github.com/SnappyDataInc/snappy-poc/blob/master/src/main/scala/io/snappydata/adanalytics/aggregator/SnappyAPILogAggregator.scala) to work with the stream as a sequence of DataFrames. (btw, SQL based access to streams is also the theme behind [Structured streaming](https://issues.apache.org/jira/browse/SPARK-8360) being introduced in Spark 2.0 )
-- [SQL based](https://github.com/SnappyDataInc/snappy-poc/blob/master/src/main/scala/io/snappydata/adanalytics/aggregator/SnappySQLLogAggregator.scala) - described below.
+- [Vanilla Spark API](https://github.com/SnappyDataInc/snappy-poc/blob/master/src/main/scala/io/snappydata/adanalytics/SparkLogAggregator.scala) (from the original blog).
+- [Spark API with Snappy extensions](https://github.com/SnappyDataInc/snappy-poc/blob/master/src/main/scala/io/snappydata/adanalytics/SnappyAPILogAggregator.scala) to work with the stream as a sequence of DataFrames. (btw, SQL based access to streams is also the theme behind [Structured streaming](https://issues.apache.org/jira/browse/SPARK-8360) being introduced in Spark 2.0 )
+- [SQL based](https://github.com/SnappyDataInc/snappy-poc/blob/master/src/main/scala/io/snappydata/adanalytics/SnappySQLLogAggregator.scala) - described below.
 
 #### Generating the AdImpression logs 
-A [KafkaAdImpressionGenerator](src/main/scala/io/snappydata/adanalytics/aggregator/KafkaAdImpressionGenerator.scala) simulates Adservers and generates random [AdImpressionLogs](src/avro/adimpressionlog.avsc)(Avro formatted objects) in batches to Kafka. 
+A [KafkaAdImpressionGenerator](src/main/scala/io/snappydata/adanalytics/KafkaAdImpressionGenerator.scala) simulates Adservers and generates random [AdImpressionLogs](src/avro/adimpressionlog.avsc)(Avro formatted objects) in batches to Kafka.
   ```scala
   val props = new Properties()
-  props.put("serializer.class", "io.snappydata.adanalytics.aggregator.AdImpressionLogAvroEncoder")
+  props.put("serializer.class", "io.snappydata.adanalytics.AdImpressionLogAvroEncoder")
   props.put("partitioner.class", "kafka.producer.DefaultPartitioner")
   props.put("key.serializer.class", "kafka.serializer.StringEncoder")
   props.put("metadata.broker.list", brokerList)
@@ -92,7 +92,7 @@ A [KafkaAdImpressionGenerator](src/main/scala/io/snappydata/adanalytics/aggregat
   }
   ```
 #### Spark stream as SQL table and Continuous query
- [SnappySQLLogAggregator](src/main/scala/io/snappydata/adanalytics/aggregator/SnappySQLLogAggregator.scala) creates a stream over the Kafka source. The messages are converted to [Row](https://spark.apache.org/docs/latest/api/java/org/apache/spark/sql/Row.html) objects using [AdImpressionToRowsConverter](src/main/scala/io/snappydata/adanalytics/aggregator/AdImpressionToRowsConverter.scala) comply with the schema defined in the 'create stream table' below.
+ [SnappySQLLogAggregator](src/main/scala/io/snappydata/adanalytics/SnappySQLLogAggregator.scala) creates a stream over the Kafka source. The messages are converted to [Row](https://spark.apache.org/docs/latest/api/java/org/apache/spark/sql/Row.html) objects using [AdImpressionToRowsConverter](src/main/scala/io/snappydata/adanalytics/aggregator/AdImpressionToRowsConverter.scala) comply with the schema defined in the 'create stream table' below.
 This is mostly just a SQL veneer over Spark Streaming. The stream table is also automatically registered with the SnappyData catalog so external clients can access this stream as a table.
 
 Next, a continuous query is registered on the stream table that is used to create the aggregations we spoke about above. The query aggregates metrics for each publisher and geo every 1 second. This query runs every time a batch is emitted. It returns a SchemaDStream.
@@ -115,13 +115,13 @@ Next, a continuous query is registered on the stream table that is used to creat
     " cookie string) " +
     " using directkafka_stream options" +
     " (storagelevel 'MEMORY_AND_DISK_SER_2'," +
-    " rowConverter 'io.snappydata.adanalytics.aggregator.AdImpressionToRowsConverter' ," +
+    " rowConverter 'io.snappydata.adanalytics.AdImpressionToRowsConverter' ," +
     s" kafkaParams 'metadata.broker.list->$brokerList'," +
     s" topics '$kafkaTopic'," +
     " K 'java.lang.String'," +
-    " V 'io.snappydata.adanalytics.aggregator.AdImpressionLog', " +
+    " V 'io.snappydata.adanalytics.AdImpressionLog', " +
     " KD 'kafka.serializer.StringDecoder', " +
-    " VD 'io.snappydata.adanalytics.aggregator.AdImpressionLogAvroDecoder')")
+    " VD 'io.snappydata.adanalytics.AdImpressionLogAvroDecoder')")
     
     // Aggregate metrics for each publisher, geo every few seconds. Just 1 second in this example.
     // With the stream registered as a table, we can execute arbitrary queries.
@@ -173,7 +173,7 @@ bin/kafka-server-start.sh config/server.properties
 
 From the root kafka folder, Create a topic "adImpressionsTopic":
 ```
-bin/kafka-topics.sh --create --zookeeper localhost:2181 --partitions 4 --topic adImpressionsTopic --replication-factor=1
+bin/kafka-topics.sh --create --zookeeper localhost:2181 --partitions 8 --topic adImpressionsTopic --replication-factor=1
 ```
 
 Next from the checkout `/snappy-poc/` directory, build the example
@@ -197,13 +197,13 @@ Start SnappyData cluster using following command from installation directory.
 ./sbin/snappy-start-all.sh
 ```
 
-This will start one locator, 2 servers and a lead node. You can understand the roles of these nodes [here](https://github.com/SnappyDataInc/snappydata/blob/master/docs/GettingStarted.md#snappydata-cluster-explanation)
+This will start one locator, one server and a lead node. You can understand the roles of these nodes [here](https://github.com/SnappyDataInc/snappydata/blob/master/docs/GettingStarted.md#snappydata-cluster-explanation)
 
 
 
 Submit the streaming job to the cluster and start it (consume the stream, aggregate and store).
 ```
-./bin/snappy-job.sh submit --lead localhost:8090 --app-name AdAnalytics --class io.snappydata.adanalytics.aggregator.SnappySQLLogAggregatorJob --app-jar SNAPPY_POC_HOME/assembly/build/libs/AdImpressionLogAggr-0.3-assembly.jar --stream
+./bin/snappy-job.sh submit --lead localhost:8090 --app-name AdAnalytics --class io.snappydata.adanalytics.SnappySQLLogAggregatorJob --app-jar SNAPPY_POC_HOME/assembly/build/libs/AdImpressionLogAggr-0.3-assembly.jar --stream
 ```
 
 SnappyData supports "Managed Spark Drivers" by running these in Lead nodes. So, if the driver were to fail, it can automatically re-start on a standby node. While the Lead node starts the streaming job, the actual work of parallel processing from kafka, etc is done in the Snappydata servers. Servers execute Spark Executors collocated with the data. 

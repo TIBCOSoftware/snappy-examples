@@ -15,7 +15,7 @@
  * LICENSE file.
  */
 
-package io.snappydata.adanalytics.aggregator
+package io.snappydata.adanalytics
 
 import org.apache.spark.sql.types._
 import org.apache.spark.streaming.Seconds
@@ -78,7 +78,7 @@ object Configs {
 
   val topics = Set(kafkaTopic)
 
-  val maxLogsPerSecPerThread = 5000
+  val maxLogsPerSecPerThread = 10000
 
   def getAdImpressionSchema: StructType = {
     StructType(Array(

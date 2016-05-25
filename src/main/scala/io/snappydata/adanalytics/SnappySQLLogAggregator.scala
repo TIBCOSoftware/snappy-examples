@@ -15,9 +15,9 @@
  * LICENSE file.
  */
 
-package io.snappydata.adanalytics.aggregator
+package io.snappydata.adanalytics
 
-import Configs._
+import io.snappydata.adanalytics.Configs._
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.streaming.SchemaDStream
 import org.apache.spark.streaming.SnappyStreamingContext
@@ -81,13 +81,13 @@ object SnappySQLLogAggregator extends App {
     " bid double," +
     " cookie string) " +
     " using directkafka_stream options(" +
-    " rowConverter 'io.snappydata.adanalytics.aggregator.AdImpressionToRowsConverter' ," +
+    " rowConverter 'io.snappydata.adanalytics.AdImpressionToRowsConverter' ," +
     s" kafkaParams 'metadata.broker.list->$brokerList'," +
     s" topics '$kafkaTopic'," +
     " K 'java.lang.String'," +
-    " V 'io.snappydata.adanalytics.aggregator.AdImpressionLog', " +
+    " V 'io.snappydata.adanalytics.AdImpressionLog', " +
     " KD 'kafka.serializer.StringDecoder', " +
-    " VD 'io.snappydata.adanalytics.aggregator.AdImpressionLogAvroDecoder')")
+    " VD 'io.snappydata.adanalytics.AdImpressionLogAvroDecoder')")
 
   // Next, create the Column table where we ingest all our data into.
    snsc.sql("create table aggrAdImpressions(time_stamp timestamp, publisher string," +

@@ -17,10 +17,14 @@
 
 package io.snappydata.benchmark
 
+import com.datastax.spark.connector.SomeColumns
 import com.datastax.spark.connector.cql.CassandraConnector
-import io.snappydata.adanalytics.aggregator.Configs._
-import io.snappydata.adanalytics.aggregator.{AdImpressionLog, AdImpressionLogAvroDecoder}
+import io.snappydata.adanalytics.AdImpressionLogAvroDecoder
+import io.snappydata.adanalytics.Configs._
+import io.snappydata.adanalytics.AdImpressionLog
 import kafka.serializer.StringDecoder
+import org.apache.log4j.{Level, Logger}
+import org.apache.spark.sql.cassandra.CassandraSQLContext
 import org.apache.spark.streaming.StreamingContext
 import org.apache.spark.streaming.kafka.KafkaUtils
 import org.apache.spark.{SparkConf, SparkContext}
@@ -31,15 +35,27 @@ import org.apache.spark.{SparkConf, SparkContext}
   * DataStax's Spark Cassandra Connector. To run this program you need to
   * start a single instance of Cassandra and run Spark in local mode.
   */
-object CassandraIngestionPerf extends App {
+object CassandraStreamIngestPerf extends App {
+
+  val rootLogger = Logger.getLogger("org");
+  rootLogger.setLevel(Level.WARN);
 
   val conf = new SparkConf(true)
     .setAppName(getClass.getSimpleName)
-    .set("spark.cassandra.connection.host" , s"$cassandraHost")
-    .set("spark.cassandra.auth.username" , "cassandra")
-    .set("spark.cassandra.auth.password" , "cassandra")
-    .set("spark.streaming.kafka.maxRatePerPartition" , s"$maxRatePerPartition")
-    .setMaster(s"$sparkMasterURL")
+    .set("spark.cassandra.connection.host", s"$cassandraHost")
+    .set("spark.cassandra.auth.username", "cassandra")
+    .set("spark.cassandra.auth.password", "cassandra")
+    .set("spark.streaming.kafka.maxRatePerPartition", s"$maxRatePerPartition")
+    .set("spark.cassandra.output.batch.size.bytes", "5120") //8000 * 1024
+    .set("spark.cassandra.output.concurrent.writes", "32")
+    .set("spark.cassandra.output.consistency.level", "ANY")
+    .set("spark.cassandra.output.batch.grouping.key", "none") ///replica_set/partition
+    .set("spark.cassandra.sql.keyspace", "adlogs")
+    .set("spark.executor.cores", "2")
+    //.set("spark.cassandra.output.batch.size.rows", "500")
+    //.set("spark.cassandra.output.batch.grouping.buffer.size", "1") //1000
+    //.setMaster(s"$sparkMasterURL")
+    .setMaster("local[*]")
 
   val assemblyJar = System.getenv("PROJECT_ASSEMBLY_JAR")
   if (assemblyJar != null) {
@@ -47,16 +63,18 @@ object CassandraIngestionPerf extends App {
     conf.set("spark.executor.extraClassPath", assemblyJar)
   }
   val sc = new SparkContext(conf)
-
+  val csc = new CassandraSQLContext(sc)
   CassandraConnector(conf).withSessionDo { session =>
     // Create keysapce and table in Cassandra
     session.execute(s"DROP KEYSPACE IF EXISTS adlogs")
     session.execute(s"CREATE KEYSPACE IF NOT EXISTS adlogs " +
       s"WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor': 1 }")
     session.execute(s"CREATE TABLE IF NOT EXISTS adlogs.adimpressions " +
-      s"(timestamp bigint primary key, publisher text, advertiser text, " +
-      "website text, geo text, bid double, cookie text)")
+      s"(timestamp bigint, publisher text, advertiser text, " +
+      "website text, geo text, bid double, cookie text, primary key (timestamp, cookie))")
   }
+  csc.setKeyspace("adlogs")
+
   // batchDuration of 1 second
   val ssc = new StreamingContext(sc, batchDuration)
 
@@ -65,15 +83,12 @@ object CassandraIngestionPerf extends App {
   val messages = KafkaUtils.createDirectStream
     [String, AdImpressionLog, StringDecoder, AdImpressionLogAvroDecoder](ssc, kafkaParams, topics)
 
-  import com.datastax.spark.connector._ // for saveToCassandra implicit
+  import com.datastax.spark.connector.streaming._
 
-  // transform the Spark RDDs as per the table schema and save it to Cassandra
-  messages.foreachRDD(rdd => rdd.map({
-    case (topic, adImp) => (adImp.getTimestamp, adImp.getPublisher,
-      adImp.getAdvertiser, adImp.getWebsite, adImp.getGeo, adImp.getBid, adImp.getCookie)
-  }).saveToCassandra("adlogs", "adimpressions",
-    SomeColumns("timestamp", "publisher", "advertiser", "website", "geo", "bid", "cookie"))
-  )
+  messages.map(_._2).map(ad =>
+    (ad.getTimestamp, ad.getPublisher, ad.getAdvertiser, ad.getWebsite, ad.getGeo, ad.getBid, ad.getCookie))
+    .saveToCassandra("adlogs", "adimpressions",
+      SomeColumns("timestamp", "publisher", "advertiser", "website", "geo", "bid", "cookie"))
 
   ssc.start
   ssc.awaitTermination

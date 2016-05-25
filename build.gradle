@@ -100,20 +100,20 @@ ext {
 def assemblyJar = tasks.getByPath(':assembly:shadowJar').outputs
 
 task generateAdImpressions(type: JavaExec, dependsOn: classes) {
-  main = 'io.snappydata.adanalytics.aggregator.KafkaAdImpressionGenerator'
+  main = 'io.snappydata.adanalytics.KafkaAdImpressionProducer'
   classpath sourceSets.test.runtimeClasspath
   environment 'PROJECT_ASSEMBLY_JAR', assemblyJar.files.asPath
 }
 
 task aggeregateAdImpressions_API(type: JavaExec, dependsOn: classes) {
-  main = 'io.snappydata.adanalytics.aggregator.SnappyAPILogAggregator'
+  main = 'io.snappydata.adanalytics.SnappyAPILogAggregator'
   jvmArgs = ['-XX:MaxPermSize=512m']
   classpath sourceSets.test.runtimeClasspath
   environment 'PROJECT_ASSEMBLY_JAR', assemblyJar.files.asPath
 }
 
 task aggeregateAdImpressions_SQL(type: JavaExec, dependsOn: classes) {
-  main = 'io.snappydata.adanalytics.aggregator.SnappySQLLogAggregator'
+  main = 'io.snappydata.adanalytics.SnappySQLLogAggregator'
   jvmArgs = ['-XX:MaxPermSize=512m']
   classpath sourceSets.test.runtimeClasspath
   environment 'PROJECT_ASSEMBLY_JAR', assemblyJar.files.asPath
