@@ -50,7 +50,7 @@ Some examples of interactive queries:
 - **Top ads based on uniques count for each Geo.**
 
 So the aggregation will look something like:
-
+    
 |timestamp               |publisher  |geo | avg_bid          |imps|uniques|
 |------------------------|-----------|----|------------------|----|-------|
 |2016-05-25 16:45:01.026 |publisher10| UT |0.5725387931435979|30  |26     |              
@@ -152,7 +152,7 @@ Next, create the Column table and ingest result of continuous query of aggregati
 ### Let's get this going
 In order to run this example, we need to install the following:
 
-1. [Apache Kafka 0.8.2.2](http://kafka.apache.org/downloads.html)
+1. [Apache Kafka 0.10.0.0](http://kafka.apache.org/downloads.html)
 2. [SnappyData 0.3 PREVIEW release](https://github.com/SnappyDataInc/snappydata/releases/tag/v0.3-preview). Download the binary snappydata-0.3.0-PREVIEW-bin.tar.gz and Unzip it. 
 The binaries will be inside "snappydata-0.3.0-PREVIEW-bin" directory.
 3. JDK 7.0 or JDK 8
