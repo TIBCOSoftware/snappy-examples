@@ -63,7 +63,7 @@ final class Worker extends Runnable {
     for (j <- 0 to numLogsPerThread by maxLogsPerSecPerThread) {
       val start = System.currentTimeMillis()
       for (i <- 1 to maxLogsPerSecPerThread) {
-        sendToKafka(AdImpressionGenerator.nextRandomAdImpression())
+        sendToKafka(AdImpressionGenerator.nextNormalAdImpression())
       }
       // If one second hasn't elapsed wait for the remaining time
       // before queueing more.

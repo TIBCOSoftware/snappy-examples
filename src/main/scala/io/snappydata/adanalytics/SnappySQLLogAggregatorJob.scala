@@ -66,7 +66,7 @@ class SnappySQLLogAggregatorJob extends SnappyStreamingJob {
       "using column options(buckets '11')")
 
     snsc.sql("CREATE SAMPLE TABLE sampledAdImpressions" +
-      " OPTIONS(qcs 'geo', fraction '0.03', strataReservoirSize '50', baseTable 'aggrAdImpressions')")
+      " OPTIONS(qcs 'geo,publisher', fraction '0.03', strataReservoirSize '50', baseTable 'aggrAdImpressions')")
 
     // Execute this query once every second. Output is a SchemaDStream.
     val resultStream: SchemaDStream = snsc.registerCQ(
