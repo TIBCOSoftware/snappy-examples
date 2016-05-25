@@ -36,6 +36,7 @@ object MemSqlIngestionPerf extends App {
   val conf = new SparkConf()
     .setAppName(getClass.getSimpleName)
     .setMaster(s"$sparkMasterURL")
+    .set("spark.executor.cores", "6")
 
   val assemblyJar = System.getenv("PROJECT_ASSEMBLY_JAR")
   if (assemblyJar != null) {
@@ -64,6 +65,7 @@ object MemSqlIngestionPerf extends App {
                 geo varchar(4),
                 bid double,
                 cookie varchar(20),
+                KEY (`timestamp`) USING CLUSTERED COLUMNSTORE,
                 SHARD KEY (timestamp))
               """)
     })
