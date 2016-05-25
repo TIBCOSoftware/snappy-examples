@@ -24,7 +24,7 @@ object AdImpressionGenerator {
 
   def nextRandomAdImpression(): AdImpressionLog = {
     val random = new Random()
-    val timestamp = System.nanoTime()
+    val timestamp = System.currentTimeMillis()
     val publisher = publishers(random.nextInt(numPublishers - 10 + 1) + 10)
     val advertiser = advertisers(random.nextInt(numAdvertisers - 10 + 1) + 10)
     val website = websites(random.nextInt(numWebsites - 100 + 1) + 100)

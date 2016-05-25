@@ -34,12 +34,14 @@ As AdServers can feed logs from many websites and given that each AdImpression l
 
 The incoming AdImpression log is formatted as depicted below.
 
-|timestamp           |publisher |advertiser| website  |geo|bid    |cookie|
-|--------------------|----------|----------|----------|---|-------|------|
-|2013-01-28 13:21:12 |     pub1 |     adv10|   abc.com| NY| 0.0001|  1214|
-|2013-01-28 13:21:13 |     pub1 |     adv10|   abc.com| NY| 0.0005|  1214|
-|2013-01-28 13:21:14 |     pub2 |     adv20|   xyz.com| CA| 0.0003|  4321|
-|2013-01-28 13:21:15 |     pub2 |     adv20|   xyz.com| CA| 0.0001|  5675|
+|timestamp              |publisher  |advertiser  | website  |geo|bid                   |cookie   |
+|-----------------------|-----------|------------|----------|---|----------------------|---------|
+|2016-05-25 16:45:29.027|publisher44|advertiser11|website233|NJ |0.8571221527653856    |cookie210|                           
+|2016-05-25 16:45:29.027|publisher31|advertiser18|website642|WV |0.2113054635444157    |cookie985|                           
+|2016-05-25 16:45:29.027|publisher21|advertiser27|website966|ND |0.5391198505461017    |cookie923|                           
+|2016-05-25 16:45:29.027|publisher34|advertiser11|website284|WV |0.05085682981132578   |cookie416|                           
+|2016-05-25 16:45:29.027|publisher29|advertiser29|website836|WA |0.8961017733169769    |cookie781|                           
+
 
 We pre-aggregate these logs by publisher and geo, and compute the average bid, the number of impressions and the number of uniques (the number of unique users that viewed the Ad) every 2 seconds. We want to maintain the last day’s worth of data in memory for interactive analytics from external clients.
 Some examples of interactive queries:
@@ -49,12 +51,13 @@ Some examples of interactive queries:
 
 So the aggregation will look something like:
 
-|timestamp           |publisher |geo    | avg_bid  |imps|uniques|
-|--------------------|----------|-------|----------|----|-------|
-|2013-01-28 13:21:00 |     pub1 |    NY |  0.0003  | 256| 104   |
-|2013-01-28 13:21:00 |     pub2 |    CA |  0.0002  | 121| 15    |
-|2013-01-28 13:22:00 |     pub1 |    NY |  0.0001  | 190| 98    |
-|2013-01-28 13:22:00 |     pub2 |    CA |  0.0007  | 137| 19    |
+|timestamp               |publisher  |geo  | avg_bid          |imps|uniques|
+|------------------------|-----------|-----|------------------|----|-------|
+|2016-05-25 16:45:01.026 |publisher10| UT  |0.5725387931435979|30  |26     |              
+|2016-05-25 16:44:56.21  |publisher43| VA  |0.5682680168342149|22  |20     |              
+|2016-05-25 16:44:59.024 |publisher19| OH  |0.5619481767564926|5   |5      |             
+|2016-05-25 16:44:52.985 |publisher11| VA  |0.4920346523303594|28  |21     |              
+|2016-05-25 16:44:56.803 |publisher38| WI  |0.4585381957119518|40  |31     |
 
 ### Code highlights
 We implemented the ingestion logic using 3 methods mentioned below but only describe the SQL approach for brevity here.
@@ -92,7 +95,7 @@ A [KafkaAdImpressionGenerator](src/main/scala/io/snappydata/adanalytics/KafkaAdI
   }
   ```
 #### Spark stream as SQL table and Continuous query
- [SnappySQLLogAggregator](src/main/scala/io/snappydata/adanalytics/SnappySQLLogAggregator.scala) creates a stream over the Kafka source. The messages are converted to [Row](https://spark.apache.org/docs/latest/api/java/org/apache/spark/sql/Row.html) objects using [AdImpressionToRowsConverter](src/main/scala/io/snappydata/adanalytics/aggregator/AdImpressionToRowsConverter.scala) comply with the schema defined in the 'create stream table' below.
+ [SnappySQLLogAggregator](src/main/scala/io/snappydata/adanalytics/SnappySQLLogAggregator.scala) creates a stream over the Kafka source. The messages are converted to [Row](https://spark.apache.org/docs/latest/api/java/org/apache/spark/sql/Row.html) objects using [AdImpressionToRowsConverter](src/main/scala/io/snappydata/adanalytics/AdImpressionToRowsConverter.scala) comply with the schema defined in the 'create stream table' below.
 This is mostly just a SQL veneer over Spark Streaming. The stream table is also automatically registered with the SnappyData catalog so external clients can access this stream as a table.
 
 Next, a continuous query is registered on the stream table that is used to create the aggregations we spoke about above. The query aggregates metrics for each publisher and geo every 1 second. This query runs every time a batch is emitted. It returns a SchemaDStream.
