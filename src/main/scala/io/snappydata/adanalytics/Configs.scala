@@ -72,13 +72,13 @@ object Configs {
 
   val cookies = (0 to numCookies).map("cookie" +)
 
-  val numLogsPerThread = 10000000
+  val numLogsPerThread = 20000000
 
   val batchDuration = Seconds(1)
 
   val topics = Set(kafkaTopic)
 
-  val maxLogsPerSecPerThread = 10000
+  val maxLogsPerSecPerThread = 5000
 
   def getAdImpressionSchema: StructType = {
     StructType(Array(
