@@ -313,7 +313,7 @@ Finally, stop the SnappyData cluser with:
 ```
 
 ### So, what was the point again?
-Hopefully we showed you how simple yet flexible it is to parallely ingest, process using SQL, run continuous queries, store data in a column table and interactively query data. All in a single unified cluster. 
+Hopefully we showed you how simple yet flexible it is to parallely ingest, process using SQL, run continuous queries, store data in column and sample tables and interactively query data. All in a single unified cluster. 
 We will soon release Part B of this exercise - a benchmark of this use case where we compare SnappyData to other alternatives. Coming soon. 
 
 ### Ask questions, start a Discussion
@@ -321,10 +321,12 @@ We will soon release Part B of this exercise - a benchmark of this use case wher
 [Stackoverflow](http://stackoverflow.com/questions/tagged/snappydata) ![Stackoverflow](http://i.imgur.com/LPIdp12.png)    [Slack](http://snappydata-slackin.herokuapp.com/)![Slack](http://i.imgur.com/h3sc6GM.png)        [Gitter](https://gitter.im/SnappyDataInc/snappydata) ![Gitter](http://i.imgur.com/jNAJeOn.jpg)          [Mailing List](https://groups.google.com/forum/#!forum/snappydata-user) ![Mailing List](http://i.imgur.com/NUsavRg.png)             [Reddit](https://www.reddit.com/r/snappydata) ![Reddit](http://i.imgur.com/AB3cVtj.png)          [JIRA](https://jira.snappydata.io/projects/SNAP/issues) ![JIRA](http://i.imgur.com/E92zntA.png)
 
 ### Source code, docs
-[Product Source](https://github.com/SnappyDataInc/snappydata)
+[SnappyData Source](https://github.com/SnappyDataInc/snappydata)
 
-[Product Docs](http://snappydatainc.github.io/snappydata/)
+[SnappyData Docs](http://snappydatainc.github.io/snappydata/)
 
 [This Example Source](https://github.com/SnappyDataInc/snappy-poc)
+
+[SnappyData Technical Paper](http://www.snappydata.io/snappy-industrial)
 
 
