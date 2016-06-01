@@ -1,5 +1,6 @@
 
-##### There is a blog post associated with this repo [here](www.snappydata.io/blog)
+##### There is a blog post associated with this repo [here](http://www.snappydata.io/blog/ad-analytics-using-spark-streaming-and-snappydata-code-example)
+##### There is a screencast associated with this repo [here](https://youtu.be/bXofwFtmHjE)
 ##### [Skip directly to instructions](#lets-get-this-going)
 
 
