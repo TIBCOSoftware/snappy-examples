@@ -1,5 +1,6 @@
 
-##### There is a blog post associated with this repo [here](http://www.snappydata.io/blog/ad-analytics-using-spark-streaming-and-snappydata-code-example)
+#### We benchmarked this code example against the [MemSQL Spark Connector](https://github.com/memsql/memsql-spark-connector) and the [Cassandra Spark Connector](https://github.com/datastax/spark-cassandra-connector). SnappyData outperformed Cassandra by 45x and MemSQL by 3x on query execution while concurrently ingesting. The benchmark is described [here](http://www.snappydata.io/blog/snappydata-memsql-cassandra-a-performance-benchmark).
+##### There is a blog post describing the code example in this repo [here](http://www.snappydata.io/blog/ad-analytics-using-spark-streaming-and-snappydata-code-example)
 ##### There is a screencast associated with this repo [here](https://youtu.be/bXofwFtmHjE)
 ##### [Skip directly to instructions](#lets-get-this-going)
 
