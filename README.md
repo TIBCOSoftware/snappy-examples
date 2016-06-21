@@ -134,11 +134,11 @@ Next, a continuous query is registered on the stream table that is used to creat
     // Aggregate metrics for each publisher, geo every few seconds. Just 1 second in this example.
     // With the stream registered as a table, we can execute arbitrary queries.
     // These queries run each time a batch is emitted by the stream. A continuous query.
-    val resultStream : SchemaDStream = snsc.registerCQ(
-    "select time_stamp, publisher, geo, avg(bid) as avg_bid," +
-    " count(*) as imps , count(distinct(cookie)) as uniques" +
-    " from adImpressionStream window (duration 1 seconds, slide 1 seconds)"+
-    " where geo != 'unknown' group by publisher, geo, time_stamp")
+    val resultStream: SchemaDStream = snsc.registerCQ(
+      "select min(time_stamp), publisher, geo, avg(bid) as avg_bid," +
+        " count(*) as imps , count(distinct(cookie)) as uniques" +
+        " from adImpressionStream window (duration 1 seconds, slide 1 seconds)" +
+        " where geo != 'unknown' group by publisher, geo")
 ```
 #### Ingesting into Column table
 Next, create the Column table and ingest result of continuous query of aggregating AdImpressionLogs. Here we use the Spark Data Source API to write to the aggrAdImpressions table. This will automatically localize the partitions in the data store without shuffling the data.
