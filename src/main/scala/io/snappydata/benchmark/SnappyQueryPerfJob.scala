@@ -3,12 +3,11 @@ package io.snappydata.benchmark
 import java.io.PrintWriter
 
 import com.typesafe.config.Config
-import org.apache.spark.sql.SnappySQLJob
-import spark.jobserver.{SparkJobValid, SparkJobValidation}
+import org.apache.spark.sql.{SnappyContext, SnappyJobValid, SnappyJobValidation, SnappySQLJob}
 
 class SnappyQueryPerfJob extends SnappySQLJob {
 
-  override def runJob(sc: C, jobConfig: Config): Any = {
+  override def runSnappyJob(sc: SnappyContext, jobConfig: Config): Any = {
     val outFileName = s"QueryPerf-${System.currentTimeMillis()}.out"
     val pw = new PrintWriter(outFileName)
     var start = System.currentTimeMillis()
@@ -33,7 +32,7 @@ class SnappyQueryPerfJob extends SnappySQLJob {
     pw.close()
   }
 
-  override def validate(sc: C, config: Config): SparkJobValidation = {
-    SparkJobValid
+  override def isValidJob(sc: SnappyContext, config: Config): SnappyJobValidation = {
+    SnappyJobValid()
   }
 }

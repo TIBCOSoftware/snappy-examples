@@ -20,7 +20,8 @@ package io.snappydata.adanalytics
 import com.typesafe.config.Config
 import io.snappydata.adanalytics.Configs._
 import org.apache.spark.sql.streaming.{SchemaDStream, SnappyStreamingJob}
-import spark.jobserver.{SparkJobValid, SparkJobValidation}
+import org.apache.spark.sql.{SnappyJobValid, SnappyJobValidation}
+import org.apache.spark.streaming.SnappyStreamingContext
 
 /**
   * Same as SnappySQLogAggregator except this streaming job runs in the data
@@ -35,7 +36,7 @@ import spark.jobserver.{SparkJobValid, SparkJobValidation}
   */
 class SnappySQLLogAggregatorJob extends SnappyStreamingJob {
 
-  override def runJob(snsc: C, jobConfig: Config): Any = {
+  override def runSnappyJob(snsc: SnappyStreamingContext, jobConfig: Config): Any = {
     //Spark tip : Keep shuffle count low when data volume is low.
     snsc.sql("set spark.sql.shuffle.partitions=8")
 
@@ -84,7 +85,7 @@ class SnappySQLLogAggregatorJob extends SnappyStreamingJob {
     snsc.awaitTermination()
   }
 
-  override def validate(snsc: C, config: Config): SparkJobValidation = {
-    SparkJobValid
+  override def isValidJob(snsc: SnappyStreamingContext, config: Config): SnappyJobValidation = {
+    SnappyJobValid()
   }
 }

@@ -16,6 +16,7 @@ allprojects {
     maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
     maven { url "http://repository.snappydata.io:8089/repository/internal" }
     maven { url "http://repository.snappydata.io:8089/repository/snapshots" }
+    maven { url "http://mvnrepository.com/artifact" }
     maven { url 'https://clojars.org/repo' }
   }
 
@@ -54,7 +55,9 @@ allprojects {
   javadoc.classpath += configurations.provided
 
   ext {
-    sparkVersion = '1.6.1'
+    sparkVersion = '2.0.1-2'
+    scalaVersion = '2.11'
+    snappyVersion = '0.6'
   }
 
   configurations.all {
@@ -69,13 +72,14 @@ allprojects {
 }
 
 dependencies {
-  provided 'io.snappydata:snappy-core_2.10:0.5.0-PREVIEW'
-  provided 'io.snappydata:snappy-cluster_2.10:0.5.0-PREVIEW'
-  provided "io.snappydata:snappy-spark-core_2.10:${sparkVersion}"
-  provided "io.snappydata:snappy-spark-catalyst_2.10:${sparkVersion}"
-  provided "io.snappydata:snappy-spark-sql_2.10:${sparkVersion}"
-  provided "io.snappydata:snappy-spark-streaming_2.10:${sparkVersion}"
-  provided 'io.snappydata:snappy-aqp_2.10:0.5.0-PREVIEW'
+  provided "io.snappydata:snappydata-core_${scalaVersion}:${snappyVersion}"
+  provided "io.snappydata:snappydata-cluster_${scalaVersion}:${snappyVersion}"
+  provided "io.snappydata:snappy-spark-core_${scalaVersion}:${sparkVersion}"
+  provided "io.snappydata:snappy-spark-catalyst_${scalaVersion}:${sparkVersion}"
+  provided "io.snappydata:snappy-spark-sql_${scalaVersion}:${sparkVersion}"
+  provided "io.snappydata:snappydata-aqp_${scalaVersion}:${snappyVersion}"
+  provided group: 'io.snappydata', name: 'snappy-spark-streaming-kafka-0.8_2.11', version: '2.0.1-2'
+
   compile 'com.miguno:kafka-avro-codec_2.10:0.1.1-SNAPSHOT'
   compile 'org.apache.kafka:kafka_2.10:0.8.2.1'
   compile 'com.twitter:algebird-core_2.10:0.1.11'
@@ -92,6 +96,7 @@ task generateAvro(type: com.commercehub.gradle.plugin.avro.GenerateAvroJavaTask)
 compileJava.source(generateAvro.outputs)
 
 avro.stringType = "charSequence"
+
 
 ext {
   assemblyJar = rootProject.tasks.getByPath(':assembly:shadowJar').outputs

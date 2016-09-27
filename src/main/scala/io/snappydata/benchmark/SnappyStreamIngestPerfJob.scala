@@ -1,14 +1,14 @@
 package io.snappydata.benchmark
 
 import com.typesafe.config.Config
-import io.snappydata.adanalytics.Configs
-import Configs._
+import io.snappydata.adanalytics.Configs._
 import org.apache.spark.sql.streaming.SnappyStreamingJob
-import spark.jobserver.{SparkJobValid, SparkJobValidation}
+import org.apache.spark.sql.{SnappyJobValid, SnappyJobValidation}
+import org.apache.spark.streaming.SnappyStreamingContext
 
 class SnappyStreamIngestPerfJob extends SnappyStreamingJob {
 
-  override def runJob(snsc: C, jobConfig: Config): Any = {
+  override def runSnappyJob(snsc: SnappyStreamingContext, jobConfig: Config): Any = {
     //snsc.sql("drop table if exists adImpressions")
     snsc.sql("drop table if exists adImpressionStream")
 
@@ -49,7 +49,7 @@ class SnappyStreamIngestPerfJob extends SnappyStreamingJob {
     snsc.awaitTermination
   }
 
-  override def validate(snsc: C, config: Config): SparkJobValidation = {
-    SparkJobValid
+  override def isValidJob(snsc: SnappyStreamingContext, config: Config): SnappyJobValidation = {
+    SnappyJobValid()
   }
 }
