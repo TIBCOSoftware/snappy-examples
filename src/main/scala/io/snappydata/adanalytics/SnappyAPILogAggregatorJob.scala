@@ -20,11 +20,10 @@ package io.snappydata.adanalytics
 import com.typesafe.config.Config
 import io.snappydata.adanalytics.Configs._
 import kafka.serializer.StringDecoder
-import org.apache.spark.sql.Row
 import org.apache.spark.sql.streaming.{SchemaDStream, SnappyStreamingJob}
-import org.apache.spark.streaming.Seconds
+import org.apache.spark.sql.{Row, SnappyJobValid, SnappyJobValidation}
 import org.apache.spark.streaming.kafka.KafkaUtils
-import spark.jobserver.{SparkJobValid, SparkJobValidation}
+import org.apache.spark.streaming.{Seconds, SnappyStreamingContext}
 
 /**
  * Same as SnappyAPILogAggregator except this streaming job runs in the data
@@ -42,10 +41,10 @@ class SnappyAPILogAggregatorJob extends SnappyStreamingJob {
   /** contains the implementation of the Job, Snappy uses this as
     * an entry point to execute Snappy job
     */
-  override def runJob(snsc: C, jobConfig: Config): Any = {
+  override def runSnappyJob(snsc: SnappyStreamingContext, jobConfig: Config): Any = {
 
     // The volumes are low. Optimize Spark shuffle by reducing the partition count
-    snsc.sql("set spark.sql.shuffle.partitions=8")
+    snsc.snappySession.sql("set spark.sql.shuffle.partitions=8")
 
     // stream of (topic, ImpressionLog)
     val messages = KafkaUtils.createDirectStream
@@ -80,7 +79,7 @@ class SnappyAPILogAggregatorJob extends SnappyStreamingJob {
     snsc.awaitTermination()
   }
 
-  override def validate(snsc: C, config: Config): SparkJobValidation = {
-    SparkJobValid
+  override def isValidJob(snsc: SnappyStreamingContext, config: Config): SnappyJobValidation = {
+    SnappyJobValid()
   }
 }

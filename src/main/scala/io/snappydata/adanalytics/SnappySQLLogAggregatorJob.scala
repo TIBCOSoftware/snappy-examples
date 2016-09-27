@@ -20,7 +20,8 @@ package io.snappydata.adanalytics
 import com.typesafe.config.Config
 import io.snappydata.adanalytics.Configs._
 import org.apache.spark.sql.streaming.{SchemaDStream, SnappyStreamingJob}
-import spark.jobserver.{SparkJobValid, SparkJobValidation}
+import org.apache.spark.sql.{SnappyJobValid, SnappyJobValidation}
+import org.apache.spark.streaming.SnappyStreamingContext
 
 /**
   * Same as SnappySQLogAggregator except this streaming job runs in the data
@@ -35,15 +36,15 @@ import spark.jobserver.{SparkJobValid, SparkJobValidation}
   */
 class SnappySQLLogAggregatorJob extends SnappyStreamingJob {
 
-  override def runJob(snsc: C, jobConfig: Config): Any = {
+  override def runSnappyJob(snsc: SnappyStreamingContext, jobConfig: Config): Any = {
     //Spark tip : Keep shuffle count low when data volume is low.
     snsc.sql("set spark.sql.shuffle.partitions=8")
 
-    snsc.sql("drop table if exists adImpressionStream")
-    snsc.sql("drop table if exists sampledAdImpressions")
-    snsc.sql("drop table if exists aggrAdImpressions")
+    snsc.snappySession.sql("drop table if exists adImpressionStream")
+    snsc.snappySession.sql("drop table if exists sampledAdImpressions")
+    snsc.snappySession.sql("drop table if exists aggrAdImpressions")
 
-    snsc.sql("create stream table adImpressionStream (" +
+    snsc.snappySession.sql("create stream table adImpressionStream (" +
       " time_stamp timestamp," +
       " publisher string," +
       " advertiser string," +
@@ -61,11 +62,11 @@ class SnappySQLLogAggregatorJob extends SnappyStreamingJob {
       " VD 'io.snappydata.adanalytics.AdImpressionLogAvroDecoder')")
 
     // Next, create the Column table where we ingest all our data into.
-    snsc.sql("create table aggrAdImpressions(time_stamp timestamp, publisher string," +
+    snsc.snappySession.sql("create table aggrAdImpressions(time_stamp timestamp, publisher string," +
       " geo string, avg_bid double, imps long, uniques long) " +
       "using column options(buckets '11')")
 
-    snsc.sql("CREATE SAMPLE TABLE sampledAdImpressions" +
+    snsc.snappySession.sql("CREATE SAMPLE TABLE sampledAdImpressions" +
       " OPTIONS(qcs 'geo,publisher', fraction '0.03', strataReservoirSize '50', baseTable 'aggrAdImpressions')")
 
     // Execute this query once every second. Output is a SchemaDStream.
@@ -84,7 +85,7 @@ class SnappySQLLogAggregatorJob extends SnappyStreamingJob {
     snsc.awaitTermination()
   }
 
-  override def validate(snsc: C, config: Config): SparkJobValidation = {
-    SparkJobValid
+  override def isValidJob(snsc: SnappyStreamingContext, config: Config): SnappyJobValidation = {
+    SnappyJobValid()
   }
 }

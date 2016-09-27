@@ -1,20 +1,20 @@
 package io.snappydata.benchmark
 
 import com.typesafe.config.Config
-import io.snappydata.adanalytics.Configs
-import Configs._
+import io.snappydata.adanalytics.Configs._
 import org.apache.spark.sql.streaming.SnappyStreamingJob
-import spark.jobserver.{SparkJobValid, SparkJobValidation}
+import org.apache.spark.sql.{SnappyJobValid, SnappyJobValidation}
+import org.apache.spark.streaming.SnappyStreamingContext
 
 class SnappyStreamIngestPerfJob extends SnappyStreamingJob {
 
-  override def runJob(snsc: C, jobConfig: Config): Any = {
+  override def runSnappyJob(snsc: SnappyStreamingContext, jobConfig: Config): Any = {
     //snsc.sql("drop table if exists adImpressions")
-    snsc.sql("drop table if exists adImpressionStream")
+    snsc.snappySession.sql("drop table if exists adImpressionStream")
 
     // Create a stream of AdImpressionLog which will pull the log messages
     // from Kafka broker
-    snsc.sql("create stream table adImpressionStream (" +
+    snsc.snappySession.sql("create stream table adImpressionStream (" +
       " time_stamp timestamp," +
       " publisher string," +
       " advertiser string," +
@@ -31,12 +31,12 @@ class SnappyStreamIngestPerfJob extends SnappyStreamingJob {
       " KD 'kafka.serializer.StringDecoder', " +
       " VD 'io.snappydata.adanalytics.AdImpressionLogAvroDecoder')")
 
-    snsc.sql("create table adImpressions(times_tamp timestamp, publisher string, " +
+    snsc.snappySession.sql("create table adImpressions(times_tamp timestamp, publisher string, " +
       "advertiser string, website string, geo string, bid double, cookie string) " +
       "using column " +
       "options ( buckets '29')")
 
-    snsc.sql("CREATE SAMPLE TABLE sampledAdImpressions" +
+    snsc.snappySession.sql("CREATE SAMPLE TABLE sampledAdImpressions" +
       " OPTIONS(qcs 'geo,publisher', fraction '0.02', strataReservoirSize '50', baseTable 'adImpressions')")
 
     // Save the streaming data to snappy store per second (btachDuration)
@@ -49,7 +49,7 @@ class SnappyStreamIngestPerfJob extends SnappyStreamingJob {
     snsc.awaitTermination
   }
 
-  override def validate(snsc: C, config: Config): SparkJobValidation = {
-    SparkJobValid
+  override def isValidJob(snsc: SnappyStreamingContext, config: Config): SnappyJobValidation = {
+    SnappyJobValid()
   }
 }
