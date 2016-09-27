@@ -40,11 +40,11 @@ class SnappySQLLogAggregatorJob extends SnappyStreamingJob {
     //Spark tip : Keep shuffle count low when data volume is low.
     snsc.sql("set spark.sql.shuffle.partitions=8")
 
-    snsc.snappySession.sql("drop table if exists adImpressionStream")
-    snsc.snappySession.sql("drop table if exists sampledAdImpressions")
-    snsc.snappySession.sql("drop table if exists aggrAdImpressions")
+    snsc.sql("drop table if exists adImpressionStream")
+    snsc.sql("drop table if exists sampledAdImpressions")
+    snsc.sql("drop table if exists aggrAdImpressions")
 
-    snsc.snappySession.sql("create stream table adImpressionStream (" +
+    snsc.sql("create stream table adImpressionStream (" +
       " time_stamp timestamp," +
       " publisher string," +
       " advertiser string," +
@@ -62,11 +62,11 @@ class SnappySQLLogAggregatorJob extends SnappyStreamingJob {
       " VD 'io.snappydata.adanalytics.AdImpressionLogAvroDecoder')")
 
     // Next, create the Column table where we ingest all our data into.
-    snsc.snappySession.sql("create table aggrAdImpressions(time_stamp timestamp, publisher string," +
+    snsc.sql("create table aggrAdImpressions(time_stamp timestamp, publisher string," +
       " geo string, avg_bid double, imps long, uniques long) " +
       "using column options(buckets '11')")
 
-    snsc.snappySession.sql("CREATE SAMPLE TABLE sampledAdImpressions" +
+    snsc.sql("CREATE SAMPLE TABLE sampledAdImpressions" +
       " OPTIONS(qcs 'geo,publisher', fraction '0.03', strataReservoirSize '50', baseTable 'aggrAdImpressions')")
 
     // Execute this query once every second. Output is a SchemaDStream.

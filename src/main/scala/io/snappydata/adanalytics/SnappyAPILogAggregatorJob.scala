@@ -44,7 +44,7 @@ class SnappyAPILogAggregatorJob extends SnappyStreamingJob {
   override def runSnappyJob(snsc: SnappyStreamingContext, jobConfig: Config): Any = {
 
     // The volumes are low. Optimize Spark shuffle by reducing the partition count
-    snsc.snappySession.sql("set spark.sql.shuffle.partitions=8")
+    snsc.sql("set spark.sql.shuffle.partitions=8")
 
     // stream of (topic, ImpressionLog)
     val messages = KafkaUtils.createDirectStream

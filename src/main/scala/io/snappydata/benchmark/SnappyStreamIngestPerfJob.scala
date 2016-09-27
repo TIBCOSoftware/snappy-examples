@@ -10,11 +10,11 @@ class SnappyStreamIngestPerfJob extends SnappyStreamingJob {
 
   override def runSnappyJob(snsc: SnappyStreamingContext, jobConfig: Config): Any = {
     //snsc.sql("drop table if exists adImpressions")
-    snsc.snappySession.sql("drop table if exists adImpressionStream")
+    snsc.sql("drop table if exists adImpressionStream")
 
     // Create a stream of AdImpressionLog which will pull the log messages
     // from Kafka broker
-    snsc.snappySession.sql("create stream table adImpressionStream (" +
+    snsc.sql("create stream table adImpressionStream (" +
       " time_stamp timestamp," +
       " publisher string," +
       " advertiser string," +
@@ -31,12 +31,12 @@ class SnappyStreamIngestPerfJob extends SnappyStreamingJob {
       " KD 'kafka.serializer.StringDecoder', " +
       " VD 'io.snappydata.adanalytics.AdImpressionLogAvroDecoder')")
 
-    snsc.snappySession.sql("create table adImpressions(times_tamp timestamp, publisher string, " +
+    snsc.sql("create table adImpressions(times_tamp timestamp, publisher string, " +
       "advertiser string, website string, geo string, bid double, cookie string) " +
       "using column " +
       "options ( buckets '29')")
 
-    snsc.snappySession.sql("CREATE SAMPLE TABLE sampledAdImpressions" +
+    snsc.sql("CREATE SAMPLE TABLE sampledAdImpressions" +
       " OPTIONS(qcs 'geo,publisher', fraction '0.02', strataReservoirSize '50', baseTable 'adImpressions')")
 
     // Save the streaming data to snappy store per second (btachDuration)
