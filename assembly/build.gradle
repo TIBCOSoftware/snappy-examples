@@ -1,6 +1,6 @@
 apply plugin: 'com.github.johnrengelman.shadow'
 
-archivesBaseName = 'AdImpressionLogAggr'
+archivesBaseName = 'snappy-poc'
 
 dependencies {
   compile rootProject

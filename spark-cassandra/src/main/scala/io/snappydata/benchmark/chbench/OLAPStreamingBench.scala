@@ -18,10 +18,6 @@ object OLAPStreamingBench extends App {
   val master = "local[*]"
   val numWH = 10
   val memory = "8g"
-  //val host = "172.31.13.52"
-  //val master = "spark://ip-172-31-13-48:7077"
-  //val numWH = 1000
-  //val memory = "28g"
 
   val conf = new SparkConf(true)
     .setAppName(getClass.getSimpleName)
@@ -176,7 +172,6 @@ object OLAPStreamingBench extends App {
         }
       } catch {
         case e: Throwable => pw.println(s"$tid Exception for query ${q._1}:  " + e)
-          pw.println(e.getStackTraceString)
       }
       val end: Long = System.currentTimeMillis - start
       pw.println(s"${new java.util.Date(System.currentTimeMillis())} $tid Time taken by ${q._1} is $end")

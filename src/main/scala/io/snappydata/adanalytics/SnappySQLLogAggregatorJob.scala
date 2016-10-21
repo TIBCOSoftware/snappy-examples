@@ -21,7 +21,7 @@ import com.typesafe.config.Config
 import io.snappydata.adanalytics.Configs._
 import org.apache.spark.sql.streaming.{SchemaDStream, SnappyStreamingJob}
 import org.apache.spark.sql.{SnappyJobValid, SnappyJobValidation}
-import org.apache.spark.streaming.SnappyStreamingContext
+import org.apache.spark.streaming.{Seconds, SnappyStreamingContext}
 
 /**
   * Same as SnappySQLogAggregator except this streaming job runs in the data
@@ -37,6 +37,7 @@ import org.apache.spark.streaming.SnappyStreamingContext
 class SnappySQLLogAggregatorJob extends SnappyStreamingJob {
 
   override def runSnappyJob(snsc: SnappyStreamingContext, jobConfig: Config): Any = {
+
     //Spark tip : Keep shuffle count low when data volume is low.
     snsc.sql("set spark.sql.shuffle.partitions=8")
 
@@ -54,7 +55,7 @@ class SnappySQLLogAggregatorJob extends SnappyStreamingJob {
       " cookie string) " +
       " using directkafka_stream options(" +
       " rowConverter 'io.snappydata.adanalytics.AdImpressionToRowsConverter' ," +
-      s" kafkaParams 'metadata.broker.list->$brokerList'," +
+      s" kafkaParams 'metadata.broker.list->$brokerList;auto.offset.reset->smallest'," +
       s" topics '$kafkaTopic'," +
       " K 'java.lang.String'," +
       " V 'io.snappydata.adanalytics.AdImpressionLog', " +

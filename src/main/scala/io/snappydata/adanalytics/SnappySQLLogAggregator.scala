@@ -82,7 +82,7 @@ object SnappySQLLogAggregator extends App {
     " cookie string) " +
     " using directkafka_stream options(" +
     " rowConverter 'io.snappydata.adanalytics.AdImpressionToRowsConverter' ," +
-    s" kafkaParams 'metadata.broker.list->$brokerList'," +
+    s" kafkaParams 'metadata.broker.list->$brokerList;auto.offset.reset->smallest'," +
     s" topics '$kafkaTopic'," +
     " K 'java.lang.String'," +
     " V 'io.snappydata.adanalytics.AdImpressionLog', " +
