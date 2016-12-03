@@ -4,7 +4,7 @@ archivesBaseName = 'snappy-poc'
 
 dependencies {
   compile rootProject
-  compile project(':spark-memsql')
+  // compile project(':spark-memsql')
   compile project(':spark-cassandra')
   compile project(':rabbitmq-snappy')
 }

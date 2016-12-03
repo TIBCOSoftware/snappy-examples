@@ -1,4 +1,4 @@
-package io.snappydata.benchmark
+package org.cassandra.benchmark
 
 import com.typesafe.config.Config
 import io.snappydata.adanalytics.Configs._

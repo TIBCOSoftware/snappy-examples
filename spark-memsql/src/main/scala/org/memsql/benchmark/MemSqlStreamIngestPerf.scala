@@ -15,16 +15,14 @@
  * LICENSE file.
  */
 
-package io.snappydata.benchmark
+package org.memsql.benchmark
 
 import com.memsql.spark.connector.MemSQLContext
-import io.snappydata.adanalytics.{Configs, AdImpressionLogToRowRDD, AdImpressionLogAvroDecoder}
-import Configs._
-import io.snappydata.adanalytics.AdImpressionLog
 import kafka.serializer.StringDecoder
 import org.apache.spark.streaming.StreamingContext
 import org.apache.spark.streaming.kafka.KafkaUtils
 import org.apache.spark.{SparkConf, SparkContext}
+import MConfigs._
 
 /**
   * Simple direct kafka spark streaming program which pulls log messages
@@ -36,7 +34,8 @@ object MemSqlStreamIngestPerf extends App {
 
   val conf = new SparkConf()
     .setAppName(getClass.getSimpleName)
-    .setMaster(s"$sparkMasterURL")
+    //.setMaster(s"$sparkMasterURL")
+    .setMaster("local[*]")
     .set("spark.executor.cores", "6")
 
   val assemblyJar = System.getenv("PROJECT_ASSEMBLY_JAR")
@@ -77,14 +76,14 @@ object MemSqlStreamIngestPerf extends App {
 
   val schema = msc.table("adLogs.adImpressions").schema
 
-  val rowConverter = new AdImpressionLogToRowRDD
+  val rowConverter = new MAdImpressionLogToRowRDD
 
   import com.memsql.spark.connector._
 
   // Creates a stream of AdImpressionLog using kafka direct that pulls
   // messages from a Kafka Broker
   val messages = KafkaUtils.createDirectStream
-    [String, AdImpressionLog, StringDecoder, AdImpressionLogAvroDecoder](ssc, kafkaParams, topics)
+    [String, MAdImpressionLog, StringDecoder, MAdImpressionLogAvroDecoder](ssc, kafkaParams, topics)
 
   // transform the Spark RDDs as per the table schema and save it to MemSql
   messages.map(_._2).foreachRDD(rdd => {

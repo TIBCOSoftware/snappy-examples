@@ -15,7 +15,7 @@
  * LICENSE file.
  */
 
-package io.snappydata.benchmark
+package org.cassandra.benchmark
 
 import com.datastax.spark.connector.SomeColumns
 import com.datastax.spark.connector.cql.CassandraConnector
@@ -24,7 +24,6 @@ import io.snappydata.adanalytics.Configs._
 import io.snappydata.adanalytics.AdImpressionLog
 import kafka.serializer.StringDecoder
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.sql.cassandra.CassandraSQLContext
 import org.apache.spark.streaming.StreamingContext
 import org.apache.spark.streaming.kafka.KafkaUtils
 import org.apache.spark.{SparkConf, SparkContext}
@@ -50,7 +49,7 @@ object CassandraStreamIngestPerf extends App {
     .set("spark.cassandra.output.concurrent.writes", "32")
     .set("spark.cassandra.output.consistency.level", "ANY")
     .set("spark.cassandra.output.batch.grouping.key", "none") ///replica_set/partition
-    .set("spark.cassandra.sql.keyspace", "adlogs")
+    // .set("spark.cassandra.sql.keyspace", "adlogs")
     .set("spark.executor.cores", "2")
     //.set("spark.cassandra.output.batch.size.rows", "500")
     //.set("spark.cassandra.output.batch.grouping.buffer.size", "1") //1000
@@ -62,8 +61,10 @@ object CassandraStreamIngestPerf extends App {
     conf.set("spark.driver.extraClassPath", assemblyJar)
     conf.set("spark.executor.extraClassPath", assemblyJar)
   }
-  val sc = new SparkContext(conf)
-  val csc = new CassandraSQLContext(sc)
+//  val sc = new SparkContext(conf)
+//  val csc = new CassandraSQLContext(sc)
+  val sc = new SparkContext("local[*]", "test", conf)
+// spark://localhost:7077
   CassandraConnector(conf).withSessionDo { session =>
     // Create keysapce and table in Cassandra
     session.execute(s"DROP KEYSPACE IF EXISTS adlogs")
@@ -73,7 +74,6 @@ object CassandraStreamIngestPerf extends App {
       s"(timestamp bigint, publisher text, advertiser text, " +
       "website text, geo text, bid double, cookie text, primary key (timestamp, cookie))")
   }
-  csc.setKeyspace("adlogs")
 
   // batchDuration of 1 second
   val ssc = new StreamingContext(sc, batchDuration)

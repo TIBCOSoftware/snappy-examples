@@ -15,7 +15,7 @@
  * LICENSE file.
  */
 
-package io.snappydata.benchmark
+package org.cassandra.benchmark
 
 import io.snappydata.adanalytics.Configs._
 import org.apache.spark.SparkContext

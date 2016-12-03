@@ -14,7 +14,7 @@
  * permissions and limitations under the License. See accompanying
  * LICENSE file.
  */
-package io.snappydata.benchmark
+package org.cassandra.benchmark
 
 import java.io.{ByteArrayOutputStream, IOException}
 import java.net.ServerSocket

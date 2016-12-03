@@ -1,4 +1,4 @@
-package io.snappydata.benchmark
+package org.cassandra.benchmark
 
 import java.io.PrintWriter
 

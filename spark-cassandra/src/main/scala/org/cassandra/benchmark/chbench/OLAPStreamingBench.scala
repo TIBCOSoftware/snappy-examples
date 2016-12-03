@@ -1,10 +1,26 @@
-package io.snappydata.benchmark.chbench
+/*
+ * Copyright (c) 2016 SnappyData, Inc. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you
+ * may not use this file except in compliance with the License. You
+ * may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License. See accompanying
+ * LICENSE file.
+ */
+
+package org.cassandra.benchmark.chbench
 
 import java.io.PrintWriter
 
 import com.datastax.spark.connector.cql.CassandraConnector
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.sql.cassandra.CassandraSQLContext
 import org.apache.spark.sql.types.{IntegerType, StructType, TimestampType}
 import org.apache.spark.sql.{DataFrame, Row}
 import org.apache.spark.streaming.{Duration, StreamingContext}
@@ -39,14 +55,12 @@ object OLAPStreamingBench extends App {
   }
 
   val sc = new SparkContext(conf)
-  val cc = new CassandraSQLContext(sc)
+  val sqlContext = new org.apache.spark.sql.SQLContext(sc)
   val ssc = new StreamingContext(sc, Duration(2000))
 
-  cc.setKeyspace("tpcc")
   CassandraConnector(conf).withSessionDo { session =>
     println("******* CONNECTED TO CASSANDRA **********")
   }
-  cc.sql("set spark.sql.shuffle.partitions=64")
 
   val stream = ssc.receiverStream[ClickStreamCustomer](
     new BenchmarkingReceiver(10000, numWH, 10, 30000, 100000))
@@ -65,7 +79,7 @@ object OLAPStreamingBench extends App {
   val window_rows = rows.window(new Duration(60 * 1000), new Duration(60 * 1000))
 
   window_rows.foreachRDD(rdd => {
-    val df = cc.createDataFrame(rdd, schema)
+    val df = sqlContext.createDataFrame(rdd, schema)
     val outFileName = s"BenchmarkingStreamingJob-${System.currentTimeMillis()}.out"
     val pw = new PrintWriter(outFileName)
     val clickstreamlog = "benchmarking" + System.currentTimeMillis()
@@ -74,8 +88,8 @@ object OLAPStreamingBench extends App {
     // price range greater than a particular amount.
     var resultdfQ1: DataFrame = null
     var resultdfQ2: DataFrame = null
-    cc.synchronized {
-      resultdfQ1 = cc.sql(s"select i_id, count(i_id) from " +
+    sqlContext.synchronized {
+      resultdfQ1 = sqlContext.sql(s"select i_id, count(i_id) from " +
         s" $clickstreamlog, item " +
         " where i_id = cs_i_id " +
         " AND i_price > 50 " +
@@ -83,7 +97,7 @@ object OLAPStreamingBench extends App {
 
       // Find out which district's customer are currently more online active to
       // stop tv commercials in those districts
-      resultdfQ2 = cc.sql("select avg(cs_timespent) as avgtimespent , cs_c_d_id " +
+      resultdfQ2 = sqlContext.sql("select avg(cs_timespent) as avgtimespent , cs_c_d_id " +
         s"from $clickstreamlog group by cs_c_d_id order by avgtimespent")
     }
 
@@ -118,45 +132,45 @@ object OLAPStreamingBench extends App {
         q._1 match {
           case "Q11" =>
             var df : DataFrame = null
-            cc.synchronized {
-              df = cc.sql(HQueries.Q11a)
+            sqlContext.synchronized {
+              df = sqlContext.sql(HQueries.Q11a)
             }
             val ret = df.collect()
             assert(ret.length == 1)
             val paramVal = ret(0).getDecimal(0)
             val qry = q._2.replace("?", paramVal.toString)
-            cc.synchronized {
-              df = cc.sql(qry)
+            sqlContext.synchronized {
+              df = sqlContext.sql(qry)
             }
             df.collect()
           case "Q15" =>
             var ret : DataFrame = null
-            cc.synchronized {
-              ret = cc.sql(HQueries.Q15a)
+            sqlContext.synchronized {
+              ret = sqlContext.sql(HQueries.Q15a)
             }
             ret.registerTempTable("revenue")
             var df : DataFrame = null
-            cc.synchronized {
-              df = cc.sql(HQueries.Q15b)
+            sqlContext.synchronized {
+              df = sqlContext.sql(HQueries.Q15b)
             }
             val maxV = df.collect()
             val paramVal = maxV(0).getDouble(0)
             val qry = q._2.replace("?", paramVal.toString)
-            cc.synchronized {
-              df = cc.sql(qry)
+            sqlContext.synchronized {
+              df = sqlContext.sql(qry)
             }
             df.collect()
           case "Q22" =>
             var df: DataFrame = null
-            cc.synchronized {
-              df = cc.sql(HQueries.Q22a)
+            sqlContext.synchronized {
+              df = sqlContext.sql(HQueries.Q22a)
             }
             val ret = df.collect()
             assert(ret.length == 1)
             val paramVal = ret(0).getDouble(0)
             val qry = q._2.replace("?", paramVal.toString)
-            cc.synchronized {
-              df = cc.sql(qry)
+            sqlContext.synchronized {
+              df = sqlContext.sql(qry)
             }
             df.collect()
           case "Q16" | "Q20" | "Q21" =>
@@ -165,8 +179,8 @@ object OLAPStreamingBench extends App {
           //cc.sql(q._2).collect()
           case _ =>
             var df: DataFrame = null
-            cc.synchronized {
-              df = cc.sql(q._2)
+            sqlContext.synchronized {
+              df = sqlContext.sql(q._2)
             }
             df.collect()
         }
