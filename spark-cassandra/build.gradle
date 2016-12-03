@@ -21,9 +21,10 @@ task startCassandraStreamIngestPerf(type: JavaExec, dependsOn: classes) {
 task startCassandraQueryPerf(type: JavaExec, dependsOn: classes) {
   dependsOn ':assembly:shadowJar'
   main = 'org.cassandra.benchmark.CassandraQueryPerf'
-  def filterGuava = sourceSets.test.runtimeClasspath.findAll { !it.getName().contains('guava-14') }
-  classpath filterGuava
-  environment 'PROJECT_ASSEMBLY_JAR', "~/guava-16.0.1.jar:~/AdImpressionLogAggr-0.3-assembly.jar"
+  classpath sourceSets.test.runtimeClasspath
+//  def filterGuava = sourceSets.test.runtimeClasspath.findAll { !it.getName().contains('guava-14') }
+//  classpath filterGuava
+//  environment 'PROJECT_ASSEMBLY_JAR', "~/guava-16.0.1.jar:~/AdImpressionLogAggr-0.3-assembly.jar"
 }
 
 task startOLAPStreamingBenchmark(type: JavaExec, dependsOn: classes) {
