@@ -14,17 +14,16 @@
  * permissions and limitations under the License. See accompanying
  * LICENSE file.
  */
-package org.cassandra.benchmark
+package io.snappydata.benchmark
 
 import java.io.{ByteArrayOutputStream, IOException}
 import java.net.ServerSocket
 
-import io.snappydata.adanalytics.{Configs, AdImpressionGenerator}
-import io.snappydata.adanalytics.AdImpressionLog
+import io.snappydata.adanalytics.Configs._
+import io.snappydata.adanalytics.{AdImpressionGenerator, AdImpressionLog}
 import org.apache.avro.io.EncoderFactory
 import org.apache.avro.specific.SpecificDatumWriter
 import org.apache.spark.streaming.StreamUtils
-import Configs._
 
 /**
   * A Simple program which writes Avro objects to socket stream

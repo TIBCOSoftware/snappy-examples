@@ -14,24 +14,24 @@
  * permissions and limitations under the License. See accompanying
  * LICENSE file.
  */
+package io.snappydata.benchmark
 
-package org.cassandra.benchmark
-
-import io.snappydata.adanalytics.{Configs, AdImpressionGenerator}
-import Configs._
 import io.snappydata.adanalytics.AdImpressionLog
+import io.snappydata.adanalytics.Configs._
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Row
-import org.apache.spark.storage.StorageLevel
 import org.apache.spark.streaming.SnappyStreamingContext
-import org.apache.spark.streaming.receiver.Receiver
 import org.apache.spark.{SparkConf, SparkContext}
 
-object CustomReceiverSnappyIngestionPerf extends App {
+import scala.collection.mutable.Queue
+
+object CSVSnappyIngestionPerf extends App {
 
   val sparkConf = new SparkConf()
     .setAppName(getClass.getSimpleName)
     .setMaster(s"$sparkMasterURL")
     .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+
 
   val assemblyJar = System.getenv("PROJECT_ASSEMBLY_JAR")
   if (assemblyJar != null) {
@@ -40,13 +40,16 @@ object CustomReceiverSnappyIngestionPerf extends App {
   }
 
   val sc = new SparkContext(sparkConf)
+
   val snsc = new SnappyStreamingContext(sc, batchDuration)
 
   snsc.snappyContext.dropTable("adImpressions", ifExists = true)
 
-  val stream = snsc.receiverStream[AdImpressionLog](new AdImpressionReceiver)
+  val rddQueue = Queue[RDD[AdImpressionLog]]()
 
-  val rows = stream.map(v => Row(new java.sql.Timestamp(v.getTimestamp), v.getPublisher.toString,
+  val logStream = snsc.queueStream(rddQueue)
+
+  val rows = logStream.map(v => Row(new java.sql.Timestamp(v.getTimestamp), v.getPublisher.toString,
     v.getAdvertiser.toString, v.getWebsite.toString, v.getGeo.toString, v.getBid, v.getCookie.toString))
 
   val logStreamAsTable = snsc.createSchemaDStream(rows, getAdImpressionSchema)
@@ -56,27 +59,33 @@ object CustomReceiverSnappyIngestionPerf extends App {
 
   logStreamAsTable.foreachDataFrame(_.write.insertInto("adImpressions"))
 
+/*  val csvReader = Future {
+
+    val csvFile = new CSVReader(new FileReader("adimpressions.csv"))
+    csvFile.iterator.asScala
+      .map { fields => {
+        val log = new AdImpressionLog()
+        log.setTimestamp(fields(0).toLong)
+        log.setPublisher(fields(1))
+        log.setAdvertiser(fields(2))
+        log.setWebsite(fields(3))
+        log.setGeo(fields(4))
+        log.setBid(fields(5).toDouble)
+        log.setCookie(fields(6))
+        log
+      }
+      }.grouped(100000).foreach { logs =>
+      val logRDD = sc.parallelize(logs, 8)
+      rddQueue += logRDD
+    }
+  }
+
+  csvReader.onComplete {
+    case Success(value) =>
+    case Failure(e) => e.printStackTrace
+  } */
+
   snsc.start()
   snsc.awaitTermination()
 
-}
-
-
-final class AdImpressionReceiver extends Receiver[AdImpressionLog](StorageLevel.MEMORY_AND_DISK_2) {
-  override def onStart() {
-    new Thread("AdImpressionReceiver") {
-      override def run() {
-        receive()
-      }
-    }.start()
-  }
-
-  override def onStop() {
-  }
-
-  private def receive() {
-    while (!isStopped()) {
-      store(AdImpressionGenerator.nextRandomAdImpression())
-    }
-  }
 }

@@ -2,9 +2,7 @@ dependencies {
   provided "org.apache.spark:spark-core_2.11:2.0.0"
   provided "org.apache.spark:spark-streaming_2.11:2.0.0"
   provided "org.apache.spark:spark-streaming-kafka_2.11:1.6.3"
-  // compile "org.apache.spark:spark-streaming-kafka_2.10:2.0.0" //required in assemble jar in cluster mode
   provided "org.apache.spark:spark-sql_2.11:2.0.0"
-
   compile project(':')
   compile 'com.datastax.spark:spark-cassandra-connector_2.11:2.0.0-M3'
 }
@@ -13,27 +11,19 @@ task startCassandraStreamIngestPerf(type: JavaExec, dependsOn: classes) {
   dependsOn ':assembly:shadowJar'
   main = 'org.cassandra.benchmark.CassandraStreamIngestPerf'
   classpath sourceSets.test.runtimeClasspath
-//  def filterGuava = sourceSets.test.runtimeClasspath.findAll { !it.getName().contains('guava-14') }
-//  classpath filterGuava
-//  environment 'PROJECT_ASSEMBLY_JAR', "~/guava-16.0.1.jar:~/AdImpressionLogAggr-0.3-assembly.jar"
 }
 
 task startCassandraQueryPerf(type: JavaExec, dependsOn: classes) {
   dependsOn ':assembly:shadowJar'
   main = 'org.cassandra.benchmark.CassandraQueryPerf'
   classpath sourceSets.test.runtimeClasspath
-//  def filterGuava = sourceSets.test.runtimeClasspath.findAll { !it.getName().contains('guava-14') }
-//  classpath filterGuava
-//  environment 'PROJECT_ASSEMBLY_JAR', "~/guava-16.0.1.jar:~/AdImpressionLogAggr-0.3-assembly.jar"
 }
 
 task startOLAPStreamingBenchmark(type: JavaExec, dependsOn: classes) {
   dependsOn ':assembly:shadowJar'
   main = 'org.cassandra.benchmark.chbench.OLAPStreamingBench'
   maxHeapSize = "57344m"
-  def filterGuava = sourceSets.test.runtimeClasspath.findAll { !it.getName().contains('guava-14') }
-  classpath filterGuava
-  environment 'PROJECT_ASSEMBLY_JAR', "~/guava-16.0.1.jar:~/AdImpressionLogAggr-0.3-assembly.jar"
+  classpath sourceSets.test.runtimeClasspath
 }
 
 

@@ -15,7 +15,7 @@
  * LICENSE file.
  */
 
-package org.cassandra.benchmark
+package io.snappydata.benchmark
 
 import java.util.Properties
 
