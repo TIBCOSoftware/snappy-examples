@@ -17,12 +17,15 @@
 
 package org.memsql.benchmark
 
-import com.memsql.spark.connector.MemSQLContext
+import io.snappydata.adanalytics.Configs._
+import io.snappydata.adanalytics.{AdImpressionLog, AdImpressionLogAvroDecoder, AdImpressionLogToRowRDD}
 import kafka.serializer.StringDecoder
 import org.apache.spark.streaming.StreamingContext
 import org.apache.spark.streaming.kafka.KafkaUtils
 import org.apache.spark.{SparkConf, SparkContext}
-import MConfigs._
+import com.memsql.spark.connector.MemSQLContext
+import org.apache.log4j.{Level, Logger}
+
 
 /**
   * Simple direct kafka spark streaming program which pulls log messages
@@ -32,10 +35,13 @@ import MConfigs._
   */
 object MemSqlStreamIngestPerf extends App {
 
+  val rootLogger = Logger.getLogger("org");
+  rootLogger.setLevel(Level.OFF);
+
   val conf = new SparkConf()
     .setAppName(getClass.getSimpleName)
-    //.setMaster(s"$sparkMasterURL")
     .setMaster("local[*]")
+    //.setMaster(s"$sparkMasterURL")
     .set("spark.executor.cores", "6")
 
   val assemblyJar = System.getenv("PROJECT_ASSEMBLY_JAR")
@@ -48,42 +54,42 @@ object MemSqlStreamIngestPerf extends App {
   val sc = new SparkContext(conf)
   val msc = new MemSQLContext(sc)
 
-  import com.memsql.spark.connector.util.JDBCImplicits._
-
-  msc.getMemSQLCluster.withMasterConn(conn => {
-    conn.withStatement(stmt => {
-      // Create database and table in MemSql
-      stmt.execute(s"CREATE DATABASE IF NOT EXISTS adLogs")
-      stmt.execute(s"DROP TABLE IF EXISTS adLogs.adImpressions")
-      stmt.execute(
-        s"""
-                CREATE TABLE adLogs.adImpressions
-                (timestamp bigint,
-                publisher varchar(15),
-                advertiser varchar(15),
-                website varchar(20),
-                geo varchar(4),
-                bid double,
-                cookie varchar(20),
-                KEY (`timestamp`) USING CLUSTERED COLUMNSTORE,
-                SHARD KEY (timestamp))
-              """)
-    })
-  })
+//  msc.getMemSQLCluster.withMasterConn(conn => {
+//    conn.withStatement(stmt => {
+//      // Create database and table in MemSql
+//      stmt.execute(s"CREATE DATABASE IF NOT EXISTS adLogs")
+//      stmt.execute(s"DROP TABLE IF EXISTS adLogs.adImpressions")
+//      stmt.execute(
+//        s"""
+//                CREATE TABLE adLogs.adImpressions
+//                (timestamp bigint,
+//                publisher varchar(15),
+//                advertiser varchar(15),
+//                website varchar(20),
+//                geo varchar(4),
+//                bid double,
+//                cookie varchar(20),
+//                KEY (`timestamp`) USING CLUSTERED COLUMNSTORE,
+//                SHARD KEY (timestamp))
+//              """)
+//    })
+//  })
 
   // batchDuration of 1 second
   val ssc = new StreamingContext(sc, batchDuration)
 
   val schema = msc.table("adLogs.adImpressions").schema
 
-  val rowConverter = new MAdImpressionLogToRowRDD
-
-  import com.memsql.spark.connector._
+  val rowConverter = new AdImpressionLogToRowRDD
 
   // Creates a stream of AdImpressionLog using kafka direct that pulls
   // messages from a Kafka Broker
   val messages = KafkaUtils.createDirectStream
-    [String, MAdImpressionLog, StringDecoder, MAdImpressionLogAvroDecoder](ssc, kafkaParams, topics)
+    [String, AdImpressionLog, StringDecoder, AdImpressionLogAvroDecoder](ssc, kafkaParams, topics)
+
+  import org.apache.spark.sql._
+  import org.apache.spark.sql.types._
+  import org.apache.spark.sql.memsql.SparkImplicits._
 
   // transform the Spark RDDs as per the table schema and save it to MemSql
   messages.map(_._2).foreachRDD(rdd => {

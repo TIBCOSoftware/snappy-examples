@@ -17,34 +17,16 @@
 
 package io.snappydata.adanalytics
 
-import com.miguno.kafka.avro.{AvroDecoder, AvroEncoder}
-import kafka.utils.VerifiableProperties
-import org.apache.avro.io.DecoderFactory
-import org.apache.avro.specific.SpecificDatumReader
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.streaming.{StreamConverter, StreamToRowsConverter}
+import com.miguno.kafka.avro.{AvroDecoder, AvroEncoder}
+import kafka.utils.VerifiableProperties
 
 class AdImpressionLogAvroEncoder(props: VerifiableProperties = null)
   extends AvroEncoder[AdImpressionLog](props, AdImpressionLog.getClassSchema)
 
 class AdImpressionLogAvroDecoder(props: VerifiableProperties = null)
   extends AvroDecoder[AdImpressionLog](props, AdImpressionLog.getClassSchema)
-
-class AdImpressionToRowsConverter extends StreamToRowsConverter with Serializable {
-
-  override def toRows(message: Any): Seq[Row] = {
-    val log = message.asInstanceOf[AdImpressionLog]
-    Seq(Row.fromSeq(Seq(
-      new java.sql.Timestamp(log.getTimestamp),
-      log.getPublisher.toString,
-      log.getAdvertiser.toString,
-      log.getWebsite.toString,
-      log.getGeo.toString,
-      log.getBid,
-      log.getCookie.toString)))
-  }
-}
 
 /**
   * Convertes Spark RDD[AdImpressionLog] to RDD[Row]
@@ -63,32 +45,4 @@ class AdImpressionLogToRowRDD extends Serializable {
         log.getCookie.toString)
     })
   }
-}
-
-
-class AvroSocketStreamConverter extends StreamConverter with Serializable {
-  override def convert(inputStream: java.io.InputStream): Iterator[AdImpressionLog] = {
-    val reader = new SpecificDatumReader[AdImpressionLog](AdImpressionLog.getClassSchema)
-    val decoder = DecoderFactory.get().directBinaryDecoder(inputStream, null)
-    new Iterator[AdImpressionLog] {
-
-      val log: AdImpressionLog = new AdImpressionLog()
-      var nextVal = log
-      nextVal = reader.read(nextVal, decoder)
-
-      override def hasNext: Boolean = nextVal != null
-
-      override def next(): AdImpressionLog = {
-        val n = nextVal
-        if (n ne null) {
-          nextVal = reader.read(nextVal, decoder)
-          n
-        } else {
-          throw new NoSuchElementException()
-        }
-      }
-    }
-  }
-
-  override def getTargetType: scala.Predef.Class[_] = classOf[AdImpressionLog]
 }
