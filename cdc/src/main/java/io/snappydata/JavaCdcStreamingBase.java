@@ -82,8 +82,8 @@ public abstract class JavaCdcStreamingBase {
         conf.set(keyStr, v.toString());
       }
       // special handling until case of this property is changed to all lower case.
-      else if (keyStr.toLowerCase().startsWith("snappydata.Cluster.URL".toLowerCase())) {
-        conf.set("snappydata.Cluster.URL", v.toString());
+      else if (keyStr.toLowerCase().startsWith("snappydata.connection".toLowerCase())) {
+        conf.set("snappydata.connection", v.toString());
       }
     });
 
