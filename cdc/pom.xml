@@ -23,7 +23,7 @@
       <dependency>
 	  <groupId>io.snappydata.trials</groupId>
 	  <artifactId>snappydata-jdbc-stream-connector_2.11</artifactId>
-	  <version>0.8.tc.1-SNAPSHOT</version>
+	  <version>0.1.tc.1-SNAPSHOT</version>
           <scope>compile</scope>
       </dependency>
       <dependency>
