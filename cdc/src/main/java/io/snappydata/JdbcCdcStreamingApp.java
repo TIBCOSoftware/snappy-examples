@@ -142,8 +142,8 @@ public class JdbcCdcStreamingApp extends SQLServerCdcBase {
 			newArgs.add("password=xxx");
 		}
 
-		if (!contains(args, "snappydata.Cluster.URL", idxOf)) {
-			newArgs.add("snappydata.Cluster.URL=localhost:1527");
+		if (!contains(args, "snappydata.connection", idxOf)) {
+			newArgs.add("snappydata.connection=localhost:1527");
 		}
 
 		if (!contains(args, "tables", idxOf)) {
