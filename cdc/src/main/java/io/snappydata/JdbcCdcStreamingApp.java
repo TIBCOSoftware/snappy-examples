@@ -69,8 +69,10 @@ public class JdbcCdcStreamingApp extends SQLServerCdcBase {
 			 */
 
 			String sqlsrvTable = sinkProps.getProperty("tableName").toUpperCase();
-			String table = sqlsrvTable.substring(sqlsrvTable.indexOf("DBO_") + 4, sqlsrvTable.indexOf("_CT"));
-			log.info("Processing for " + table + " batchId " + batchId);
+			String customerTable = sqlsrvTable.substring(sqlsrvTable.indexOf("DBO_") + 4, sqlsrvTable.indexOf("_CT"));
+			String personTable = customerTable + "_person";
+			String addrTable = customerTable + "_addr";
+			log.info("Processing for " + customerTable + " batchId " + batchId);
 
 			/*
 			 * --------------[ Preferred Way ] ----------------
@@ -84,12 +86,31 @@ public class JdbcCdcStreamingApp extends SQLServerCdcBase {
 			 * apply them here instead of handling all the columns all the time.
 			 * --------------------------------------------------
 			 */
-			StructType dfSchema = df.schema();
-			String[] columns = new String[dfSchema.size() - 6];
-			for (int i = 6; i < dfSchema.size(); i++) {
-				columns[i - 6] = dfSchema.apply(i).name();
-			}
+            StructType dfSchema = df.schema();
+            String[] customerColumns = new String[dfSchema.size() - 6];
+            for (int i = 6; i < dfSchema.size(); i++) {
+                customerColumns[i - 6] = dfSchema.apply(i).name();
+            }
 
+            // DF gets inserted into customer table
+            registerSnappyUpsertsAndDeletes(df, customerTable, dfSchema, customerColumns);
+
+            // Dividing the DF in two different DFs
+            String[] personColumns = new String[3];
+            personColumns[0] = dfSchema.apply(6).name(); // C_NAME
+            personColumns[1] = dfSchema.apply(10).name(); // C_ACCTBAL
+            personColumns[2] = dfSchema.apply(11).name(); // C_MKTSEGMENT
+
+            String[] addressColumns = new String[3];
+            addressColumns[0] = dfSchema.apply(7).name(); // C_Address
+            addressColumns[1] = dfSchema.apply(8).name(); // C_NationKey
+            addressColumns[2] = dfSchema.apply(9).name(); // C_Phone
+
+            registerSnappyUpsertsAndDeletes(df, personTable, dfSchema, personColumns);
+            registerSnappyUpsertsAndDeletes(df, addrTable, dfSchema, addressColumns);
+        }
+
+		private void registerSnappyUpsertsAndDeletes(Dataset<Row> df, String table, StructType dfSchema, String[] columns) {
 			Dataset<Row> snappyCustomerUpsert = df
 					// pick only insert/update ops
 					.filter("\"__$operation\" = 4 OR \"__$operation\" = 2")
@@ -128,12 +149,12 @@ public class JdbcCdcStreamingApp extends SQLServerCdcBase {
 		ArrayList<String> newArgs = new ArrayList<>();
 		Collections.addAll(newArgs, args);
 
-		BiPredicate<String, String> idxOf = (a, b) -> a.indexOf(b) > 0 || b.indexOf(a) > 0;
+		BiPredicate<String, String> idxOf = (a, b) -> a.indexOf(b) >= 0 || b.indexOf(a) >= 0;
 		if (!contains(args, "driver", idxOf)) {
 			newArgs.add("driver=" + SQLServerDriver.class.getCanonicalName());
 		}
 		if (!contains(args, "url", idxOf)) {
-			newArgs.add("url=jdbc:sqlserver://<server.domain.com>:1433");
+			 newArgs.add("url=jdbc:sqlserver://snappydb16.westus.cloudapp.azure.com:1433");
 		}
 		if (!contains(args, "user", idxOf)) {
 			newArgs.add("user=xxx");
