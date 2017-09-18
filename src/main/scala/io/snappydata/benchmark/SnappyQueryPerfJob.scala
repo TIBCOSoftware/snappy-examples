@@ -25,7 +25,7 @@ import org.apache.spark.sql.{SnappyContext, SnappyJobValid, SnappyJobValidation,
 class SnappyQueryPerfJob extends SnappySQLJob {
 
   override def runSnappyJob(sc: SnappyContext, jobConfig: Config): Any = {
-    val outFileName = s"QueryPerf-${System.currentTimeMillis()}.out"
+    val outFileName = s"SnappyQueryPerf-${System.currentTimeMillis()}.out"
     val pw = new PrintWriter(outFileName)
     var start = System.currentTimeMillis()
     sc.sql("select count(*) AS adCount, geo from adImpressions group by geo order by adCount desc limit 20").collect()

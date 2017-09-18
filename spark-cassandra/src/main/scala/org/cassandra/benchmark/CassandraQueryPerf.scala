@@ -17,54 +17,76 @@
 
 package org.cassandra.benchmark
 
-import io.snappydata.adanalytics.Configs
-import Configs._
+import java.io.PrintWriter
+
+import com.datastax.spark.connector.cql.CassandraConnector
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.sql.SparkSession
 
 object CassandraQueryPerf extends App {
 
-  val rootLogger = Logger.getLogger("org");
-  rootLogger.setLevel(Level.WARN);
+  val rootLogger = Logger.getLogger("org")
+  rootLogger.setLevel(Level.WARN)
 
-  val conf = new SparkConf(true)
-    .setAppName(getClass.getSimpleName)
-    .set("spark.cassandra.connection.host", s"$cassandraHost")
-    .set("spark.cassandra.auth.username", "cassandra")
-    .set("spark.cassandra.auth.password", "cassandra")
-    .set("spark.cassandra.sql.keyspace", "adlogs")
-    //    .set("spark.sql.shuffle.partitions", "8")
-    .setMaster("local[*]")
-    .set("spark.executor.cores", "2")
-    .set("spark.ui.port", "4041")
-  val assemblyJar = System.getenv("PROJECT_ASSEMBLY_JAR")
-  if (assemblyJar != null) {
-    conf.set("spark.driver.extraClassPath", assemblyJar)
-    conf.set("spark.executor.extraClassPath", assemblyJar)
-  }
+  val ss = SparkSession.builder()
+    .appName(getClass.getSimpleName)
+    .master("local[*]")
+    .config("spark.executor.cores", "2")
+    .config("spark.cassandra.connection.host", "127.0.0.1")
+    .getOrCreate()
 
-//  val sc = new SparkContext(conf)
-//  val msc = new CassandraSQLContext(sc)
-  val sc = new SparkContext("spark://localhost:7077", "test", conf)
-  val sqlContext = new org.apache.spark.sql.SQLContext(sc)
+  val outFileName = s"CassandraQueryPerf-${System.currentTimeMillis()}.out"
+  val pw = new PrintWriter(outFileName)
 
- // sqlContext.setKeyspace("adlogs")
+  // ss.sql("CREATE TABLE geoBids (geo string, max_bid double)")
+
+  val df = ss
+    .read
+    .format("org.apache.spark.sql.cassandra")
+    .options(Map( "table" -> "adimpressions", "keyspace" -> "adlogs"))
+    .load()
+
+  df.createOrReplaceTempView("adImpressions")
 
   var start = System.currentTimeMillis()
-  sqlContext.sql("select count(*) AS adCount, geo from adimpressions group" +
+  ss.sql("select count(*) AS adCount, geo from adImpressions group" +
     " by geo order by adCount desc limit 20").collect()
-  println("Time for Q1 " + (System.currentTimeMillis() - start ))
+  pw.println("Time for Q1 " + (System.currentTimeMillis() - start))
+  pw.flush()
 
   start = System.currentTimeMillis()
-  sqlContext.sql("select sum (bid) as max_bid, geo from adimpressions group" +
+  val result = ss.sql("select sum (bid) as max_bid, geo from adImpressions group" +
     " by geo order by max_bid desc limit 20").collect()
-  println("Time for Q2 " + (System.currentTimeMillis() - start ))
+  pw.println("Time for Q2 " + (System.currentTimeMillis() - start))
+  pw.flush()
+
+  val maxBid = result.toList(1).getDouble(0)
+  val geo = result.toList(1).getString(1)
 
   start = System.currentTimeMillis()
-  sqlContext.sql("select sum (bid) as max_bid, publisher from adimpressions" +
+
+//  CassandraConnector(ss.sparkContext.getConf).withSessionDo { session =>
+//    session.execute(s"INSERT INTO adLogs.geoBids(geo, max_bid) VALUES ($geo, 0.0)")
+//    // Configs.geos.foreach(geo => session.execute(s"INSERT INTO adLogs.geoBids(geo, max_bid) VALUES ($geo, 0.0)"))
+//  }
+
+  CassandraConnector(ss.sparkContext.getConf).withSessionDo { session =>
+    session.execute(s"update adLogs.geoBids set max_bid=$maxBid where geo='$geo'")
+  }
+
+  // ss.sql(s"update table geoBids set max_bid=$maxBid where geo='$geo'")
+  pw.println("Time for update " + (System.currentTimeMillis() - start))
+  pw.flush()
+
+  start = System.currentTimeMillis()
+  ss.sql("select sum (bid) as max_bid, publisher from adImpressions" +
     " group by publisher order by max_bid desc limit 20").collect()
-  println("Time for Q3 " + (System.currentTimeMillis() - start ))
+  pw.println("Time for Q3 " + (System.currentTimeMillis() - start))
+  pw.flush()
 
-  sqlContext.sql("select count(*) as cnt from adimpressions").show()
-
+  start = System.currentTimeMillis()
+  val array = ss.sql("select count(*) from adImpressions").collect()
+  pw.println(array(0) +"Time for count(*) " + (System.currentTimeMillis() - start))
+  pw.flush()
+  pw.close()
 }

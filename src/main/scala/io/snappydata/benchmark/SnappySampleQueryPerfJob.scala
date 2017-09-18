@@ -29,26 +29,27 @@ class SnappySampleQueryPerfJob extends SnappySQLJob {
     val pw = new PrintWriter(outFileName)
     var start = System.currentTimeMillis()
     sc.sql("select count(*) AS adCount, geo from adImpressions group by geo" +
-      " order by adCount desc limit 20 with error 0.1").collect()
+      " order by adCount desc limit 20 with error").collect()
     pw.println("Time for Sample Q1 " + (System.currentTimeMillis() - start))
     pw.flush()
 
     start = System.currentTimeMillis()
     sc.sql("select sum (bid) as max_bid, geo from adImpressions group by geo" +
-      " order by max_bid desc limit 20 with error 0.1").collect()
+      " order by max_bid desc limit 20 with error").collect()
     pw.println("Time for Sample Q2 " + (System.currentTimeMillis() - start))
     pw.flush()
 
     start = System.currentTimeMillis()
-    val array = sc.sql("select count(*) as sample_cnt from" +
-      " adImpressions with error 0.1").collect()
-    pw.println(array(0) +"Time for sample count(*) " + (System.currentTimeMillis() - start))
+    sc.sql("select sum (bid) as max_bid, publisher from adImpressions group by" +
+      " publisher order by max_bid desc limit 20 with error").collect()
+    pw.println("Time for Sample Q3 " + (System.currentTimeMillis() - start))
     pw.flush()
 
     start = System.currentTimeMillis()
-    sc.sql("select sum (bid) as max_bid, publisher from adImpressions group by" +
-      " publisher order by max_bid desc limit 20 with error 0.5").collect()
-    pw.println("Time for Sample Q3 " + (System.currentTimeMillis() - start))
+    //    val array = sc.sql("select count(*) as sample_cnt from" +
+    //      " adImpressions with error").collect()
+    val array = sc.sql("select count(*) from adImpressions").collect()
+    pw.println(array(0) +"Time for count(*) " + (System.currentTimeMillis() - start))
     pw.flush()
 
     pw.close()

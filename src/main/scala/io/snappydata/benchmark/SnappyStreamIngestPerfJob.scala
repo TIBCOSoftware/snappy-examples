@@ -19,9 +19,10 @@ package io.snappydata.benchmark
 
 import com.typesafe.config.Config
 import io.snappydata.adanalytics.Configs._
+import org.apache.spark.jdbc.{ConnectionConfBuilder, ConnectionUtil}
 import org.apache.spark.sql.streaming.SnappyStreamingJob
+import org.apache.spark.sql.{SnappyJobValid, SnappyJobValidation}
 import org.apache.spark.streaming.SnappyStreamingContext
-import org.apache.spark.sql.{SnappyContext, SnappyJobValid, SnappyJobValidation, SnappySQLJob}
 
 class SnappyStreamIngestPerfJob extends SnappyStreamingJob {
 
@@ -53,12 +54,21 @@ class SnappyStreamIngestPerfJob extends SnappyStreamingJob {
       "using column options ( buckets '29', persistent 'asynchronous')")
 
     snsc.sql("CREATE SAMPLE TABLE sampledAdImpressions" +
-      " OPTIONS(qcs 'geo,publisher', fraction '0.02', strataReservoirSize '50', baseTable 'adImpressions')")
+      " OPTIONS(qcs 'geo,publisher', fraction '0.02', baseTable 'adImpressions')")
 
-    // Save the streaming data to snappy store per second (btachDuration)
+    snsc.sql("create table totalBids(bidCount double) using row options(partition_by 'bidCount') ")
+    snsc.sql("insert into totalBids values(0)")
+
+    val conf = new ConnectionConfBuilder(snsc.snappyContext).build()
+
     snsc.getSchemaDStream("adImpressionStream").foreachDataFrame( df => {
         df.write.insertInto("adImpressions")
         df.write.insertInto("sampledAdImpressions")
+        val numBids = df.first().getDouble(4)
+        val conn = ConnectionUtil.getConnection(conf)
+        val stmt = conn.prepareStatement(s"update totalBids set bidCount = $numBids")
+        stmt.executeUpdate()
+        conn.close()
       })
 
     snsc.start

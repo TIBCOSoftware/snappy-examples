@@ -67,12 +67,14 @@ object CassandraStreamIngestPerf extends App {
 // spark://localhost:7077
   CassandraConnector(conf).withSessionDo { session =>
     // Create keysapce and table in Cassandra
-    session.execute(s"DROP KEYSPACE IF EXISTS adlogs")
-    session.execute(s"CREATE KEYSPACE IF NOT EXISTS adlogs " +
-      s"WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor': 1 }")
-    session.execute(s"CREATE TABLE IF NOT EXISTS adlogs.adimpressions " +
-      s"(timestamp bigint, publisher text, advertiser text, " +
-      "website text, geo text, bid double, cookie text, primary key (timestamp, cookie))")
+//    session.execute(s"DROP KEYSPACE IF EXISTS adlogs")
+//    session.execute(s"CREATE KEYSPACE IF NOT EXISTS adlogs " +
+//      s"WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor': 1 }")
+//    session.execute(s"CREATE TABLE IF NOT EXISTS adlogs.adimpressions " +
+//      s"(timestamp bigint, publisher text, advertiser text, " +
+//      "website text, geo text, bid double, cookie text, primary key (timestamp, cookie))")
+    session.execute(s"CREATE TABLE IF NOT EXISTS adlogs.geoBids " +
+      s"(geo text, max_bid double, primary key (geo))")
   }
 
   // batchDuration of 1 second
