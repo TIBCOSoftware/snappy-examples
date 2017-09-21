@@ -21,15 +21,15 @@
     <dependencies>
       <!-- https://mvnrepository.com/artifact/io.snappydata/snappydata-cluster_2.11 -->
       <dependency>
-	  <groupId>io.snappydata.trials</groupId>
+	  <groupId>io.snappydata</groupId>
 	  <artifactId>snappydata-jdbc-stream-connector_2.11</artifactId>
-	  <version>0.1.tc.1-SNAPSHOT</version>
+	  <version>0.9</version>
           <scope>compile</scope>
       </dependency>
       <dependency>
-          <groupId>io.snappydata.trials</groupId>
+          <groupId>io.snappydata</groupId>
           <artifactId>snappydata-core_2.11</artifactId>
-          <version>0.8.tc.1-SNAPSHOT</version>
+          <version>1.0.0</version>
           <scope>compile</scope>
       </dependency>    
       <dependency>
