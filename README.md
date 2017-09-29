@@ -166,9 +166,9 @@ Finally, create a sample table that ingests from the column table specified abov
 In order to run this example, we need to install the following:
 
 1. [Apache Kafka 2.11-0.8.2.1](http://kafka.apache.org/downloads.html)
-2. [SnappyData 0.6.1 release](https://github.com/SnappyDataInc/snappydata/releases/tag/v0.6.1). Download the binary snappydata-0.6.1-bin.tar.gz and Unzip it.
-The binaries will be inside "snappydata-0.6.1-bin" directory.
-3. JDK 7.0 or JDK 8
+2. [SnappyData 1.0.0 Enterprise Release](https://www.snappydata.io/download). Download the binary snappydata-1.0.0-bin.tar.gz and Unzip it.
+The binaries will be inside "snappydata-1.0.0-bin" directory.
+3. JDK 8
 
 Then checkout the Ad analytics example
 ```
@@ -205,7 +205,7 @@ Goto the SnappyData product install home directory.
 In conf subdirectory, create file "spark-env.sh"(copy spark-env.sh.template) and add this line ...
 
 ```
-SPARK_DIST_CLASSPATH=SNAPPY_POC_HOME/assembly/build/libs/snappy-poc-0.6.1-assembly.jar
+SPARK_DIST_CLASSPATH=SNAPPY_POC_HOME/assembly/build/libs/snappy-poc-1.0.0-assembly.jar
 ```
 > Make sure you set the SNAPPY_POC_HOME directory appropriately above
 
@@ -225,7 +225,7 @@ Submit the streaming job to the cluster and start it (consume the stream, aggreg
 > Make sure you copy/paste the SNAPPY_POC_HOME path from above in the command below where indicated
 
 ```
-./bin/snappy-job.sh submit --lead localhost:8090 --app-name AdAnalytics --class io.snappydata.adanalytics.SnappySQLLogAggregatorJob --app-jar SNAPPY_POC_HOME/assembly/build/libs/snappy-poc-0.6.1-assembly.jar --stream
+./bin/snappy-job.sh submit --lead localhost:8090 --app-name AdAnalytics --class io.snappydata.adanalytics.SnappySQLLogAggregatorJob --app-jar SNAPPY_POC_HOME/assembly/build/libs/snappy-poc-1.0.0-assembly.jar --stream
 ```
 
 SnappyData supports "Managed Spark Drivers" by running these in Lead nodes. So, if the driver were to fail, it can automatically re-start on a standby node. While the Lead node starts the streaming job, the actual work of parallel processing from kafka, etc is done in the SnappyData servers. Servers execute Spark Executors collocated with the data. 

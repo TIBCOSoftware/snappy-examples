@@ -41,10 +41,8 @@ object SnappySQLLogAggregator extends App {
     .setAppName(getClass.getSimpleName)
     .set("spark.sql.inMemoryColumnarStorage.compressed", "false")
     .set("spark.sql.inMemoryColumnarStorage.batchSize", "2000")
-    .setMaster(s"$sparkMasterURL") //local split
+    .setMaster(s"$sparkMasterURL")
     .set("snappydata.store.locators", s"$snappyLocators")
-    // use this above property to tell the program to use SnappyData as the
-    // default store for tables.
     .set("spark.ui.port", "4041")
     .set("spark.streaming.kafka.maxRatePerPartition", s"$maxRatePerPartition")
 

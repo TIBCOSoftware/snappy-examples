@@ -1,9 +1,8 @@
 package io.snappydata.adanalytics
 
 import com.twitter.algebird.{HLL, HyperLogLogMonoid}
-import Configs._
+import io.snappydata.adanalytics.Configs._
 import kafka.serializer.StringDecoder
-import org.apache.commons.io.Charsets
 import org.apache.spark.SparkConf
 import org.apache.spark.streaming.kafka.KafkaUtils
 import org.apache.spark.streaming.{Seconds, StreamingContext}
@@ -38,7 +37,7 @@ object SparkLogAggregator extends App {
         timestamp = log.getTimestamp,
         sumBids = log.getBid,
         imps = 1,
-        uniquesHll = hyperLogLog(log.getCookie.toString.getBytes(Charsets.UTF_8))
+        uniquesHll = hyperLogLog(log.getCookie.toString.getBytes())
       )
       (key, agg)
   }

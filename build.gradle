@@ -8,7 +8,7 @@ archivesBaseName = 'snappy-poc'
 
 allprojects {
 
-  version = '0.6.1'
+  version = '1.0.0'
 
   repositories {
     mavenCentral()
@@ -56,7 +56,7 @@ allprojects {
 
   ext {
     sparkVersion = '2.0.1-3'
-    snappyVersion = '0.6.1'
+    snappyVersion = '1.0.0'
   }
 
   configurations.all {
@@ -76,7 +76,7 @@ dependencies {
   provided "io.snappydata:snappy-spark-core_2.11:${sparkVersion}"
   provided "io.snappydata:snappy-spark-catalyst_2.11:${sparkVersion}"
   provided "io.snappydata:snappy-spark-sql_2.11:${sparkVersion}"
-  provided "io.snappydata:snappydata-aqp_2.11:${snappyVersion}"
+  // provided "io.snappydata:snappydata-aqp_2.11:${snappyVersion}"
 
   compile 'com.miguno:kafka-avro-codec_2.10:0.1.1-SNAPSHOT'
   compile 'org.apache.kafka:kafka_2.11:0.8.2.1'
