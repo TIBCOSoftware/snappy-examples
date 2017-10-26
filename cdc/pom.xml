@@ -12,18 +12,14 @@
     </properties>
 
     <repositories>
-	<repository>
-	  <id>io.snappydata</id>
-	  <url>http://repository.snappydata.io/repository/snapshots</url>
-	</repository>
      </repositories>
 
     <dependencies>
-      <!-- https://mvnrepository.com/artifact/io.snappydata/snappydata-cluster_2.11 -->
+      <!-- publish the jar into your local maven repository -->
       <dependency>
-	  <groupId>io.snappydata</groupId>
-	  <artifactId>snappydata-jdbc-stream-connector_2.11</artifactId>
-	  <version>0.9</version>
+	      <groupId>io.snappydata</groupId>
+          <artifactId>snappydata-jdbc-stream-connector_2.11</artifactId>
+          <version>0.9</version>
           <scope>compile</scope>
       </dependency>
       <dependency>
@@ -31,11 +27,23 @@
           <artifactId>snappydata-core_2.11</artifactId>
           <version>1.0.0</version>
           <scope>compile</scope>
-      </dependency>    
+      </dependency>
       <dependency>
-	  <groupId>com.microsoft.sqlserver</groupId>
-	  <artifactId>mssql-jdbc</artifactId>
-	  <version>6.1.0.jre8</version>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-core_2.11</artifactId>
+            <version>2.1.0</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-sql_2.11</artifactId>
+            <version>2.1.0</version>
+            <scope>compile</scope>
+        </dependency>
+       <dependency>
+	      <groupId>com.microsoft.sqlserver</groupId>
+	      <artifactId>mssql-jdbc</artifactId>
+	      <version>6.1.0.jre8</version>
           <scope>compile</scope>
       </dependency>
     </dependencies>
