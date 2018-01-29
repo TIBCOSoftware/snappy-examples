@@ -17,10 +17,15 @@
 package io.snappydata.app;
 
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.spark.SparkConf;
@@ -48,24 +53,24 @@ public class JavaCdcStreamingApp {
 
   public static void main(String[] args) throws Exception {
     JavaCdcStreamingApp _this = new JavaCdcStreamingApp();
-    _this.connect();
-    _this.startJob();
+    _this.connect(args);
+    _this.startJob(args);
   }
 
-  private SnappySession connect() throws ClassNotFoundException, IOException {
+  private SnappySession connect(String[] args) throws Exception {
     String checkPointDir = Utils.createTempDir(".", "stream-spark").getCanonicalPath();
     snappySpark = new SnappySession(SparkSession.builder().
         config("spark.sql.streaming.checkpointLocation", checkPointDir).
         // config("snappydata.connection", "localhost:1527").
         // config("spark.sql.autoBroadcastJoinThreshold", "-1").
         // config("spark.task.maxFailures", "0").
-        getOrCreate().sparkContext());
-    sourceOptions = fillSourceOptions(snappySpark.sparkContext().conf());
+            getOrCreate().sparkContext());
+    sourceOptions = fillSourceOptions(args);
     return snappySpark;
   }
 
-  private void startJob() throws Exception {
-    configureTables();
+  private void startJob(String[] args) throws Exception {
+    configureTables(args);
     ArrayList<StreamingQuery> activeQueries = new ArrayList<>(sourceDestTables.size());
 
 
@@ -99,43 +104,40 @@ public class JavaCdcStreamingApp {
         .start();
   }
 
+  private static Properties readPropertyFile(String filePath) throws Exception {
+    File file = new File(filePath);
+    FileInputStream fileInput = new FileInputStream(file);
+    Properties properties = new Properties();
+    properties.load(fileInput);
+    fileInput.close();
+    return properties;
+  }
 
-  private static java.util.Map<String, String> fillSourceOptions(SparkConf conf) {
+  private static java.util.Map<String, String> fillSourceOptions(String[] args) throws Exception {
     java.util.Map<String, String> options = new HashMap<>();
 
-    if (!conf.contains("driver")) {
-      options.put("driver", "com.microsoft.sqlserver.jdbc.SQLServerDriver");
-    } else {
-      options.put("driver", conf.get("driver"));
-    }
-    if (!conf.contains("url")) {
-      options.put("url", "jdbc:sqlserver://sqlent.westus.cloudapp.azure.com:1433");
-    } else {
-      options.put("url", conf.get("url"));
-    }
-    if (!conf.contains("user")) {
-      options.put("user", "sqldb");
-    } else {
-      options.put("user", conf.get("user"));
-    }
-    if (!conf.contains("password")) {
-      options.put("password", "snappydata#msft1");
-    } else {
-      options.put("password", conf.get("password"));
-    }
+    String connPropertiesPath = args[0];
+    Properties properties = readPropertyFile(connPropertiesPath);
 
-    if (!conf.contains("databaseName")) {
-      options.put("databaseName", "testdatabase");
-    } else {
-      options.put("databaseName", conf.get("databaseName"));
+    Enumeration enuKeys = properties.keys();
+    while (enuKeys.hasMoreElements()) {
+      String key = (String)enuKeys.nextElement();
+      String value = properties.getProperty(key);
+      options.put(key, value);
     }
     return options;
   }
 
-  private void configureTables() {
-    sourceDestTables.put("testdatabase.cdc.dbo_customer_CT", "customer");
-    sourceDestTables.put("testdatabase.cdc.dbo_person_event_CT ", "person_event");
-    // sourceDestTables.put("testdatabase.cdc.dbo_CODE_VALUE_CT", "CODE_VALUE");
+  private void configureTables(String[] args) throws Exception {
+    String sourceDestTablePath = args[1];
+    Properties properties = readPropertyFile(sourceDestTablePath);
+
+    Enumeration enuKeys = properties.keys();
+    while (enuKeys.hasMoreElements()) {
+      String key = (String)enuKeys.nextElement();
+      String value = properties.getProperty(key);
+      sourceDestTables.put(key, value);
+    }
   }
 
 }
