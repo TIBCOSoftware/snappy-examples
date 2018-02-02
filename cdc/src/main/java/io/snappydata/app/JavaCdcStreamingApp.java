@@ -77,7 +77,7 @@ public class JavaCdcStreamingApp {
     for (String sourceTable : sourceDestTables.keySet()) {
       DataStreamReader reader = snappySpark.readStream()
           .format(StreamConf.JDBC_STREAM())
-          .option(StreamConf.SPEC(), "io.snappydata.app.DummySpec")
+          .option(StreamConf.SPEC(), "io.snappydata.app.SqlServerSpec")
           .option(StreamConf.SOURCE_TABLE_NAME(), sourceTable)
           .option(StreamConf.MAX_EVENTS(), "50000")
           .options(sourceOptions);

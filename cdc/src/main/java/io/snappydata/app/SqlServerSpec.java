@@ -20,7 +20,7 @@ import org.apache.spark.sql.streaming.jdbc.SourceSpec;
 import scala.Option;
 import scala.Some;
 
-public class DummySpec implements SourceSpec {
+public class SqlServerSpec implements SourceSpec {
 
   @Override
   public String offsetColumn() {

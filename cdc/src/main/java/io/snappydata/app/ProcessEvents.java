@@ -39,19 +39,6 @@ public class ProcessEvents implements SnappyStreamSink {
   public void process(SnappySession snappySession, Properties sinkProps,
       long batchId, Dataset<Row> df) {
 
-      /*
-        NOTES:
-          The incoming df has few conversions automatically done compared to the current c#
-          script of data type mappings.
-
-          firstly, microsoft sql server data types are mapped to standard jdbc types done by the
-          microsoft jdbc driver used here.
-
-          secondly, using auto type inference, snappydata custom StreamSource utilizes JdbcRDD to
-           automap the incoming jdbc type to spark catalyst type and therefore ready to be
-           consumed by the SnappySession apis.
-       */
-
     String snappyTable = sinkProps.getProperty("TABLENAME").toUpperCase();
 
     log.info("SB: Processing for " + snappyTable + " batchId " + batchId);
@@ -66,14 +53,33 @@ public class ProcessEvents implements SnappyStreamSink {
         // the WHERE clause of the delete operation.
         .drop(metaColumns.toArray(new String[metaColumns.size()]));
 
-      snappyJavaUtil(snappyCustomerDelete.write()).deleteFrom("APP." + snappyTable);
+    snappyJavaUtil(snappyCustomerDelete.write()).deleteFrom("APP." + snappyTable);
 
-    Dataset<Row> snappyCustomerUpsert = df
-        // pick only insert/update ops
-        .filter("\"__$operation\" = 4 OR \"__$operation\" = 2")
-        // exclude the first 5 columns and pick the rest as columns have
-        // 1-1 correspondence with snappydata customer table.
-        .drop(metaColumns.toArray(new String[metaColumns.size()]));
-    snappyJavaUtil(snappyCustomerUpsert.write()).putInto("APP." + snappyTable);
+    if(batchId == 0){ // Batch ID will be always 0 when stream app starts
+      // In case of 0th batchId always do a putInto , as we don't know if its restaring from a failure.
+      Dataset<Row> snappyCustomerUpsert = df
+          // pick only insert/update ops
+          .filter("\"__$operation\" = 4 OR \"__$operation\" = 2")
+          .drop(metaColumns.toArray(new String[metaColumns.size()]));
+      snappyJavaUtil(snappyCustomerUpsert.write()).putInto("APP." + snappyTable);
+    } else {
+      Dataset<Row> snappyCustomerUpdates = df
+          // pick only update ops
+          .filter("\"__$operation\" = 4")
+          .drop(metaColumns.toArray(new String[metaColumns.size()]));
+
+      snappyJavaUtil(snappyCustomerUpdates.write()).update("APP." + snappyTable);
+
+      Dataset<Row> snappyCustomerInserts = df
+          // pick only insert ops
+          .filter("\"__$operation\" = 2")
+          .drop(metaColumns.toArray(new String[metaColumns.size()]));
+
+      try{
+        snappyCustomerInserts.write().insertInto("APP." + snappyTable);
+      }catch (Exception e) {
+        snappyJavaUtil(snappyCustomerInserts.write()).putInto("APP." + snappyTable);
+      }
+    }
   }
 }
