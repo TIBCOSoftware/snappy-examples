@@ -19,7 +19,6 @@ package io.snappydata.app;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -28,7 +27,6 @@ import java.util.LinkedHashMap;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.spark.SparkConf;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SnappySession;
@@ -81,7 +79,6 @@ public class JavaCdcStreamingApp {
           .option(StreamConf.SOURCE_TABLE_NAME(), sourceTable)
           .option(StreamConf.MAX_EVENTS(), "50000")
           .options(sourceOptions);
-
 
       Dataset<Row> ds = reader.load();
       StreamingQuery q = getStreamWriter(sourceDestTables.get(sourceTable), ds);

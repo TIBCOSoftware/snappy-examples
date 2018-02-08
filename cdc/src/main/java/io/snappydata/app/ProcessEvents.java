@@ -53,33 +53,15 @@ public class ProcessEvents implements SnappyStreamSink {
         // the WHERE clause of the delete operation.
         .drop(metaColumns.toArray(new String[metaColumns.size()]));
 
-    snappyJavaUtil(snappyCustomerDelete.write()).deleteFrom("APP." + snappyTable);
-
-    if(batchId == 0){ // Batch ID will be always 0 when stream app starts
-      // In case of 0th batchId always do a putInto , as we don't know if its restaring from a failure.
-      Dataset<Row> snappyCustomerUpsert = df
-          // pick only insert/update ops
-          .filter("\"__$operation\" = 4 OR \"__$operation\" = 2")
-          .drop(metaColumns.toArray(new String[metaColumns.size()]));
-      snappyJavaUtil(snappyCustomerUpsert.write()).putInto("APP." + snappyTable);
-    } else {
-      Dataset<Row> snappyCustomerUpdates = df
-          // pick only update ops
-          .filter("\"__$operation\" = 4")
-          .drop(metaColumns.toArray(new String[metaColumns.size()]));
-
-      snappyJavaUtil(snappyCustomerUpdates.write()).update("APP." + snappyTable);
-
-      Dataset<Row> snappyCustomerInserts = df
-          // pick only insert ops
-          .filter("\"__$operation\" = 2")
-          .drop(metaColumns.toArray(new String[metaColumns.size()]));
-
-      try{
-        snappyCustomerInserts.write().insertInto("APP." + snappyTable);
-      }catch (Exception e) {
-        snappyJavaUtil(snappyCustomerInserts.write()).putInto("APP." + snappyTable);
-      }
+    if(snappyCustomerDelete.count() > 0) {
+      snappyJavaUtil(snappyCustomerDelete.write()).deleteFrom("APP." + snappyTable);
     }
+
+    Dataset<Row> snappyCustomerUpsert = df
+        // pick only insert/update ops
+        .filter("\"__$operation\" = 4 OR \"__$operation\" = 2")
+        .drop(metaColumns.toArray(new String[metaColumns.size()]));
+    snappyJavaUtil(snappyCustomerUpsert.write()).putInto("APP." + snappyTable);
+
   }
 }
