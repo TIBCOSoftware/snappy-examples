@@ -51,20 +51,21 @@ public class JavaCdcStreamingApp {
 
   public static void main(String[] args) throws Exception {
     JavaCdcStreamingApp _this = new JavaCdcStreamingApp();
-    _this.connect(args);
+    _this.initSourceOptions(args);
     _this.startJob(args);
   }
 
-  private SnappySession connect(String[] args) throws Exception {
-    String checkPointDir = Utils.createTempDir(".", "stream-spark").getCanonicalPath();
+  private SnappySession createSnappySession(String table) throws ClassNotFoundException, IOException {
+    String checkPointDir = Utils.createTempDir(".", "stream-spark-"+table).getCanonicalPath();
     snappySpark = new SnappySession(SparkSession.builder().
         config("spark.sql.streaming.checkpointLocation", checkPointDir).
-        // config("snappydata.connection", "localhost:1527").
-        // config("spark.sql.autoBroadcastJoinThreshold", "-1").
-        // config("spark.task.maxFailures", "0").
-            getOrCreate().sparkContext());
-    sourceOptions = fillSourceOptions(args);
+        getOrCreate().sparkContext());
+
     return snappySpark;
+  }
+
+  private void initSourceOptions(String[] args) throws Exception {
+    sourceOptions = fillSourceOptions(args);
   }
 
   private void startJob(String[] args) throws Exception {
@@ -73,7 +74,8 @@ public class JavaCdcStreamingApp {
 
 
     for (String sourceTable : sourceDestTables.keySet()) {
-      DataStreamReader reader = snappySpark.readStream()
+      SnappySession newSession = createSnappySession(sourceTable);
+      DataStreamReader reader = newSession.readStream()
           .format(StreamConf.JDBC_STREAM())
           .option(StreamConf.SPEC(), "io.snappydata.app.SqlServerSpec")
           .option(StreamConf.SOURCE_TABLE_NAME(), sourceTable)
