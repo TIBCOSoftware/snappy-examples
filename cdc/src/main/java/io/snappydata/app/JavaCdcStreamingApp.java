@@ -27,6 +27,8 @@ import java.util.LinkedHashMap;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.spark.scheduler.SparkListener;
+import org.apache.spark.scheduler.SparkListenerApplicationEnd;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SnappySession;
@@ -87,8 +89,21 @@ public class JavaCdcStreamingApp {
       activeQueries.add(q);
     }
 
+    snappySpark.sparkContext().addSparkListener(new SparkContextListener(activeQueries));
+
     for (StreamingQuery q : activeQueries) {
       q.awaitTermination();
+    }
+  }
+
+  private class SparkContextListener extends SparkListener {
+    ArrayList<StreamingQuery> activeQueries;
+    public SparkContextListener(ArrayList<StreamingQuery> activeQueries) {
+      this.activeQueries = activeQueries;
+    }
+    @Override
+    public void onApplicationEnd(SparkListenerApplicationEnd applicationEnd) {
+      activeQueries.stream().forEach(q -> q.stop());
     }
   }
 
