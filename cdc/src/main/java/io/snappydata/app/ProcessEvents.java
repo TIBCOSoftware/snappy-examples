@@ -39,7 +39,7 @@ public class ProcessEvents implements SnappyStreamSink {
   public void process(SnappySession snappySession, Properties sinkProps,
       long batchId, Dataset<Row> df) {
 
-    String snappyTable = sinkProps.getProperty("TABLENAME").toUpperCase();
+    String snappyTable = sinkProps.getProperty("tablename").toUpperCase();
 
     log.info("SB: Processing for " + snappyTable + " batchId " + batchId);
 

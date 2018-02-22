@@ -103,7 +103,11 @@ public class JavaCdcStreamingApp {
     }
     @Override
     public void onApplicationEnd(SparkListenerApplicationEnd applicationEnd) {
-      activeQueries.stream().forEach(q -> q.stop());
+      activeQueries.stream().forEach(q -> {
+        if (q.isActive()){
+          q.stop();
+        }
+      });
     }
   }
 
