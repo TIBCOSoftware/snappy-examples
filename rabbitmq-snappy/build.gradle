@@ -1,10 +1,10 @@
 dependencies {
-  provided "io.snappydata:snappydata-core_2.11:${snappyVersion}"
-  provided "io.snappydata:snappydata-cluster_2.11:${snappyVersion}"
-  provided "io.snappydata:snappy-spark-core_2.11:${sparkVersion}"
-  provided "io.snappydata:snappy-spark-catalyst_2.11:${sparkVersion}"
-  provided "io.snappydata:snappy-spark-sql_2.11:${sparkVersion}"
-  provided "io.snappydata:snappy-spark-streaming_2.11:${sparkVersion}"
+  compileOnly "io.snappydata:snappydata-core_2.11:${snappyVersion}"
+  compileOnly "io.snappydata:snappydata-cluster_2.11:${snappyVersion}"
+  compileOnly "io.snappydata:snappy-spark-core_2.11:${sparkVersion}"
+  compileOnly "io.snappydata:snappy-spark-catalyst_2.11:${sparkVersion}"
+  compileOnly "io.snappydata:snappy-spark-sql_2.11:${sparkVersion}"
+  compileOnly "io.snappydata:snappy-spark-streaming_2.11:${sparkVersion}"
   compile 'com.rabbitmq:amqp-client:3.5.7'
   compile project(':')
 }

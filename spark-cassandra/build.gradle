@@ -1,9 +1,9 @@
 dependencies {
-  provided "org.apache.spark:spark-core_2.11:1.6.0"
-  provided "org.apache.spark:spark-streaming_2.11:1.6.0"
-  provided "org.apache.spark:spark-streaming-kafka_2.11:1.6.0"
+  compileOnly "org.apache.spark:spark-core_2.11:1.6.0"
+  compileOnly "org.apache.spark:spark-streaming_2.11:1.6.0"
+  compileOnly "org.apache.spark:spark-streaming-kafka_2.11:1.6.0"
   // compile "org.apache.spark:spark-streaming-kafka_2.10:1.6.0" //required in assemble jar in cluster mode
-  provided "org.apache.spark:spark-sql_2.11:1.6.0"
+  compileOnly "org.apache.spark:spark-sql_2.11:1.6.0"
 
   compile project(':')
   compile 'com.datastax.spark:spark-cassandra-connector_2.11:1.6.0-M2'

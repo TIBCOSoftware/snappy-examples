@@ -1,10 +1,9 @@
 dependencies {
-
-    provided "org.apache.spark:spark-core_2.10:1.5.2"
-    provided "org.apache.spark:spark-streaming_2.10:1.5.2"
-    provided "org.apache.spark:spark-streaming-kafka_2.10:1.5.2"
-    provided "org.apache.spark:spark-sql_2.10:1.5.2"
-    provided "org.apache.spark:spark-catalyst_2.10:1.5.2"
+    compileOnly "org.apache.spark:spark-core_2.10:1.5.2"
+    compileOnly "org.apache.spark:spark-streaming_2.10:1.5.2"
+    compileOnly "org.apache.spark:spark-streaming-kafka_2.10:1.5.2"
+    compileOnly "org.apache.spark:spark-sql_2.10:1.5.2"
+    compileOnly "org.apache.spark:spark-catalyst_2.10:1.5.2"
 
     compile project(':')
     compile 'com.memsql:memsql-connector_2.10:1.3.2'
