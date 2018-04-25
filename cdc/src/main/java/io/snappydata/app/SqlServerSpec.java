@@ -41,11 +41,11 @@ public class SqlServerSpec implements SourceSpec {
   public String getNextOffset(String tableName, String currentOffset, int maxEvents) {
     String offsetColumn = offsetColumn();
     String query = String.format("select master.dbo.fn_varbintohexstr(max(%s)) nextLSN " +
-            "from (select %s, sum(count(1)) over " +
+            "from (select %s, rank() over " +
             "(order by %s) runningCount " +
             "from %s where %s > master.dbo.fn_cdc_hexstrtobin('%s') " +
-            "group by %s) x where runningCount <= %d", offsetColumn, offsetColumn, offsetColumn,
-        tableName, offsetColumn, currentOffset, offsetColumn, maxEvents);
+            " ) x where runningCount <= %d", offsetColumn, offsetColumn, offsetColumn,
+        tableName, offsetColumn, currentOffset, maxEvents);
     return query;
   }
 }
