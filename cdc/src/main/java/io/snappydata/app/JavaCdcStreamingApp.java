@@ -46,6 +46,7 @@ public class JavaCdcStreamingApp {
    * the source database and destination table in SnappyData
    */
   private final java.util.Map<String, String> sourceDestTables = new LinkedHashMap<>();
+  private final java.util.Map<String, String> tableKeyMap = new LinkedHashMap<>();
 
   private java.util.Map<String, String> sourceOptions = new HashMap<>();
 
@@ -73,7 +74,7 @@ public class JavaCdcStreamingApp {
   private void startJob(String[] args) throws Exception {
     configureTables(args);
     ArrayList<StreamingQuery> activeQueries = new ArrayList<>(sourceDestTables.size());
-
+    System.out.println("SourceOptiona are " + sourceOptions);
 
     for (String sourceTable : sourceDestTables.keySet()) {
       SnappySession newSession = createSnappySession(sourceTable);
@@ -114,11 +115,15 @@ public class JavaCdcStreamingApp {
   protected StreamingQuery getStreamWriter(String tableName,
       Dataset<Row> reader) throws IOException {
 
+    String keyColumns = tableKeyMap.get(tableName);
+    System.out.println("keyColumns are " + keyColumns);
     return reader.writeStream()
         .trigger(ProcessingTime.create(10, TimeUnit.SECONDS))
         .format(StreamConf.SNAPPY_SINK())
         .option("sink", ProcessEvents.class.getName())
         .option("tableName", tableName)
+        .option("keyColumns", keyColumns)
+        .option("handleconflict", keyColumns != null ? "true" : "false")
         .start();
   }
 
@@ -148,13 +153,22 @@ public class JavaCdcStreamingApp {
 
   private void configureTables(String[] args) throws Exception {
     String sourceDestTablePath = args[1];
+    String tableKeyMapPath = args[2];
     Properties properties = readPropertyFile(sourceDestTablePath);
+    Properties tableKeysProps = readPropertyFile(tableKeyMapPath);
 
     Enumeration enuKeys = properties.keys();
     while (enuKeys.hasMoreElements()) {
       String key = (String)enuKeys.nextElement();
       String value = properties.getProperty(key);
       sourceDestTables.put(key, value);
+    }
+
+    Enumeration tableKeysEnum = tableKeysProps.keys();
+    while (tableKeysEnum.hasMoreElements()) {
+      String key = (String)tableKeysEnum.nextElement();
+      String value = tableKeysProps.getProperty(key);
+      tableKeyMap.put(key, value);
     }
   }
 
