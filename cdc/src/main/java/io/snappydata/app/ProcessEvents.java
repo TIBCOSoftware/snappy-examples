@@ -34,11 +34,13 @@ import static org.apache.spark.sql.functions.col;
 
 public class ProcessEvents implements SnappyStreamSink {
 
-  private static Logger log = Logger.getLogger(ProcessEvents.class.getName());
+  private static final Logger log = Logger.getLogger(ProcessEvents.class.getName());
 
-  private static List<String> metaColumns = asList("__$start_lsn",
+  private static final List<String> metaColumns = asList("__$start_lsn",
       "__$end_lsn", "__$seqval", "__$operation", "__$update_mask", "__$command_id", "STRLSN");
 
+  private static final String[] metaColumnsArray =
+      metaColumns.toArray(new String[metaColumns.size()]);
 
   @Override
   public void process(SnappySession snappySession, Properties sinkProps,
@@ -53,7 +55,7 @@ public class ProcessEvents implements SnappyStreamSink {
       return;
     }
 
-    log.info("Processing for " + snappyTable + " batchId " + batchId + " With conflicting keys");
+    log.debug("Processing for " + snappyTable + " batchId " + batchId + " With conflicting keys");
 
     // String separated key columns. This should match with column
     // table key columns or row table primary key.
@@ -69,7 +71,7 @@ public class ProcessEvents implements SnappyStreamSink {
      * a) Filter out all updates on keys which are followed by a delete.
      * b) If we get something in #a first apply those updates.
      * c) Then apply all deletes.
-     * d) If count of #a is greater than zero filter out such updates from main update set.
+     * d) If count of #a is greater than zero then filter out such updates from main update set.
      *    Then apply the update.
      */
     Dataset<Row> snappyCustomerUpsert = df
@@ -83,7 +85,7 @@ public class ProcessEvents implements SnappyStreamSink {
 
 
     if (snappyCustomerDelete.count() > 0) {
-      // Filter out all inserts which are after a delete by comparing their LSN numbers.
+      // Filter out all inserts which are before a delete by comparing their LSN numbers.
       // We are checking less than or equal to as one transaction might do both the operations.
       Column joinExpr = joinExpresssion(keyColumns, "u", "d");
       Dataset<Row> insertsFollowedByDeletes = snappyCustomerUpsert.as("u").join(snappyCustomerDelete.as("d"),
@@ -94,13 +96,13 @@ public class ProcessEvents implements SnappyStreamSink {
       if (insertFollowedByDeleteCount > 0L) {
         insertsFollowedByDeletes.show();
         Dataset<Row> modifiedUpdate = insertsFollowedByDeletes
-            .drop(metaColumns.toArray(new String[metaColumns.size()]));
+            .drop(metaColumnsArray);
 
         snappyJavaUtil(modifiedUpdate.write()).putInto("APP." + snappyTable);
       }
 
       Dataset<Row> modifiedDelete = snappyCustomerDelete
-          .drop(metaColumns.toArray(new String[metaColumns.size()]));
+          .drop(metaColumnsArray);
       snappyJavaUtil(modifiedDelete.write()).deleteFrom("APP." + snappyTable);
 
       if (insertFollowedByDeleteCount > 0L) {
@@ -112,16 +114,16 @@ public class ProcessEvents implements SnappyStreamSink {
 
 
         Dataset<Row> afterDrop = filteredUpdates
-            .drop(metaColumns.toArray(new String[metaColumns.size()]));
+            .drop(metaColumnsArray);
         snappyJavaUtil(afterDrop.write()).putInto("APP." + snappyTable);
       } else {
         Dataset<Row> modifiedUpdate = snappyCustomerUpsert
-            .drop(metaColumns.toArray(new String[metaColumns.size()]));
+            .drop(metaColumnsArray);
         snappyJavaUtil(modifiedUpdate.write()).putInto("APP." + snappyTable);
       }
     } else {
       Dataset<Row> modifiedUpdate = snappyCustomerUpsert
-          .drop(metaColumns.toArray(new String[metaColumns.size()]));
+          .drop(metaColumnsArray);
       snappyJavaUtil(modifiedUpdate.write()).putInto("APP." + snappyTable);
     }
   }
@@ -131,7 +133,7 @@ public class ProcessEvents implements SnappyStreamSink {
 
     String snappyTable = sinkProps.getProperty("tablename").toUpperCase();
 
-    log.info("SB: Processing for " + snappyTable + " batchId " + batchId);
+    log.debug("SB: Processing for " + snappyTable + " batchId " + batchId);
 
       /* --------------[ Preferred Way ] ---------------- */
     df.cache();
