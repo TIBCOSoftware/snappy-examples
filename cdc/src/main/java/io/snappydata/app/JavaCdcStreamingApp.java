@@ -60,9 +60,10 @@ public class JavaCdcStreamingApp {
 
   private SnappySession createSnappySession(String table) throws ClassNotFoundException, IOException {
     String checkPointDir = Utils.createTempDir(".", "stream-spark-"+table).getCanonicalPath();
-    snappySpark = new SnappySession(SparkSession.builder().
-        config("spark.sql.streaming.checkpointLocation", checkPointDir).
-        getOrCreate().sparkContext());
+    snappySpark = new SnappySession(SparkSession.builder()
+        .master("local")
+        .config("spark.sql.streaming.checkpointLocation", checkPointDir)
+        .getOrCreate().sparkContext());
 
     return snappySpark;
   }

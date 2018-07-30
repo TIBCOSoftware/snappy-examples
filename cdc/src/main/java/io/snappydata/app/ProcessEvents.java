@@ -37,7 +37,7 @@ public class ProcessEvents implements SnappyStreamSink {
   private static final Logger log = Logger.getLogger(ProcessEvents.class.getName());
 
   private static final List<String> metaColumns = asList("__$start_lsn",
-      "__$end_lsn", "__$seqval", "__$operation", "__$update_mask", "__$command_id", "STRLSN");
+      "__$end_lsn", "__$seqval", "__$operation", "__$update_mask", "__$command_id", "STRLSN", "LSNTOTIME");
 
   private static final String[] metaColumnsArray =
       metaColumns.toArray(new String[metaColumns.size()]);

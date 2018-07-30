@@ -38,6 +38,14 @@ public class SqlServerSpec implements SourceSpec {
   }
 
   @Override
+  public String projectedColumns(){
+      String offsetColumn = offsetColumn();
+      String query = String.format("master.dbo.fn_varbintohexstr(%s) as STRLSN," +
+          "sys.fn_cdc_map_lsn_to_time(%s) as LSNTOTIME, *", offsetColumn, offsetColumn);
+      return query;
+  }
+
+  @Override
   public String getNextOffset(String tableName, String currentOffset, int maxEvents) {
     String offsetColumn = offsetColumn();
     String query = String.format("select master.dbo.fn_varbintohexstr(max(%s)) nextLSN " +
