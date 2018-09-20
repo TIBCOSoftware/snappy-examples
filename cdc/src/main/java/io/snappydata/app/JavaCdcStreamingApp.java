@@ -116,7 +116,7 @@ public class JavaCdcStreamingApp {
 
     Dataset<Column> keyColumns = snappySpark.sessionCatalog().getKeyColumns(tableName);
     String keyCols = convertDataSetToString(keyColumns);
-    System.out.println("Key Columns are :: " + keyColumns);
+    System.out.println("Key Columns are :: " + keyCols);
     return reader.writeStream()
         .trigger(ProcessingTime.create(10, TimeUnit.SECONDS))
         .format(StreamConf.SNAPPY_SINK())
