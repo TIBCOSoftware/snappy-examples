@@ -18,21 +18,21 @@ package io.snappydata.app;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang.StringUtils;
+import com.gemstone.gemfire.internal.util.ArrayUtils;
 import org.apache.log4j.Logger;
-import org.apache.spark.sql.*;
 import org.apache.spark.sql.expressions.Window;
 import org.apache.spark.sql.expressions.WindowSpec;
+import org.apache.spark.sql.Row;
+import org.apache.spark.sql.*;
 import org.apache.spark.sql.streaming.jdbc.SnappyStreamSink;
-import org.apache.commons.lang.StringUtils;
+
 import static java.util.Arrays.asList;
 import static org.apache.spark.SnappyJavaUtils.snappyJavaUtil;
 import static org.apache.spark.sql.functions.col;
-import static org.apache.spark.sql.functions.*;
+import static org.apache.spark.sql.functions.first;
 
 public class ProcessEvents implements SnappyStreamSink {
 
@@ -81,29 +81,29 @@ public class ProcessEvents implements SnappyStreamSink {
             // pick only insert/update ops
             .filter("\"__$operation\" = 4 OR \"__$operation\" = 2");
         System.out.println("Update insert");
-        snappyCustomerUpsert.show();
-        // df.show();
+        snappyCustomerUpsert.show(false);
+        // df.show(false);
         Dataset<Row> snappyCustomerDelete = df
             // pick only delete ops
             .filter("\"__$operation\" = 1");
         System.out.println("Delete");
-        snappyCustomerDelete.show();
+        snappyCustomerDelete.show(false);
         if (snappyCustomerDelete.count() > 0) {
             // Filter out all inserts which are before a delete by comparing their LSN numbers.
             // We are checking less than or equal to as one transaction might do both the operations.
             Column joinExpr = joinExpresssion(keyColumns, "u", "d");
             Dataset<Row> insertsFollowedByDeletes = snappyCustomerUpsert.as("u").join(snappyCustomerDelete.as("d"),
-                joinExpr.and(col("u.STRLSN").leq(col("d.STRLSN"))).and(col("u.__$seqval").leq(col("d.__$seqval"))), "left_semi");
+                joinExpr.and(col("u.STRLSN").lt(col("d.STRLSN")).or(
+                    col("u.STRLSN").equalTo(col("d.STRLSN")).and(
+                        col("u.__$seqval").lt(col("d.__$seqval"))))), "left_semi");
 
-            System.out.println("Conflated upserts before deletes");
-            Dataset<Row> conflatedUpserts = conflateUpserts(keyColumns,insertsFollowedByDeletes);
 
             long insertFollowedByDeleteCount = insertsFollowedByDeletes.count();
 
             if (insertFollowedByDeleteCount > 0L) {
                 System.out.println("Inserts follwed by deletes");
-                conflatedUpserts.show();
-                Dataset<Row> modifiedUpdate = conflatedUpserts
+                insertsFollowedByDeletes.show(false);
+                Dataset<Row> modifiedUpdate = insertsFollowedByDeletes
                     .drop(metaColumnsArray);
 
                 snappyJavaUtil(modifiedUpdate.write()).putInto("APP." + snappyTable);
@@ -118,32 +118,28 @@ public class ProcessEvents implements SnappyStreamSink {
                 // Filter out such updates from the main update set.
                 Column joinExpr2 = joinExpresssion(keyColumns, "up", "ud");
                 Dataset<Row> filteredUpdates = snappyCustomerUpsert.as("up").join(insertsFollowedByDeletes.as("ud"),
-                    joinExpr2.and(col("up.STRLSN").equalTo(col("ud.STRLSN"))).and(col("up.__$seqval").equalTo(col("ud.__$seqval"))), "left_anti");
+                    joinExpr2.and(col("up.STRLSN").equalTo(col("ud.STRLSN")).and(
+                        col("up.__$seqval").equalTo(col("ud.__$seqval")))), "left_anti");
 
                 System.out.println("Filtered updates");
-                filteredUpdates.show();
+                filteredUpdates.show(false);
 
-                System.out.println("Conflated upserts after deletes");
-
-                Dataset<Row> conflatedUpserts1 = conflateUpserts(keyColumns,filteredUpdates);
-                Dataset<Row> afterDrop = conflatedUpserts1
+                Dataset<Row> afterDrop = conflateUpserts(keyColumns,filteredUpdates)
                     .drop(metaColumnsArray);
                 snappyJavaUtil(afterDrop.write()).putInto("APP." + snappyTable);
                 System.out.println("After dropping meta columns");
-                afterDrop.show();
+                afterDrop.show(false);
             } else {
                 Dataset<Row> modifiedUpdate = snappyCustomerUpsert
                     .drop(metaColumnsArray);
                 System.out.println("Insert update");
-                modifiedUpdate.show();
+                modifiedUpdate.show(false);
                 snappyJavaUtil(modifiedUpdate.write()).putInto("APP." + snappyTable);
             }
         } else {
-            System.out.println("Conflated upserts if deletes not present");
-            Dataset<Row> conflatedUpserts = conflateUpserts(keyColumns,snappyCustomerUpsert);
-            Dataset<Row> modifiedUpdate = conflatedUpserts
+            Dataset<Row> modifiedUpdate = conflateUpserts(keyColumns,snappyCustomerUpsert)
                 .drop(metaColumnsArray);
-            modifiedUpdate.show();
+            modifiedUpdate.show(false);
             snappyJavaUtil(modifiedUpdate.write()).putInto("APP." + snappyTable);
         }
     }
@@ -184,12 +180,29 @@ public class ProcessEvents implements SnappyStreamSink {
         return equalsStream.stream().reduce((c1, c2) -> c1.and(c2)).get();
     }
 
+    // pick only update ops if Update followed by insert performed on same key
     private Dataset<Row> conflateUpserts(List<String> keyCols, Dataset<Row> df){
-        WindowSpec windowSpec = Window.partitionBy(keyCols.get(0)).orderBy(col("__$seqval").desc());
-        Dataset<Row> conflatedUpserts = df.withColumn("seqval", first("__$seqval").over(windowSpec))
+            String cols = keyCols.get(0);
+            WindowSpec windowSpec;
+            // if table contains single key column
+            if(keyCols.size()==1)
+            {
+                windowSpec = Window.partitionBy(cols).orderBy(col("STRLSN").desc(), col("__$seqval").desc());
+            }
+            // If table contains multiple key columns
+            else {
+                String[] array = keyCols.stream().toArray(String[]::new);
+                array = (String[])ArrayUtils.remove(array,0);
+                windowSpec = Window.partitionBy(cols,array).orderBy(col("STRLSN").desc(), col("__$seqval").desc());
+
+            }
+            Dataset<Row> conflatedUpserts = df.withColumn("seqval", first("__$seqval").over(windowSpec))
                 .select("*").where(col("seqval").equalTo(col("__$seqval")))
                 .drop("seqval");
-        conflatedUpserts.show();
-        return conflatedUpserts;
+            System.out.println("Conflated upserts");
+            conflatedUpserts.show(false);
+            return conflatedUpserts;
+
     }
+
 }
