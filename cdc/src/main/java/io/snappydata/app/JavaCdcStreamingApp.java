@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import org.apache.spark.scheduler.SparkListener;
 import org.apache.spark.scheduler.SparkListenerApplicationEnd;
@@ -39,6 +40,9 @@ import org.apache.spark.sql.streaming.ProcessingTime;
 import org.apache.spark.sql.streaming.StreamingQuery;
 import org.apache.spark.sql.streaming.jdbc.StreamConf;
 import org.apache.spark.util.Utils;
+import scala.collection.Seq;
+
+import static scala.collection.JavaConversions.seqAsJavaList;
 
 public class JavaCdcStreamingApp {
 
@@ -114,15 +118,16 @@ public class JavaCdcStreamingApp {
   protected StreamingQuery getStreamWriter(String tableName,
       Dataset<Row> reader) throws IOException {
 
-    Dataset<Column> keyColumns = snappySpark.sessionCatalog().getKeyColumns(tableName);
-    String keyCols = convertDataSetToString(keyColumns);
-    System.out.println("Key Columns are :: " + keyCols);
+    Seq<Column> keyColumns = snappySpark.sessionCatalog().getKeyColumns(tableName);
+    String keyColsCSV = seqAsJavaList(keyColumns).stream()
+          .map(Column::name).collect(Collectors.joining(","));
+    System.out.println("Key Columns are :: " + keyColsCSV);
     return reader.writeStream()
         .trigger(ProcessingTime.create(10, TimeUnit.SECONDS))
         .format(StreamConf.SNAPPY_SINK())
         .option("sink", ProcessEvents.class.getName())
         .option("tableName", tableName)
-        .option("keyColumns", keyCols)
+        .option("keyColumns", keyColsCSV)
         .option("handleconflict", keyColumns != null ? "true" : "false")
         .start();
   }
@@ -160,21 +165,6 @@ public class JavaCdcStreamingApp {
       String value = properties.getProperty(key);
       sourceDestTables.put(key, value);
     }
-  }
-
-  private String convertDataSetToString(Dataset<Column> columns) {
-    StringBuilder builder = new StringBuilder();
-    Column[] all = (Column[]) columns.collect();
-    int numColumns = all.length;
-    int i = 1;
-    for(Column c : all){
-       builder.append(c.name());
-       if (i != numColumns){
-           builder.append(",");
-       }
-       i++;
-     }
-     return builder.toString();
   }
 
 }
