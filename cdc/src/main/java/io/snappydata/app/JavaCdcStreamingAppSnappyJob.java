@@ -17,7 +17,6 @@
 package io.snappydata.app;
 
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -29,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import com.typesafe.config.Config;
+import org.apache.log4j.Logger;
 import org.apache.spark.scheduler.SparkListener;
 import org.apache.spark.scheduler.SparkListenerApplicationEnd;
 import org.apache.spark.sql.*;
@@ -39,8 +39,6 @@ import org.apache.spark.sql.streaming.StreamingQuery;
 import org.apache.spark.sql.streaming.jdbc.StreamConf;
 import org.apache.spark.util.Utils;
 import scala.collection.Seq;
-import org.apache.spark.sql.Row;
-
 import static scala.collection.JavaConversions.seqAsJavaList;
 
 public class JavaCdcStreamingAppSnappyJob extends JavaSnappySQLJob{
@@ -57,13 +55,11 @@ public class JavaCdcStreamingAppSnappyJob extends JavaSnappySQLJob{
 
     public Object runSnappyJob(SnappySession snappy, Config jobConfig) {
         try{
-
             System.setProperty("java.security.egd", "file:///dev/urandom");
             JavaCdcStreamingAppSnappyJob _this = new JavaCdcStreamingAppSnappyJob();
             String configFile =  jobConfig.getString("configFile");
             Properties prop = new Properties();
             prop.load(new FileInputStream(configFile));
-            //String configFile1 = "/Users/smahajan/Downloads/scriptsForApp1/cdc_source_connection.properties";
             String configFile1 = jobConfig.getString("configFile1");
             Properties prop1 = new Properties();
             prop1.load(new FileInputStream(configFile1));
@@ -138,10 +134,8 @@ public class JavaCdcStreamingAppSnappyJob extends JavaSnappySQLJob{
         Dataset<Row> reader) throws IOException {
 
         Seq<Column> keyColumns = snappySpark.sessionCatalog().getKeyColumns(tableName);
-
         String keyColsCSV = seqAsJavaList(keyColumns).stream()
             .map(Column::name).collect(Collectors.joining(","));
-
         System.out.println("Key Columns are : " + keyColsCSV);
         return reader.writeStream()
             .trigger(ProcessingTime.create(10, TimeUnit.SECONDS))
@@ -151,15 +145,6 @@ public class JavaCdcStreamingAppSnappyJob extends JavaSnappySQLJob{
             .option("keyColumns", keyColsCSV)
             .option("handleconflict", keyColumns != null ? "true" : "false")
             .start();
-    }
-
-    private static Properties readPropertyFile(String filePath) throws Exception {
-        File file = new File(filePath);
-        FileInputStream fileInput = new FileInputStream(file);
-        Properties properties = new Properties();
-        properties.load(fileInput);
-        fileInput.close();
-        return properties;
     }
 
     private static java.util.Map<String, String> fillSourceOptions(Properties args) throws Exception {
@@ -186,5 +171,4 @@ public class JavaCdcStreamingAppSnappyJob extends JavaSnappySQLJob{
             sourceDestTables.put(key, value);
         }
     }
-
 }
