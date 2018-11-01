@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
-import com.gemstone.gemfire.internal.util.ArrayUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.log4j.Logger;
 import org.apache.spark.sql.expressions.Window;
 import org.apache.spark.sql.expressions.WindowSpec;
