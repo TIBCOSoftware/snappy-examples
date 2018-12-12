@@ -18,7 +18,6 @@ package io.snappydata.app;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Properties;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.ArrayUtils;
@@ -45,11 +44,11 @@ public class ProcessEvents implements SnappyStreamSink {
         metaColumns.toArray(new String[metaColumns.size()]);
 
     @Override
-    public void process(SnappySession snappySession, Properties sinkProps,
+    public void process(SnappySession snappySession, scala.collection.immutable.Map<String, String> sinkProps,
         long batchId, Dataset<Row> df) {
 
-        String snappyTable = sinkProps.getProperty("tablename").toUpperCase();
-        boolean handleConflict = Boolean.parseBoolean(sinkProps.getProperty("handleconflict"));
+        String snappyTable = sinkProps.get("tablename").get().toUpperCase();
+        boolean handleConflict = Boolean.parseBoolean(sinkProps.get("handleconflict").get());
 
         // If for some table we are sure not to handle conflicting property keep it simple
         if (!handleConflict) {
@@ -61,7 +60,7 @@ public class ProcessEvents implements SnappyStreamSink {
 
         // String separated key columns. This should match with column
         // table key columns or row table primary key.
-        String commaSepratedKeyColumns = (String)sinkProps.get("keycolumns");
+        String commaSepratedKeyColumns = sinkProps.get("keycolumns").get();
 
         List<String> keyColumns = Arrays.asList(commaSepratedKeyColumns.split(","));
 
@@ -144,10 +143,10 @@ public class ProcessEvents implements SnappyStreamSink {
         }
     }
 
-    public void simpleProcess(SnappySession snappySession, Properties sinkProps,
+    public void simpleProcess(SnappySession snappySession, scala.collection.immutable.Map<String, String> sinkProps,
         long batchId, Dataset<Row> df) {
 
-        String snappyTable = sinkProps.getProperty("tablename").toUpperCase();
+        String snappyTable = sinkProps.get("tablename").get().toUpperCase();
 
         log.debug("SB: Processing for " + snappyTable + " batchId " + batchId);
 
@@ -204,5 +203,4 @@ public class ProcessEvents implements SnappyStreamSink {
             return conflatedUpserts;
 
     }
-
 }
