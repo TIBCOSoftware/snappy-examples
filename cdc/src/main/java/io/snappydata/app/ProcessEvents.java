@@ -47,7 +47,7 @@ public class ProcessEvents implements SnappyStreamSink {
     public void process(SnappySession snappySession, scala.collection.immutable.Map<String, String> sinkProps,
         long batchId, Dataset<Row> df) {
 
-        String snappyTable = sinkProps.get("tablename").get().toUpperCase();
+        String snappyTable = sinkProps.get("tableName").get().toUpperCase();
         boolean handleConflict = Boolean.parseBoolean(sinkProps.get("handleconflict").get());
 
         // If for some table we are sure not to handle conflicting property keep it simple
@@ -60,7 +60,7 @@ public class ProcessEvents implements SnappyStreamSink {
 
         // String separated key columns. This should match with column
         // table key columns or row table primary key.
-        String commaSepratedKeyColumns = sinkProps.get("keycolumns").get();
+        String commaSepratedKeyColumns = sinkProps.get("keyColumns").get();
 
         List<String> keyColumns = Arrays.asList(commaSepratedKeyColumns.split(","));
 
@@ -146,7 +146,7 @@ public class ProcessEvents implements SnappyStreamSink {
     public void simpleProcess(SnappySession snappySession, scala.collection.immutable.Map<String, String> sinkProps,
         long batchId, Dataset<Row> df) {
 
-        String snappyTable = sinkProps.get("tablename").get().toUpperCase();
+        String snappyTable = sinkProps.get("tableName").get().toUpperCase();
 
         log.debug("SB: Processing for " + snappyTable + " batchId " + batchId);
 
