@@ -81,13 +81,13 @@ public class ProcessEvents implements SnappyStreamSink {
             // pick only insert/update ops
             .filter("\"__$operation\" = 4 OR \"__$operation\" = 2");
         System.out.println("Update insert");
-        snappyCustomerUpsert.show(false);
+        snappyCustomerUpsert.show();
         // df.show(false);
         Dataset<Row> snappyCustomerDelete = df
             // pick only delete ops
             .filter("\"__$operation\" = 1");
         System.out.println("Delete");
-        snappyCustomerDelete.show(false);
+        snappyCustomerDelete.show();
         if (snappyCustomerDelete.count() > 0) {
             // Filter out all inserts which are before a delete by comparing their LSN numbers.
             // We are checking less than or equal to as one transaction might do both the operations.
@@ -102,7 +102,7 @@ public class ProcessEvents implements SnappyStreamSink {
 
             if (insertFollowedByDeleteCount > 0L) {
                 System.out.println("Inserts follwed by deletes");
-                insertsFollowedByDeletes.show(false);
+                insertsFollowedByDeletes.show();
                 Dataset<Row> modifiedUpdate = insertsFollowedByDeletes
                     .drop(metaColumnsArray);
 
@@ -122,24 +122,24 @@ public class ProcessEvents implements SnappyStreamSink {
                         col("up.__$seqval").equalTo(col("ud.__$seqval")))), "left_anti");
 
                 System.out.println("Filtered updates");
-                filteredUpdates.show(false);
+                filteredUpdates.show();
 
                 Dataset<Row> afterDrop = conflateUpserts(keyColumns,filteredUpdates)
                     .drop(metaColumnsArray);
                 snappyJavaUtil(afterDrop.write()).putInto("APP." + snappyTable);
                 System.out.println("After dropping meta columns");
-                afterDrop.show(false);
+                afterDrop.show();
             } else {
                 Dataset<Row> modifiedUpdate = snappyCustomerUpsert
                     .drop(metaColumnsArray);
                 System.out.println("Insert update");
-                modifiedUpdate.show(false);
+                modifiedUpdate.show();
                 snappyJavaUtil(modifiedUpdate.write()).putInto("APP." + snappyTable);
             }
         } else {
             Dataset<Row> modifiedUpdate = conflateUpserts(keyColumns,snappyCustomerUpsert)
                 .drop(metaColumnsArray);
-            modifiedUpdate.show(false);
+            modifiedUpdate.show();
             snappyJavaUtil(modifiedUpdate.write()).putInto("APP." + snappyTable);
         }
     }
@@ -200,7 +200,7 @@ public class ProcessEvents implements SnappyStreamSink {
                 .select("*").where(col("seqval").equalTo(col("__$seqval")))
                 .drop("seqval");
             System.out.println("Conflated upserts");
-            conflatedUpserts.show(false);
+            conflatedUpserts.show();
             return conflatedUpserts;
 
     }

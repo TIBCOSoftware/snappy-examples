@@ -20,12 +20,8 @@ package io.snappydata.app;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Properties;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 import org.apache.spark.scheduler.SparkListener;
@@ -38,6 +34,7 @@ import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.streaming.DataStreamReader;
 import org.apache.spark.sql.streaming.ProcessingTime;
 import org.apache.spark.sql.streaming.StreamingQuery;
+import org.apache.spark.sql.streaming.StreamingQueryException;
 import org.apache.spark.sql.streaming.jdbc.StreamConf;
 import org.apache.spark.util.Utils;
 import scala.collection.Seq;
@@ -50,86 +47,155 @@ public class JavaCdcStreamingApp {
    * A map of source and destination table. The source table should have been defined in
    * the source database and destination table in SnappyData
    */
-  private final java.util.Map<String, String> sourceDestTables = new LinkedHashMap<>();
+  private final java.util.Map<String, String> sourceDestTables;
 
-  private java.util.Map<String, String> sourceOptions = new HashMap<>();
+  private final java.util.Map<String, String> sourceOptions;
+  Map<String, StreamingQuery> activeQueries = new ConcurrentHashMap<>();
 
-  private SnappySession snappySpark;
+//  private SnappySession snappySpark;
 
   public static void main(String[] args) throws Exception {
-    JavaCdcStreamingApp _this = new JavaCdcStreamingApp();
-    _this.initSourceOptions(args);
-    _this.startJob(args);
+    JavaCdcStreamingApp _this = new JavaCdcStreamingApp(args);
+    _this.startJob();
   }
 
-  private SnappySession createSnappySession(String table) throws ClassNotFoundException, IOException {
-    String checkPointDir = Utils.createTempDir(".", "stream-spark-" + table).getCanonicalPath();
-    snappySpark = new SnappySession(SparkSession.builder()
-          .config("spark.sql.streaming.checkpointLocation", checkPointDir)
-          .getOrCreate().sparkContext());
-    return snappySpark;
+  private JavaCdcStreamingApp(String[] args) throws Exception {
+    sourceOptions = Collections.unmodifiableMap(fillSourceOptions(args));
+    sourceDestTables = Collections.unmodifiableMap(configureTables(args));
   }
 
-  private void initSourceOptions(String[] args) throws Exception {
-    sourceOptions = fillSourceOptions(args);
+  private SnappySession createSnappySession() throws ClassNotFoundException, IOException {
+    String checkPointDir = Utils.createTempDir(".", "stream-spark-cdc").getCanonicalPath();
+    return new SnappySession(SparkSession.builder()
+            .config("spark.sql.streaming.checkpointLocation", checkPointDir)
+            .getOrCreate().sparkContext());
   }
 
-  private void startJob(String[] args) throws Exception {
-    configureTables(args);
-    ArrayList<StreamingQuery> activeQueries = new ArrayList<>(sourceDestTables.size());
+  private void startJob() throws Exception {
+    ExecutorService executorService = Executors.newFixedThreadPool(10);
     System.out.println("SourceOptiona are " + sourceOptions);
 
+//    snappySpark = createSnappySession();
+//
+//    snappySpark.sparkContext().addSparkListener(new SparkContextListener(activeQueries));
+
+    ExecutorService service = Executors.newFixedThreadPool(2);
+    List<Future> queries = new ArrayList<>();
     for (String sourceTable : sourceDestTables.keySet()) {
-      SnappySession newSession = createSnappySession(sourceTable);
-      DataStreamReader reader = newSession.readStream()
-          .format(StreamConf.JDBC_STREAM())
-          .option(StreamConf.SPEC(), "io.snappydata.app.SqlServerSpec")
-          .option(StreamConf.SOURCE_TABLE_NAME(), sourceTable)
-          .option(StreamConf.MAX_EVENTS(), "50000")
-          .options(sourceOptions);
+      Future<?> adjustment = service.submit(() -> {
+        try {
+          startStream(4, sourceTable, "adjustment");
+        } catch (StreamingQueryException | IOException | InterruptedException | ClassNotFoundException e) {
+          throw new RuntimeException();
+        }
+      });
+      Thread.sleep(10000);
+      Future<?> adjustment1 = service.submit(() -> {
+        try {
+          startStream(4, sourceTable, "adjustment1");
+        } catch (StreamingQueryException | IOException | InterruptedException | ClassNotFoundException e) {
+          throw new RuntimeException();
+        }
+      });
 
-      Dataset<Row> ds = reader.load();
-      StreamingQuery q = getStreamWriter(sourceDestTables.get(sourceTable), ds);
-      activeQueries.add(q);
+      try {
+        adjustment.get();
+      } catch (Exception e){
+        System.out.println("adjustemnt failed with "+ e.getClass().getCanonicalName() +
+                " message "+ e.getMessage() + " cause " + e.getCause().getClass().getCanonicalName());
+        e.printStackTrace();
+      }
+      try {
+        adjustment1.get();
+      } catch (Exception e){
+        System.out.println("adjustemnt1 failed with "+ e.getClass().getCanonicalName() +
+                " message "+ e.getMessage() + " cause " + e.getCause().getClass().getCanonicalName());
+        e.printStackTrace();
+      }
+//      startStream(4, sourceTable, "adjustment");
+//      startStream(4, sourceTable, "ad justment1");
+      //queries.add(executorService.submit(new StreamQueryExecutor(snappySpark, sourceTable, activeQueries, 5)));
     }
 
-    snappySpark.sparkContext().addSparkListener(new SparkContextListener(activeQueries));
+    executorService.shutdownNow();
+//    for ( StreamingQuery q: activeQueries.values()) {
+//      q.awaitTermination();
+//    }
 
-    for (StreamingQuery q : activeQueries) {
-      q.awaitTermination();
+  }
+  private void startStream(int attemptsLeft, String sourceTable, String tableName) throws StreamingQueryException, IOException, ClassNotFoundException, InterruptedException {
+    StreamingQuery query = null;
+    SnappySession snappySession = createSnappySession();
+    snappySession.sql("set spark.sql.autoBroadcastJoinThreshold=-1");
+    System.out.println(tableName + " starting stream. attempts left:" + attemptsLeft);
+    try {
+      query = startStreamQuery(snappySession,sourceTable, tableName);
+      activeQueries.put(sourceTable, query);
+     // snappySession.sparkContext().addSparkListener(new SparkContextListener(activeQueries));
+      query.awaitTermination();
+    } catch (Exception e) {
+      System.out.println("stream execution "+tableName+" failed with exception:");
+      System.out.println(tableName+" failed with "+ e.getClass().getCanonicalName() +
+              " message "+ e.getMessage() + " cause " + e.getCause().getClass().getCanonicalName());
+      e.printStackTrace();
+      if(query!=null && query.isActive()){
+        query.stop();
+      }
+
+      if(attemptsLeft ==0 ){
+        throw e;
+      }
+
+      Thread.sleep(30000L);
+      startStream(attemptsLeft - 1, sourceTable, tableName);
     }
+  }
+
+  private StreamingQuery startStreamQuery(SnappySession snappySession, String sourceTable, String tableName) throws ClassNotFoundException, IOException {
+
+    DataStreamReader reader = snappySession.readStream()
+            .format(StreamConf.JDBC_STREAM())
+            .option(StreamConf.SPEC(), "io.snappydata.app.SqlServerSpec")
+            .option(StreamConf.SOURCE_TABLE_NAME(), sourceTable)
+            .option(StreamConf.MAX_EVENTS(), "50000")
+            .options(sourceOptions);
+
+    Dataset<Row> ds = reader.load();
+    return getStreamWriter(snappySession, tableName, ds, sourceTable);
+  }
+
+  private StreamingQuery getStreamWriter(SnappySession snappySession, String tableName,
+                                         Dataset<Row> reader, String sourceTable) throws IOException {
+
+    Seq<Column> keyColumns = snappySession.sessionCatalog().getKeyColumns(tableName);
+    String keyColsCSV = seqAsJavaList(keyColumns).stream()
+            .map(Column::name).collect(Collectors.joining(","));
+    System.out.println("Key Columns are :: " + keyColsCSV);
+    return reader.writeStream()
+            .trigger(ProcessingTime.create(10, TimeUnit.SECONDS))
+            .format(StreamConf.SNAPPY_SINK())
+            .option("sink", ProcessEvents.class.getName())
+            .option("tableName", tableName)
+            .queryName(tableName)
+            .option("keyColumns", keyColsCSV)
+            .option("handleconflict", keyColumns != null ? "true" : "false")
+            .start();
   }
 
   private class SparkContextListener extends SparkListener {
-    ArrayList<StreamingQuery> activeQueries;
-    public SparkContextListener(ArrayList<StreamingQuery> activeQueries) {
+    Map<String, StreamingQuery> activeQueries;
+    SparkContextListener(Map<String, StreamingQuery> activeQueries) {
       this.activeQueries = activeQueries;
     }
+
     @Override
     public void onApplicationEnd(SparkListenerApplicationEnd applicationEnd) {
-      activeQueries.stream().forEach(q -> {
+      activeQueries.values().forEach(q -> {
         if (q.isActive()){
           q.stop();
         }
       });
     }
-  }
-
-  protected StreamingQuery getStreamWriter(String tableName,
-      Dataset<Row> reader) throws IOException {
-
-    Seq<Column> keyColumns = snappySpark.sessionCatalog().getKeyColumns(tableName);
-    String keyColsCSV = seqAsJavaList(keyColumns).stream()
-          .map(Column::name).collect(Collectors.joining(","));
-    System.out.println("Key Columns are :: " + keyColsCSV);
-    return reader.writeStream()
-        .trigger(ProcessingTime.create(10, TimeUnit.SECONDS))
-        .format(StreamConf.SNAPPY_SINK())
-        .option("sink", ProcessEvents.class.getName())
-        .option("tableName", tableName)
-        .option("keyColumns", keyColsCSV)
-        .option("handleconflict", keyColumns != null ? "true" : "false")
-        .start();
   }
 
   private static Properties readPropertyFile(String filePath) throws Exception {
@@ -156,15 +222,18 @@ public class JavaCdcStreamingApp {
     return options;
   }
 
-  private void configureTables(String[] args) throws Exception {
+  private Map<String, String> configureTables(String[] args) throws Exception {
     String sourceDestTablePath = args[1];
     Properties properties = readPropertyFile(sourceDestTablePath);
     Enumeration enuKeys = properties.keys();
+    Map<String, String> sourceDestTables = new HashMap<>();
     while (enuKeys.hasMoreElements()) {
       String key = (String)enuKeys.nextElement();
       String value = properties.getProperty(key);
       sourceDestTables.put(key, value);
     }
+
+    return sourceDestTables;
   }
 
 }
