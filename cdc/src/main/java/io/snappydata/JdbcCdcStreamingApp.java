@@ -53,7 +53,7 @@ public class JdbcCdcStreamingApp extends SQLServerCdcBase {
 		private static Logger log = Logger.getLogger(ProcessEvents.class.getName());
 
 		@Override
-		public void process(SnappySession snappySession, Properties sinkProps, long batchId, Dataset<Row> df) {
+		public void process(SnappySession snappySession, scala.collection.immutable.Map<String, String> sinkProps, long batchId, Dataset<Row> df) {
 
 			/*
 			 * NOTES: The incoming df has few conversions automatically done
@@ -68,7 +68,7 @@ public class JdbcCdcStreamingApp extends SQLServerCdcBase {
 			 * SnappySession apis.
 			 */
 
-			String sqlsrvTable = sinkProps.getProperty("tableName").toUpperCase();
+			String sqlsrvTable = sinkProps.get("tableName").get().toUpperCase();
 			String customerTable = sqlsrvTable.substring(sqlsrvTable.indexOf("DBO_") + 4, sqlsrvTable.indexOf("_CT"));
 			String personTable = customerTable + "_person";
 			String addrTable = customerTable + "_addr";
