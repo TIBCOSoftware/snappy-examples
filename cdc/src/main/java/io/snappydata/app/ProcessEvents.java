@@ -27,6 +27,7 @@ import org.apache.spark.sql.expressions.WindowSpec;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.*;
 import org.apache.spark.sql.streaming.jdbc.SnappyStreamSink;
+import org.apache.spark.sql.collection.Utils;
 
 import static java.util.Arrays.asList;
 import static org.apache.spark.SnappyJavaUtils.snappyJavaUtil;
@@ -47,8 +48,8 @@ public class ProcessEvents implements SnappyStreamSink {
     public void process(SnappySession snappySession, scala.collection.immutable.Map<String, String> sinkProps,
         long batchId, Dataset<Row> df) {
 
-        String snappyTable = sinkProps.get("tableName").get().toUpperCase();
-        boolean handleConflict = Boolean.parseBoolean(sinkProps.get("handleconflict").get());
+        String snappyTable = Utils.toUpperCase(sinkProps.apply("tableName"));
+        boolean handleConflict = Boolean.parseBoolean(sinkProps.apply("handleconflict"));
 
         // If for some table we are sure not to handle conflicting property keep it simple
         if (!handleConflict) {
@@ -60,7 +61,7 @@ public class ProcessEvents implements SnappyStreamSink {
 
         // String separated key columns. This should match with column
         // table key columns or row table primary key.
-        String commaSepratedKeyColumns = sinkProps.get("keyColumns").get();
+        String commaSepratedKeyColumns = sinkProps.apply("keyColumns");
 
         List<String> keyColumns = Arrays.asList(commaSepratedKeyColumns.split(","));
 
@@ -146,7 +147,7 @@ public class ProcessEvents implements SnappyStreamSink {
     public void simpleProcess(SnappySession snappySession, scala.collection.immutable.Map<String, String> sinkProps,
         long batchId, Dataset<Row> df) {
 
-        String snappyTable = sinkProps.get("tableName").get().toUpperCase();
+        String snappyTable = Utils.toUpperCase(sinkProps.apply("tableName"));
 
         log.debug("SB: Processing for " + snappyTable + " batchId " + batchId);
 
