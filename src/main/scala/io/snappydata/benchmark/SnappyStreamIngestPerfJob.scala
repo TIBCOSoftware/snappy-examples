@@ -22,10 +22,10 @@ class SnappyStreamIngestPerfJob extends SnappyStreamingJob {
       " geo string," +
       " bid double," +
       " cookie string) " +
-      " using directkafka_stream options (" +
+      " using kafka_stream options (" +
       " rowConverter 'io.snappydata.adanalytics.AdImpressionToRowsConverter' ," +
       s" kafkaParams 'metadata.broker.list->$brokerList'," +
-      s" topics '$kafkaTopic'," +
+      s" subscribe '$kafkaTopic'," +
       " K 'java.lang.String'," +
       " V 'io.snappydata.adanalytics.AdImpressionLog', " +
       " KD 'kafka.serializer.StringDecoder', " +

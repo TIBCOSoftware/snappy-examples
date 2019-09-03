@@ -20,7 +20,7 @@ package io.snappydata.benchmark
 import java.util.Properties
 
 import io.snappydata.adanalytics.Configs._
-import io.snappydata.adanalytics.KafkaAdImpressionProducer._
+import io.snappydata.adanalytics.KafkaAdImpressionProducer.{props, _}
 import io.snappydata.adanalytics.{AdImpressionGenerator, AdImpressionLog, Configs}
 import kafka.producer.{KeyedMessage, Producer, ProducerConfig}
 
@@ -34,11 +34,11 @@ object KafkaAdImpressionAsyncProducer{
   val props = new Properties()
   props.put("producer.type", "async")
   props.put("request.required.acks", "0")
-  props.put("serializer.class", "io.snappydata.adanalytics.AdImpressionLogAvroEncoder")
+  props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer")
+  props.put("value.serializer", "io.snappydata.adanalytics.AdImpressionLogAvroSerializer")
   props.put("queue.buffering.max.messages", "1000000") // 10000
   props.put("metadata.broker.list", brokerList)
   props.put("partitioner.class", "kafka.producer.DefaultPartitioner")
-  props.put("key.serializer.class", "kafka.serializer.StringEncoder")
   props.put("batch.size", "9000000") // bytes
   props.put("linger.ms", "50")
 

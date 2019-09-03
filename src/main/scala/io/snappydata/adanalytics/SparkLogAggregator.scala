@@ -2,9 +2,11 @@ package io.snappydata.adanalytics
 
 import com.twitter.algebird.{HLL, HyperLogLogMonoid}
 import io.snappydata.adanalytics.Configs._
+import io.snappydata.adanalytics.SnappyAPILogAggregator.ssc
 import kafka.serializer.StringDecoder
 import org.apache.spark.SparkConf
 import org.apache.spark.streaming.kafka.KafkaUtils
+import org.apache.spark.streaming.kafka010.{ConsumerStrategies, KafkaUtils, LocationStrategies}
 import org.apache.spark.streaming.{Seconds, StreamingContext}
 import org.joda.time.DateTime
 
@@ -23,14 +25,16 @@ object SparkLogAggregator extends App {
   val ssc = new StreamingContext(sc, Seconds(1))
 
   // stream of (topic, ImpressionLog)
-  val messages = KafkaUtils.createDirectStream
-    [String, AdImpressionLog, StringDecoder, AdImpressionLogAvroDecoder](ssc, kafkaParams, topics)
+  val consumerStrategies = ConsumerStrategies
+    .Subscribe[String, AdImpressionLog](topics, kafkaParams)
+  val messages = KafkaUtils.createDirectStream[String, AdImpressionLog](ssc,
+    LocationStrategies.PreferConsistent, consumerStrategies)
 
   // to count uniques
   lazy val hyperLogLog = new HyperLogLogMonoid(12)
 
   // we filter out non resolved geo (unknown) and map (pub, geo) -> AggLog that will be reduced
-  val logsByPubGeo = messages.map(_._2).filter(_.getGeo != Configs.UnknownGeo).map {
+  val logsByPubGeo = messages.map(_.value()).filter(_.getGeo != Configs.UnknownGeo).map {
     log =>
       val key = PublisherGeoKey(log.getPublisher.toString, log.getGeo.toString)
       val agg = AggregationLog(

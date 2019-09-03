@@ -17,6 +17,7 @@
 
 package io.snappydata.adanalytics
 
+import io.snappydata.benchmark.KafkaAdImpressionAsyncProducer.props
 import org.apache.spark.sql.types._
 import org.apache.spark.streaming.Seconds
 
@@ -37,7 +38,9 @@ object Configs {
   val brokerList = "localhost:9092"
 
   val kafkaParams: Map[String, String] = Map(
-    "metadata.broker.list" -> brokerList
+    "metadata.broker.list" -> brokerList,
+    "key.serializer" -> "org.apache.kafka.common.serialization.StringSerializer",
+    "value.serializer" -> "io.snappydata.adanalytics.AdImpressionLogAvroSerializer"
   )
 
   val hostname = "localhost"

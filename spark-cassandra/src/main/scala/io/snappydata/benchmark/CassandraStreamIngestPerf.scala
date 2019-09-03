@@ -22,6 +22,7 @@ import com.datastax.spark.connector.cql.CassandraConnector
 import io.snappydata.adanalytics.AdImpressionLogAvroDecoder
 import io.snappydata.adanalytics.Configs._
 import io.snappydata.adanalytics.AdImpressionLog
+import io.snappydata.adanalytics.SnappyAPILogAggregator.ssc
 import kafka.serializer.StringDecoder
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.cassandra.CassandraSQLContext

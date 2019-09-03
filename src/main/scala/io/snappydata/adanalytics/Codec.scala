@@ -16,20 +16,12 @@
  */
 
 package io.snappydata.adanalytics
-
-import com.miguno.kafka.avro.{AvroDecoder, AvroEncoder}
 import kafka.utils.VerifiableProperties
 import org.apache.avro.io.DecoderFactory
 import org.apache.avro.specific.SpecificDatumReader
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.streaming.{StreamConverter, StreamToRowsConverter}
-
-class AdImpressionLogAvroEncoder(props: VerifiableProperties = null)
-  extends AvroEncoder[AdImpressionLog](props, AdImpressionLog.getClassSchema)
-
-class AdImpressionLogAvroDecoder(props: VerifiableProperties = null)
-  extends AvroDecoder[AdImpressionLog](props, AdImpressionLog.getClassSchema)
 
 class AdImpressionToRowsConverter extends StreamToRowsConverter with Serializable {
 

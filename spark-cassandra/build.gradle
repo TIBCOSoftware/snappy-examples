@@ -1,9 +1,9 @@
 dependencies {
-  compileOnly "org.apache.spark:spark-core_2.11:1.6.0"
-  compileOnly "org.apache.spark:spark-streaming_2.11:1.6.0"
-  compileOnly "org.apache.spark:spark-streaming-kafka_2.11:1.6.0"
+  compileOnly "org.apache.spark:spark-core_2.11:$sparkVersion"
+  compileOnly "org.apache.spark:spark-streaming_2.11:$sparkVersion"
+  compileOnly "org.apache.spark:spark-streaming-kafka_2.11:$sparkVersion"
   // compile "org.apache.spark:spark-streaming-kafka_2.10:1.6.0" //required in assemble jar in cluster mode
-  compileOnly "org.apache.spark:spark-sql_2.11:1.6.0"
+  compileOnly "org.apache.spark:spark-sql_2.11:$sparkVersion"
 
   compile project(':')
   compile 'com.datastax.spark:spark-cassandra-connector_2.11:1.6.0-M2'
@@ -33,5 +33,3 @@ task startOLAPStreamingBenchmark(type: JavaExec, dependsOn: classes) {
   classpath filterGuava
   environment 'PROJECT_ASSEMBLY_JAR', "~/guava-16.0.1.jar:~/AdImpressionLogAggr-0.3-assembly.jar"
 }
-
-

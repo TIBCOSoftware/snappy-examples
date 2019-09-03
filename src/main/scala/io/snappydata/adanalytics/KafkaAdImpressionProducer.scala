@@ -31,9 +31,9 @@ import io.snappydata.adanalytics.KafkaAdImpressionProducer._
 object KafkaAdImpressionProducer{
 
   val props = new Properties()
-  props.put("serializer.class", "io.snappydata.adanalytics.AdImpressionLogAvroEncoder")
   props.put("partitioner.class", "kafka.producer.DefaultPartitioner")
-  props.put("key.serializer.class", "kafka.serializer.StringEncoder")
+  props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer")
+  props.put("value.serializer", "io.snappydata.adanalytics.AdImpressionLogAvroSerializer")
   props.put("metadata.broker.list", brokerList)
 
   val config = new ProducerConfig(props)

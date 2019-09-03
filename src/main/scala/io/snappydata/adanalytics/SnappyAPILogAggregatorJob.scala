@@ -19,10 +19,10 @@ package io.snappydata.adanalytics
 
 import com.typesafe.config.Config
 import io.snappydata.adanalytics.Configs._
-import kafka.serializer.StringDecoder
 import org.apache.spark.sql.streaming.{SchemaDStream, SnappyStreamingJob}
 import org.apache.spark.sql.{Row, SnappyJobValid, SnappyJobValidation}
 import org.apache.spark.streaming.kafka.KafkaUtils
+import org.apache.spark.streaming.kafka010.{ConsumerStrategies, KafkaUtils, LocationStrategies}
 import org.apache.spark.streaming.{Seconds, SnappyStreamingContext}
 
 /**
@@ -47,11 +47,16 @@ class SnappyAPILogAggregatorJob extends SnappyStreamingJob {
     snsc.sql("set spark.sql.shuffle.partitions=8")
 
     // stream of (topic, ImpressionLog)
-    val messages = KafkaUtils.createDirectStream
-      [String, AdImpressionLog, StringDecoder, AdImpressionLogAvroDecoder](snsc, kafkaParams, topics)
+    val consumerStrategies = ConsumerStrategies
+        .Subscribe[String, AdImpressionLog](topics, kafkaParams)
+    val messages = KafkaUtils.createDirectStream[String, AdImpressionLog](snsc,
+      LocationStrategies.PreferConsistent, consumerStrategies)
+
+//    val messages = KafkaUtils.createDirectStream
+//      [String, AdImpressionLog, StringDecoder, AdImpressionLogAvroDecoder](snsc, kafkaParams, topics)
 
     // Filter out bad messages ...use a 1 second window
-    val logs = messages.map(_._2).filter(_.getGeo != Configs.UnknownGeo)
+    val logs = messages.map(_.value()).filter(_.getGeo != Configs.UnknownGeo)
       .window(Seconds(1), Seconds(1))
 
     // Best to operate stream as a DataFrame/Table ... easy to run analytics on stream

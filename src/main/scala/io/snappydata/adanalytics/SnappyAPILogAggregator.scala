@@ -22,6 +22,7 @@ import kafka.serializer.StringDecoder
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.streaming.SchemaDStream
 import org.apache.spark.streaming.kafka.KafkaUtils
+import org.apache.spark.streaming.kafka010.{ConsumerStrategies, KafkaUtils, LocationStrategies}
 import org.apache.spark.streaming.{Duration, SnappyStreamingContext}
 import org.apache.spark.{SparkConf, SparkContext}
 
@@ -54,11 +55,17 @@ object SnappyAPILogAggregator extends App {
   ssc.sql("set spark.sql.shuffle.partitions=8")
 
   // stream of (topic, ImpressionLog)
-  val messages = KafkaUtils.createDirectStream
-    [String, AdImpressionLog, StringDecoder, AdImpressionLogAvroDecoder](ssc, kafkaParams, topics)
+//  val messages = KafkaUtils.createDirectStream
+//    [String, AdImpressionLog, StringDecoder, AdImpressionLogAvroDecoder](ssc, kafkaParams, topics)
+
+  // stream of (topic, ImpressionLog)
+  val consumerStrategies = ConsumerStrategies
+    .Subscribe[String, AdImpressionLog](topics, kafkaParams)
+  val messages = KafkaUtils.createDirectStream[String, AdImpressionLog](ssc,
+    LocationStrategies.PreferConsistent, consumerStrategies)
 
   // Filter out bad messages ...use a second window
-  val logs = messages.map(_._2).filter(_.getGeo != Configs.UnknownGeo)
+  val logs = messages.map(_.value()).filter(_.getGeo != Configs.UnknownGeo)
     .window(Duration(1000), Duration(1000))
 
   // We want to process the stream as a DataFrame/Table ... easy to run

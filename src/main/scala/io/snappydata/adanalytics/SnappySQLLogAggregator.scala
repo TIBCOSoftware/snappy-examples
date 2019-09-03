@@ -78,7 +78,7 @@ object SnappySQLLogAggregator extends App {
     " geo string," +
     " bid double," +
     " cookie string) " +
-    " using directkafka_stream options(" +
+    " using kafka_stream options(" +
     " rowConverter 'io.snappydata.adanalytics.AdImpressionToRowsConverter' ," +
     s" kafkaParams 'metadata.broker.list->$brokerList;auto.offset.reset->smallest'," +
     s" topics '$kafkaTopic'," +
