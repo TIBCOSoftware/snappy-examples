@@ -17,24 +17,26 @@
 
 package io.snappydata.adanalytics
 
+import com.typesafe.config.{Config, ConfigFactory}
 import io.snappydata.adanalytics.Configs._
-import kafka.serializer.StringDecoder
-import org.apache.spark.sql.Row
-import org.apache.spark.sql.streaming.SchemaDStream
-import org.apache.spark.streaming.kafka.KafkaUtils
-import org.apache.spark.streaming.{Duration, SnappyStreamingContext}
+import org.apache.kafka.common.serialization.ByteArrayDeserializer
+import org.apache.spark.sql._
+import org.apache.spark.sql.catalyst.encoders.RowEncoder
+import org.apache.spark.sql.functions.{approx_count_distinct, avg, count, window}
+import org.apache.spark.sql.types._
 import org.apache.spark.{SparkConf, SparkContext}
 
 /**
- * Example using Spark API + Snappy extension to model a Stream as a DataFrame.
- * The Spark driver and executors run in local mode and simply use Snappy
- * cluster as the data store.
- */
-object SnappyAPILogAggregator extends App {
+  * Example using Spark API + Snappy extension to model a Stream as a DataFrame.
+  *
+  * This example can be run either in local mode or can be submitted as a job
+  * to an already running SnappyData cluster.
+  */
+object SnappyAPILogAggregator extends SnappySQLJob with App {
 
   val conf = new SparkConf()
     .setAppName(getClass.getSimpleName)
-    .setMaster(s"$sparkMasterURL") // local split
+    .setMaster(s"$sparkMasterURL")
     .set("snappydata.store.locators", s"$snappyLocators")
     .set("spark.ui.port", "4041")
     .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
@@ -48,43 +50,94 @@ object SnappyAPILogAggregator extends App {
   }
 
   val sc = new SparkContext(conf)
-  val ssc = new SnappyStreamingContext(sc, batchDuration)
+  private val snappy = new SnappySession(sc)
 
-  // The volumes are low. Optimize Spark shuffle by reducing the partition count
-  ssc.sql("set spark.sql.shuffle.partitions=8")
+  runSnappyJob(snappy, ConfigFactory.empty())
 
-  // stream of (topic, ImpressionLog)
-  val messages = KafkaUtils.createDirectStream
-    [String, AdImpressionLog, StringDecoder, AdImpressionLogAvroDecoder](ssc, kafkaParams, topics)
-
-  // Filter out bad messages ...use a second window
-  val logs = messages.map(_._2).filter(_.getGeo != Configs.UnknownGeo)
-    .window(Duration(1000), Duration(1000))
-
-  // We want to process the stream as a DataFrame/Table ... easy to run
-  // analytics on stream ...will be standard part of Spark 2.0 (Structured
-  // streaming)
-  val rows = logs.map(v => Row(new java.sql.Timestamp(v.getTimestamp), v.getPublisher.toString,
-    v.getAdvertiser.toString, v.getWebsite.toString, v.getGeo.toString, v.getBid, v.getCookie.toString))
-
-  val logStreamAsTable : SchemaDStream = ssc.createSchemaDStream(rows, getAdImpressionSchema)
-
-  import org.apache.spark.sql.functions._
-
-  /**
-    * We want to execute the following analytic query ... using the DataFrame
-    * API ...
-    * select publisher, geo, avg(bid) as avg_bid, count(*) imps, count(distinct(cookie)) uniques
-    * from AdImpressionLog group by publisher, geo, timestamp"
+  /** Contains the implementation of the Job, Snappy uses this as
+    * an entry point to execute Snappy job
     */
-  logStreamAsTable.foreachDataFrame(df => {
-    val df1 = df.groupBy("publisher", "geo", "timestamp")
-      .agg(avg("bid").alias("avg_bid"), count("geo").alias("imps"),
-        countDistinct("cookie").alias("uniques"))
-    df1.show()
-  })
+  override def runSnappyJob(snappy: SnappySession, jobConfig: Config): Any = {
 
-  // start rolling!
-  ssc.start
-  ssc.awaitTermination
+    // The volumes are low. Optimize Spark shuffle by reducing the partition count
+    snappy.sql("set spark.sql.shuffle.partitions=8")
+
+    import org.apache.spark.sql.streaming.ProcessingTime
+    snappy.sql("drop table if exists adImpressionStream")
+    snappy.sql("drop table if exists sampledAdImpressions")
+    snappy.sql("drop table if exists aggrAdImpressions")
+
+    snappy.sql("create table aggrAdImpressions(time_stamp timestamp, publisher string," +
+      " geo string, avg_bid double, imps long, uniques long) " +
+      "using column options(buckets '11')")
+    val schema = StructType(Seq(StructField("timestamp", TimestampType), StructField("publisher", StringType),
+      StructField("advertiser", StringType), StructField("website", StringType), StructField("geo", StringType),
+      StructField("bid", DoubleType), StructField("cookie", StringType)))
+
+    def binaryToRowConverter: Array[Byte] => Row = {
+      v => {
+        val adImpressionLog = AdImpressionLogAvroDeserializer.deserialize(v)
+        Row(new java.sql.Timestamp(adImpressionLog.getTimestamp), adImpressionLog.getPublisher.toString,
+          adImpressionLog.getAdvertiser.toString, adImpressionLog.getWebsite.toString,
+          adImpressionLog.getGeo.toString, adImpressionLog.getBid, adImpressionLog.getCookie.toString)
+      }
+    }
+
+    val df = snappy.readStream
+      .format("kafka")
+      .option("kafka.bootstrap.servers", brokerList)
+      .option("value.deserializer", classOf[ByteArrayDeserializer].getName)
+      .option("startingOffsets", "earliest")
+      .option("maxOffsetsPerTrigger", 10000)
+      .option("subscribe", kafkaTopic)
+      .load().select("value").as[Array[Byte]](Encoders.BINARY)
+      .map(binaryToRowConverter)(RowEncoder.apply(schema))
+      .filter(s"geo != '${Configs.UnknownGeo}'")
+
+    // Group by on sliding window of 1 second
+    val windowedDF = df.groupBy(window(df.col("timestamp"), "1 seconds", "1 seconds"),
+      df.col("publisher"), df.col("geo"))
+      .agg(avg("bid").alias("avg_bid"), count("geo").alias("imps"),
+        approx_count_distinct("cookie").alias("uniques"))
+
+    val logStream = windowedDF.select("window.start", "publisher", "geo", "avg_bid", "imps", "uniques")
+      .writeStream
+      .format("snappysink")
+      .queryName("log_stream1")
+      .trigger(ProcessingTime("1 seconds"))
+      .option("tableName","aggrAdImpressions")
+      .option("checkpointLocation", this.getClass.getCanonicalName)
+      .outputMode("update")
+      .start
+
+    logStream.awaitTermination()
+  }
+
+  override def isValidJob(snappy: SnappySession, config: Config): SnappyJobValidation = {
+    SnappyJobValid()
+  }
 }
+
+
+//todo[vatsal]: remove this code after final testing
+//
+///**
+//  * We want to execute the following analytic query on each batch dataframe:
+//  * select publisher, geo, avg(bid) as avg_bid, count(*) imps, count(distinct(cookie)) uniques
+//  * from AdImpressionLog group by publisher, geo, timestamp
+//  */
+//class CustomSinkCallback1 extends SnappySinkCallback {
+//  override def process(snappySession: SnappySession, sinkProps: Map[String, String], batchId: Long,
+//                       df: Dataset[Row], possibleDuplicate: Boolean): Unit = {
+//
+////    df.groupBy(window(df.col("timestamp"), "1 seconds", "1 seconds")
+////      , df.col("timestamp"), df.col("publisher"), df.col("geo")).agg()
+//    val frame = df.groupBy(window(df.col("timestamp"), "1 seconds", "1 seconds"),
+//      df.col("timestamp"), df.col("publisher"), df.col("geo"))
+//      .agg(avg("bid").alias("avg_bid"), count("geo").alias("imps"),
+//        countDistinct("cookie").alias("uniques"))
+//    frame.show
+//    frame.select("timestamp","publisher", "geo", "avg_bid", "imps", "uniques")
+//      .write.insertInto("aggrAdImpressions")
+//  }
+//}

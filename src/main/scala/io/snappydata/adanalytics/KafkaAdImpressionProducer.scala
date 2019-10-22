@@ -18,26 +18,28 @@
 package io.snappydata.adanalytics
 
 import java.util.Properties
+import java.util.concurrent.Future
 
 import io.snappydata.adanalytics.Configs._
-import kafka.producer.{KeyedMessage, Producer, ProducerConfig}
 import io.snappydata.adanalytics.KafkaAdImpressionProducer._
+import org.apache.hadoop.ipc.RetriableException
+import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord, RecordMetadata}
 
 /**
   * A simple Kafka Producer program which randomly generates
   * ad impression log messages and sends it to Kafka broker.
   * This program generates and sends 10 million messages.
+  *
+  * Note that this producer sends messages on Kafka in async manner.
   */
-object KafkaAdImpressionProducer{
+object KafkaAdImpressionProducer {
 
   val props = new Properties()
-  props.put("serializer.class", "io.snappydata.adanalytics.AdImpressionLogAvroEncoder")
-  props.put("partitioner.class", "kafka.producer.DefaultPartitioner")
-  props.put("key.serializer.class", "kafka.serializer.StringEncoder")
-  props.put("metadata.broker.list", brokerList)
+  props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer")
+  props.put("value.serializer", "io.snappydata.adanalytics.AdImpressionLogAvroSerializer")
+  props.put("bootstrap.servers", "localhost:9092")
 
-  val config = new ProducerConfig(props)
-  val producer = new Producer[String, AdImpressionLog](config)
+  val producer = new KafkaProducer[String, AdImpressionLog](props)
 
   def main(args: Array[String]) {
     println("Sending Kafka messages of topic " + kafkaTopic + " to brokers " + brokerList)
@@ -52,9 +54,20 @@ object KafkaAdImpressionProducer{
     System.exit(0)
   }
 
-  def sendToKafka(log: AdImpressionLog) = {
-    producer.send(new KeyedMessage[String, AdImpressionLog](
-      Configs.kafkaTopic, log.getTimestamp.toString, log))
+  def sendToKafka(log: AdImpressionLog): Future[RecordMetadata] = {
+    producer.send(new ProducerRecord[String, AdImpressionLog](
+      Configs.kafkaTopic, log.getTimestamp.toString, log), new org.apache.kafka.clients.producer.Callback() {
+      override def onCompletion(metadata: RecordMetadata, exception: Exception): Unit = {
+        if (exception != null) {
+          if (exception.isInstanceOf[RetriableException]) {
+            println(s"Encountered a retriable exception while sending messages: $exception")
+          } else {
+            throw exception
+          }
+        }
+      }
+    }
+    )
   }
 }
 
@@ -71,7 +84,7 @@ final class Worker extends Runnable {
       if (timeRemaining > 0) {
         Thread.sleep(timeRemaining)
       }
-      if (j !=0 & (j % 200000) == 0) {
+      if (j != 0 & (j % 200000) == 0) {
         println(s" ${Thread.currentThread().getName} sent $j Kafka messages" +
           s" of topic $kafkaTopic to brokers $brokerList ")
       }
