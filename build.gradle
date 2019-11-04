@@ -43,16 +43,11 @@ allprojects {
 }
 
 dependencies {
-  //todo[vatsal]: following five dependencies are kept as compile dependencies
-  // cause generateAdImpressions target is failing when these dependencies
-  // are made compileOnly. Figure out a way to make generateAdImpressions
-  // without making these as compile dependencies because making these
-  // dependencies compile increases the size of the uber jar.
-  compile "io.snappydata:snappydata-core_2.11:${snappyVersion}"
-  compile "io.snappydata:snappydata-cluster_2.11:${snappyVersion}"
-  compile "io.snappydata:snappy-spark-core_2.11:${sparkVersion}"
-  compile "io.snappydata:snappy-spark-catalyst_2.11:${sparkVersion}"
-  compile "io.snappydata:snappy-spark-sql_2.11:${sparkVersion}"
+  compileOnly "io.snappydata:snappydata-core_2.11:${snappyVersion}"
+  compileOnly "io.snappydata:snappydata-cluster_2.11:${snappyVersion}"
+  compileOnly "io.snappydata:snappy-spark-core_2.11:${sparkVersion}"
+  compileOnly "io.snappydata:snappy-spark-catalyst_2.11:${sparkVersion}"
+  compileOnly "io.snappydata:snappy-spark-sql_2.11:${sparkVersion}"
   // compileOnly "io.snappydata:snappydata-aqp_2.11:${snappyVersion}"
 
   compile 'org.apache.kafka:kafka-clients:0.10.0.1'
@@ -62,6 +57,11 @@ dependencies {
   compile 'com.googlecode.javaewah:JavaEWAH:1.1.5'
   compile 'org.joda:joda-convert:1.2'
   compile 'com.opencsv:opencsv:3.3'
+}
+
+sourceSets {
+  test.compileClasspath += configurations.compileOnly
+  test.runtimeClasspath += configurations.compileOnly
 }
 
 task generateAvro(type: com.commercehub.gradle.plugin.avro.GenerateAvroJavaTask) {
