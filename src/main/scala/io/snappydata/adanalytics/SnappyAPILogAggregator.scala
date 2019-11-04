@@ -22,7 +22,8 @@ import io.snappydata.adanalytics.Configs._
 import org.apache.kafka.common.serialization.ByteArrayDeserializer
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.encoders.RowEncoder
-import org.apache.spark.sql.functions.{approx_count_distinct, avg, count, window}
+import org.apache.spark.sql.functions.{avg, count, countDistinct, window}
+import org.apache.spark.sql.streaming.SnappySinkCallback
 import org.apache.spark.sql.types._
 import org.apache.spark.{SparkConf, SparkContext}
 
@@ -36,8 +37,6 @@ object SnappyAPILogAggregator extends SnappySQLJob with App {
 
   val conf = new SparkConf()
     .setAppName(getClass.getSimpleName)
-    .setMaster(s"$sparkMasterURL")
-    .set("snappydata.store.locators", s"$snappyLocators")
     .set("spark.ui.port", "4041")
     .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
     .registerAvroSchemas(AdImpressionLog.getClassSchema)
@@ -63,8 +62,6 @@ object SnappyAPILogAggregator extends SnappySQLJob with App {
     snappy.sql("set spark.sql.shuffle.partitions=8")
 
     import org.apache.spark.sql.streaming.ProcessingTime
-    snappy.sql("drop table if exists adImpressionStream")
-    snappy.sql("drop table if exists sampledAdImpressions")
     snappy.sql("drop table if exists aggrAdImpressions")
 
     snappy.sql("create table aggrAdImpressions(time_stamp timestamp, publisher string," +
@@ -74,15 +71,6 @@ object SnappyAPILogAggregator extends SnappySQLJob with App {
       StructField("advertiser", StringType), StructField("website", StringType), StructField("geo", StringType),
       StructField("bid", DoubleType), StructField("cookie", StringType)))
 
-    def binaryToRowConverter: Array[Byte] => Row = {
-      v => {
-        val adImpressionLog = AdImpressionLogAvroDeserializer.deserialize(v)
-        Row(new java.sql.Timestamp(adImpressionLog.getTimestamp), adImpressionLog.getPublisher.toString,
-          adImpressionLog.getAdvertiser.toString, adImpressionLog.getWebsite.toString,
-          adImpressionLog.getGeo.toString, adImpressionLog.getBid, adImpressionLog.getCookie.toString)
-      }
-    }
-
     val df = snappy.readStream
       .format("kafka")
       .option("kafka.bootstrap.servers", brokerList)
@@ -91,22 +79,25 @@ object SnappyAPILogAggregator extends SnappySQLJob with App {
       .option("maxOffsetsPerTrigger", 10000)
       .option("subscribe", kafkaTopic)
       .load().select("value").as[Array[Byte]](Encoders.BINARY)
-      .map(binaryToRowConverter)(RowEncoder.apply(schema))
+      .mapPartitions(itr => {
+        val deserializer = new AdImpressionLogSpecificDeserializer
+        itr.map(data => {
+          val adImpressionLog = deserializer.deserialize(data)
+          Row(new java.sql.Timestamp(adImpressionLog.getTimestamp), adImpressionLog.getPublisher.toString,
+            adImpressionLog.getAdvertiser.toString, adImpressionLog.getWebsite.toString,
+            adImpressionLog.getGeo.toString, adImpressionLog.getBid, adImpressionLog.getCookie.toString)
+        })
+      })(RowEncoder.apply(schema))
       .filter(s"geo != '${Configs.UnknownGeo}'")
 
-    // Group by on sliding window of 1 second
-    val windowedDF = df.groupBy(window(df.col("timestamp"), "1 seconds", "1 seconds"),
-      df.col("publisher"), df.col("geo"))
-      .agg(avg("bid").alias("avg_bid"), count("geo").alias("imps"),
-        approx_count_distinct("cookie").alias("uniques"))
-
-    val logStream = windowedDF.select("window.start", "publisher", "geo", "avg_bid", "imps", "uniques")
+    val logStream = df
       .writeStream
       .format("snappysink")
       .queryName("log_stream1")
       .trigger(ProcessingTime("1 seconds"))
-      .option("tableName","aggrAdImpressions")
-      .option("checkpointLocation", this.getClass.getCanonicalName)
+      .option("tableName", "aggrAdImpressions")
+      .option("sinkCallback", "io.snappydata.adanalytics.CustomSinkCallback")
+      .option("checkpointLocation", s"/tmp/${this.getClass.getCanonicalName}")
       .outputMode("update")
       .start
 
@@ -118,26 +109,20 @@ object SnappyAPILogAggregator extends SnappySQLJob with App {
   }
 }
 
+/**
+  * We want to execute the following analytic query on each batch dataframe:
+  * select publisher, geo, avg(bid) as avg_bid, count(*) imps, count(distinct(cookie)) uniques
+  * from AdImpressionLog group by publisher, geo, timestamp
+  */
+class CustomSinkCallback extends SnappySinkCallback {
+  override def process(snappySession: SnappySession, sinkProps: Map[String, String], batchId: Long,
+                       df: Dataset[Row], possibleDuplicate: Boolean): Unit = {
 
-//todo[vatsal]: remove this code after final testing
-//
-///**
-//  * We want to execute the following analytic query on each batch dataframe:
-//  * select publisher, geo, avg(bid) as avg_bid, count(*) imps, count(distinct(cookie)) uniques
-//  * from AdImpressionLog group by publisher, geo, timestamp
-//  */
-//class CustomSinkCallback1 extends SnappySinkCallback {
-//  override def process(snappySession: SnappySession, sinkProps: Map[String, String], batchId: Long,
-//                       df: Dataset[Row], possibleDuplicate: Boolean): Unit = {
-//
-////    df.groupBy(window(df.col("timestamp"), "1 seconds", "1 seconds")
-////      , df.col("timestamp"), df.col("publisher"), df.col("geo")).agg()
-//    val frame = df.groupBy(window(df.col("timestamp"), "1 seconds", "1 seconds"),
-//      df.col("timestamp"), df.col("publisher"), df.col("geo"))
-//      .agg(avg("bid").alias("avg_bid"), count("geo").alias("imps"),
-//        countDistinct("cookie").alias("uniques"))
-//    frame.show
-//    frame.select("timestamp","publisher", "geo", "avg_bid", "imps", "uniques")
-//      .write.insertInto("aggrAdImpressions")
-//  }
-//}
+    val frame = df.groupBy(window(df.col("timestamp"), "1 seconds", "1 seconds"),
+      df.col("timestamp"), df.col("publisher"), df.col("geo"))
+      .agg(avg("bid").alias("avg_bid"), count("geo").alias("imps"),
+        countDistinct("cookie").alias("uniques"))
+    frame.select("timestamp", "publisher", "geo", "avg_bid", "imps", "uniques")
+      .write.insertInto("aggrAdImpressions")
+  }
+}
