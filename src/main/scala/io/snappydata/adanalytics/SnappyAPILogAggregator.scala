@@ -80,7 +80,7 @@ object SnappyAPILogAggregator extends SnappySQLJob with App {
       .option("subscribe", kafkaTopic)
       .load().select("value").as[Array[Byte]](Encoders.BINARY)
       .mapPartitions(itr => {
-        val deserializer = new AdImpressionLogSpecificDeserializer
+        val deserializer = new AdImpressionLogAVRODeserializer
         itr.map(data => {
           val adImpressionLog = deserializer.deserialize(data)
           Row(new java.sql.Timestamp(adImpressionLog.getTimestamp), adImpressionLog.getPublisher.toString,
