@@ -1,74 +1,68 @@
-//package io.snappydata.adanalytics
-//
-//import com.twitter.algebird.{HLL, HyperLogLogMonoid}
-//import io.snappydata.adanalytics.Configs._
-//import org.apache.spark.SparkConf
-//import org.apache.spark.streaming.kafka010.{ConsumerStrategies, KafkaUtils, LocationStrategies}
-//import org.apache.spark.streaming.{Seconds, StreamingContext}
-//
-//import org.joda.time.DateTime
-//
-///**
-//  * Vanilla Spark implementation with no Snappy extensions being used.
-//  * Code is from https://chimpler.wordpress.com/2014/07/01/implementing-a-real-time-data-pipeline-with-spark-streaming/
-//  * This implementation uses a HyperLogLog to find uniques. We skip this
-//  * probabilistic structure in our implementation as we can easily extract the
-//  * exact distinct count for such small time windows.
-//  **/
-//object SparkLogAggregator extends App {
-//
-//  val sc = new SparkConf()
-//    .setAppName(getClass.getName)
-//    .setMaster("local[*]")
-//  val ssc = new StreamingContext(sc, Seconds(1))
-//
-//  // stream of (topic, ImpressionLog)
-//  val consumerStrategies = ConsumerStrategies
-//    .Subscribe[String, AdImpressionLog](topics, kafkaParams)
-//  val messages = KafkaUtils.createDirectStream[String, AdImpressionLog](ssc,
-//    LocationStrategies.PreferConsistent, consumerStrategies)
-//
-//  // to count uniques
-//  lazy val hyperLogLog = new HyperLogLogMonoid(12)
-//
-//  // we filter out non resolved geo (unknown) and map (pub, geo) -> AggLog that will be reduced
-//  val logsByPubGeo = messages.map(_.value()).filter(_.getGeo != Configs.UnknownGeo).map {
-//    log =>
-//      val key = PublisherGeoKey(log.getPublisher.toString, log.getGeo.toString)
-//      val agg = AggregationLog(
-//        timestamp = log.getTimestamp,
-//        sumBids = log.getBid,
-//        imps = 1,
-//        uniquesHll = hyperLogLog(log.getCookie.toString.getBytes())
-//      )
-//      (key, agg)
-//  }
-//
-//  // Reduce to generate imps, uniques, sumBid per pub and geo per 2 seconds
-//  val aggLogs = logsByPubGeo.reduceByKeyAndWindow(reduceAggregationLogs, Seconds(2))
-//
-//  aggLogs.foreachRDD(rdd => {
-//    rdd.foreach(f => {
-//      println("AggregationLog {timestamp=" + f._2.timestamp + " sumBids=" + f._2.sumBids + " imps=" + f._2.imps + "}")
-//    })
-//  })
-//
-//  // start rolling!
-//  ssc.start
-//  ssc.awaitTermination
-//
-//  private def reduceAggregationLogs(aggLog1: AggregationLog, aggLog2: AggregationLog) = {
-//    aggLog1.copy(
-//      timestamp = math.min(aggLog1.timestamp, aggLog2.timestamp),
-//      sumBids = aggLog1.sumBids + aggLog2.sumBids,
-//      imps = aggLog1.imps + aggLog2.imps,
-//      uniquesHll = aggLog1.uniquesHll + aggLog2.uniquesHll
-//    )
-//  }
-//}
-//
-//case class AggregationLog(timestamp: Long, sumBids: Double, imps: Int = 1, uniquesHll: HLL)
-//
-//case class AggregationResult(date: DateTime, publisher: String, geo: String, imps: Int, uniques: Int, avgBids: Double)
-//
-//case class PublisherGeoKey(publisher: String, geo: String)
+package io.snappydata.adanalytics
+
+import io.snappydata.adanalytics.Configs._
+import org.apache.kafka.common.serialization.ByteArrayDeserializer
+import org.apache.spark.SparkConf
+import org.apache.spark.sql.catalyst.encoders.RowEncoder
+import org.apache.spark.sql.functions.{approx_count_distinct, avg, count, window}
+import org.apache.spark.sql.types._
+import org.apache.spark.sql.{Encoders, Row, SparkSession}
+import org.apache.spark.streaming.{Seconds, StreamingContext}
+/**
+  * Vanilla Spark implementation with no Snappy extensions being used.
+  */
+object SparkLogAggregator extends App {
+
+  val sc = new SparkConf()
+    .setAppName(getClass.getName)
+    .setMaster("local[*]")
+  val ssc = new StreamingContext(sc, Seconds(1))
+  val schema = StructType(Seq(StructField("timestamp1", TimestampType), StructField("publisher", StringType),
+    StructField("advertiser", StringType), StructField("website", StringType), StructField("geo", StringType),
+    StructField("bid", DoubleType), StructField("cookie", StringType)))
+
+  private val spark = SparkSession.builder().getOrCreate()
+  import spark.implicits._
+//  private val snappy = new SnappySession(spark.sparkContext)
+  val df = spark.readStream
+    .format("kafka")
+    .option("kafka.bootstrap.servers", brokerList)
+    .option("value.deserializer", classOf[ByteArrayDeserializer].getName)
+    .option("startingOffsets", "earliest")
+    .option("maxOffsetsPerTrigger", 100000)
+    .option("subscribe", kafkaTopic)
+    .load().select("value").as[Array[Byte]](Encoders.BINARY)
+    .mapPartitions(itr => {
+      val deserializer = new AdImpressionLogAVRODeserializer
+      itr.map(data => {
+        val adImpressionLog = deserializer.deserialize(data)
+        Row(new java.sql.Timestamp(adImpressionLog.getTimestamp), adImpressionLog.getPublisher.toString,
+          adImpressionLog.getAdvertiser.toString, adImpressionLog.getWebsite.toString,
+          adImpressionLog.getGeo.toString, adImpressionLog.getBid, adImpressionLog.getCookie.toString)
+      })
+    })(RowEncoder.apply(schema))
+    .filter(s"geo != '${Configs.UnknownGeo}'")
+
+  // Group by on sliding window of 1 second
+  val windowedDF = df.withColumn("eventTime", $"timestamp1".cast("timestamp"))
+    .withWatermark("eventTime", "10 seconds")
+    .groupBy(window($"eventTime", "1 seconds", "1 seconds"),
+    df.col("publisher"), df.col("geo"))
+    .agg(avg("bid").alias("avg_bid"),count("geo").alias("imps"),
+      approx_count_distinct("cookie").alias("uniques"))
+
+  val logStream = windowedDF.select("window.start", "publisher", "geo", "imps", "uniques")
+    .map(r=>Row(r.getValuesMap(Seq("start","publisher","geo","avg_bid","imps","uniques"))
+      .mkString(",")))(RowEncoder(StructType(Seq(StructField("value", StringType, nullable = true)))))
+    .writeStream
+    .queryName("spark_log_stream")
+    //todo[vatsal]: accept checkpoint directory as argument
+    .option("checkpointLocation", "/tmp/"+this.getClass.getCanonicalName)
+    .outputMode("update")
+    .format("kafka")
+    .option("kafka.bootstrap.servers", "localhost:9092")
+    .option("topic", "adImpressionsOut")
+    .start()
+
+  logStream.awaitTermination()
+}

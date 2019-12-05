@@ -22,8 +22,7 @@ import io.snappydata.adanalytics.Configs._
 import org.apache.kafka.common.serialization.ByteArrayDeserializer
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.encoders.RowEncoder
-import org.apache.spark.sql.functions.{avg, count, countDistinct, window}
-import org.apache.spark.sql.streaming.SnappySinkCallback
+import org.apache.spark.sql.functions.{avg, count, approx_count_distinct, window}
 import org.apache.spark.sql.types._
 import org.apache.spark.{SparkConf, SparkContext}
 
@@ -33,7 +32,7 @@ import org.apache.spark.{SparkConf, SparkContext}
   * This example can be run either in local mode or can be submitted as a job
   * to an already running SnappyData cluster.
   */
-object SnappyAPILogAggregator extends SnappySQLJob with App {
+object SnappyLogAggregator extends SnappySQLJob with App {
 
   val conf = new SparkConf()
     .setAppName(getClass.getSimpleName)
@@ -71,6 +70,7 @@ object SnappyAPILogAggregator extends SnappySQLJob with App {
       StructField("advertiser", StringType), StructField("website", StringType), StructField("geo", StringType),
       StructField("bid", DoubleType), StructField("cookie", StringType)))
 
+    import snappy.implicits._
     val df = snappy.readStream
       .format("kafka")
       .option("kafka.bootstrap.servers", brokerList)
@@ -90,13 +90,20 @@ object SnappyAPILogAggregator extends SnappySQLJob with App {
       })(RowEncoder.apply(schema))
       .filter(s"geo != '${Configs.UnknownGeo}'")
 
-    val logStream = df
+    val windowedDF = df.withColumn("eventTime", $"timestamp".cast("timestamp"))
+      .withWatermark("eventTime", "10 seconds")
+      .groupBy(window($"eventTime", "1 seconds", "1 seconds"), $"timestamp", $"publisher", $"geo")
+      .agg(avg("bid").alias("avg_bid"), count("geo").alias("imps"),
+        approx_count_distinct("cookie").alias("uniques"))
+      .select("timestamp", "publisher", "geo", "avg_bid", "imps", "uniques")
+
+    val logStream = windowedDF
       .writeStream
       .format("snappysink")
-      .queryName("log_stream1")
+      .queryName("log_stream")
       .trigger(ProcessingTime("1 seconds"))
       .option("tableName", "aggrAdImpressions")
-      .option("sinkCallback", "io.snappydata.adanalytics.CustomSinkCallback")
+      //todo[vatsal]: accept checkpoint directory as argument
       .option("checkpointLocation", s"/tmp/${this.getClass.getCanonicalName}")
       .outputMode("update")
       .start
@@ -106,23 +113,5 @@ object SnappyAPILogAggregator extends SnappySQLJob with App {
 
   override def isValidJob(snappy: SnappySession, config: Config): SnappyJobValidation = {
     SnappyJobValid()
-  }
-}
-
-/**
-  * We want to execute the following analytic query on each batch dataframe:
-  * select publisher, geo, avg(bid) as avg_bid, count(*) imps, count(distinct(cookie)) uniques
-  * from AdImpressionLog group by publisher, geo, timestamp
-  */
-class CustomSinkCallback extends SnappySinkCallback {
-  override def process(snappySession: SnappySession, sinkProps: Map[String, String], batchId: Long,
-                       df: Dataset[Row], possibleDuplicate: Boolean): Unit = {
-
-    val frame = df.groupBy(window(df.col("timestamp"), "1 seconds", "1 seconds"),
-      df.col("timestamp"), df.col("publisher"), df.col("geo"))
-      .agg(avg("bid").alias("avg_bid"), count("geo").alias("imps"),
-        countDistinct("cookie").alias("uniques"))
-    frame.select("timestamp", "publisher", "geo", "avg_bid", "imps", "uniques")
-      .write.insertInto("aggrAdImpressions")
   }
 }

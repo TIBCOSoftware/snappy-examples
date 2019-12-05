@@ -68,7 +68,7 @@ So the aggregation will look something like:
 We implemented the ingestion logic using 3 methods mentioned below but only describe the SQL approach for brevity here.
 TODO: verify the links
 - [Vanilla Spark API](https://github.com/SnappyDataInc/snappy-poc/blob/master/src/main/scala/io/snappydata/adanalytics/SparkLogAggregator.scala)
-- [Spark API with Snappy extensions](https://github.com/SnappyDataInc/snappy-poc/blob/master/src/main/scala/io/snappydata/adanalytics/SnappyAPILogAggregator.scala) to work with the stream as a sequence of DataFrames.
+- [Spark API with Snappy extensions](https://github.com/SnappyDataInc/snappy-poc/blob/master/src/main/scala/io/snappydata/adanalytics/SnappyLogAggregator.scala) to work with the stream as a sequence of DataFrames.
 
 
 #### Generating the AdImpression logs 

@@ -87,7 +87,7 @@ task generateAdImpressions(type: JavaExec, dependsOn: classes) {
 }
 
 task aggeregateAdImpressions_API(type: JavaExec, dependsOn: classes) {
-  main = 'io.snappydata.adanalytics.SnappyAPILogAggregator'
+  main = 'io.snappydata.adanalytics.SnappyLogAggregator'
   jvmArgs = ['-XX:MaxPermSize=512m']
   classpath sourceSets.test.runtimeClasspath
   environment 'PROJECT_ASSEMBLY_JAR', assemblyJar.files.asPath
