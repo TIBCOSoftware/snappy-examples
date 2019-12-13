@@ -55,12 +55,11 @@ object SparkLogAggregator extends App {
     .map(r=>Row(r.getValuesMap(Seq("start","publisher","geo","avg_bid","imps","uniques"))
       .mkString(",")))(RowEncoder(StructType(Seq(StructField("value", StringType, nullable = true)))))
     .writeStream
-    .queryName("spark_log_stream")
-    //todo[vatsal]: accept checkpoint directory as argument
-    .option("checkpointLocation", "/tmp/"+this.getClass.getCanonicalName)
+    .queryName("spark_log_aggregator")
+    .option("checkpointLocation", sparkLogAggregatorCheckpointDir)
     .outputMode("update")
     .format("kafka")
-    .option("kafka.bootstrap.servers", "localhost:9092")
+    .option("kafka.bootstrap.servers", brokerList)
     .option("topic", "adImpressionsOut")
     .start()
 

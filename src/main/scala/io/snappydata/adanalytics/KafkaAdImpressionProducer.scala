@@ -37,7 +37,7 @@ object KafkaAdImpressionProducer {
   val props = new Properties()
   props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer")
   props.put("value.serializer", "io.snappydata.adanalytics.AdImpressionLogAVROSerializer")
-  props.put("bootstrap.servers", "localhost:9092")
+  props.put("bootstrap.servers", brokerList)
 
   val producer = new KafkaProducer[String, AdImpressionLog](props)
 

@@ -40,6 +40,10 @@ object Configs {
     "metadata.broker.list" -> brokerList
   )
 
+  // Ideally checkpoint directory should be at some shared HDFS location accessible by all the nodes
+  val snappyLogAggregatorCheckpointDir = s"/tmp/snappyLogAggregator"
+  val sparkLogAggregatorCheckpointDir = s"/tmp/sparkLogAggregator"
+
   val hostname = "localhost"
 
   val socketPort = 9000
@@ -90,5 +94,4 @@ object Configs {
       StructField("bid", DoubleType, true),
       StructField("cookie", StringType, true)))
   }
-
 }

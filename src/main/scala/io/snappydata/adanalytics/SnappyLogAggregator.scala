@@ -100,11 +100,10 @@ object SnappyLogAggregator extends SnappySQLJob with App {
     val logStream = windowedDF
       .writeStream
       .format("snappysink")
-      .queryName("log_stream")
+      .queryName("log_aggregator")
       .trigger(ProcessingTime("1 seconds"))
       .option("tableName", "aggrAdImpressions")
-      //todo[vatsal]: accept checkpoint directory as argument
-      .option("checkpointLocation", s"/tmp/${this.getClass.getCanonicalName}")
+      .option("checkpointLocation", snappyLogAggregatorCheckpointDir)
       .outputMode("update")
       .start
 
