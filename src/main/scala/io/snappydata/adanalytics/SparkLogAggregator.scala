@@ -1,6 +1,7 @@
 package io.snappydata.adanalytics
 
 import io.snappydata.adanalytics.Configs._
+import org.apache.commons.lang.StringEscapeUtils
 import org.apache.kafka.common.serialization.ByteArrayDeserializer
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.catalyst.encoders.RowEncoder
@@ -18,7 +19,7 @@ object SparkLogAggregator extends App {
     .setAppName(getClass.getName)
     .setMaster("local[*]")
   val ssc = new StreamingContext(sc, Seconds(1))
-  val schema = StructType(Seq(StructField("timestamp1", TimestampType), StructField("publisher", StringType),
+  val schema = StructType(Seq(StructField("timestamp", TimestampType), StructField("publisher", StringType),
     StructField("advertiser", StringType), StructField("website", StringType), StructField("geo", StringType),
     StructField("bid", DoubleType), StructField("cookie", StringType)))
 
@@ -26,7 +27,6 @@ object SparkLogAggregator extends App {
 
   import spark.implicits._
 
-  //  private val snappy = new SnappySession(spark.sparkContext)
   val df = spark.readStream
     .format("kafka")
     .option("kafka.bootstrap.servers", brokerList)
@@ -49,14 +49,14 @@ object SparkLogAggregator extends App {
   // Group by on sliding window of 1 second
   val windowedDF = df.withColumn("eventTime", $"timestamp".cast("timestamp"))
     .withWatermark("eventTime", "10 seconds")
-    .groupBy(window($"eventTime", "1 seconds", "1 seconds"),
-      df.col("publisher"), df.col("geo"))
+    .groupBy(window($"eventTime", "1 seconds", "1 seconds"), $"publisher", $"geo")
     .agg(avg("bid").alias("avg_bid"), count("geo").alias("imps"),
       approx_count_distinct("cookie").alias("uniques"))
 
+  private val encoder = RowEncoder(StructType(Seq(StructField("value", StringType, nullable = true))))
   val logStream = windowedDF.select("window.start", "publisher", "geo", "imps", "uniques")
     .map(r => Row(r.getValuesMap(Seq("start", "publisher", "geo", "avg_bid", "imps", "uniques"))
-      .mkString(",")))(RowEncoder(StructType(Seq(StructField("value", StringType, nullable = true)))))
+      .map(s => StringEscapeUtils.escapeCsv(s.toString())).mkString(",")))(encoder)
     .writeStream
     .queryName("spark_log_aggregator")
     .option("checkpointLocation", sparkLogAggregatorCheckpointDir)
