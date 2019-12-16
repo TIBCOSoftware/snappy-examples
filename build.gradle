@@ -51,12 +51,7 @@ dependencies {
   // compileOnly "io.snappydata:snappydata-aqp_2.11:${snappyVersion}"
 
   compile 'org.apache.kafka:kafka-clients:0.10.0.1'
-  compile 'com.miguno:kafka-avro-codec_2.10:0.1.1-SNAPSHOT'
   compile 'org.apache.kafka:kafka_2.11:0.10.0.1'
-  compile 'com.twitter:algebird-core_2.10:0.1.11'
-  compile 'com.googlecode.javaewah:JavaEWAH:1.1.5'
-  compile 'org.joda:joda-convert:1.2'
-  compile 'com.opencsv:opencsv:3.3'
 }
 
 sourceSets {
@@ -86,47 +81,9 @@ task generateAdImpressions(type: JavaExec, dependsOn: classes) {
   environment 'PROJECT_ASSEMBLY_JAR', assemblyJar.files.asPath
 }
 
-task aggeregateAdImpressions_API(type: JavaExec, dependsOn: classes) {
+task aggeregateAdImpressions(type: JavaExec, dependsOn: classes) {
   main = 'io.snappydata.adanalytics.SnappyLogAggregator'
   jvmArgs = ['-XX:MaxPermSize=512m']
-  classpath sourceSets.test.runtimeClasspath
-  environment 'PROJECT_ASSEMBLY_JAR', assemblyJar.files.asPath
-}
-
-task aggeregateAdImpressions_SQL(type: JavaExec, dependsOn: classes) {
-  main = 'io.snappydata.adanalytics.SnappySQLLogAggregator'
-  jvmArgs = ['-XX:MaxPermSize=512m']
-  classpath sourceSets.test.runtimeClasspath
-  environment 'PROJECT_ASSEMBLY_JAR', assemblyJar.files.asPath
-}
-
-task generateAdImpressions_Socket(type: JavaExec, dependsOn: classes) {
-  main = 'io.snappydata.benchmark.SocketAdImpressionGenerator'
-  classpath sourceSets.test.runtimeClasspath
-  environment 'PROJECT_ASSEMBLY_JAR', assemblyJar.files.asPath
-  maxHeapSize = "8196m"
-}
-
-task startSnappyIngestionPerf_Socket(type: JavaExec, dependsOn: classes) {
-  main = 'io.snappydata.benchmark.SocketSnappyIngestionPerf'
-  jvmArgs = ['-XX:MaxPermSize=512m']
-  maxHeapSize = "8196m"
-  classpath sourceSets.test.runtimeClasspath
-  environment 'PROJECT_ASSEMBLY_JAR', assemblyJar.files.asPath
-}
-
-task startSnappyIngestionPerf_CustomReceiver(type: JavaExec, dependsOn: classes) {
-  main = 'io.snappydata.benchmark.CustomReceiverSnappyIngestionPerf'
-  jvmArgs = ['-XX:MaxPermSize=512m']
-  maxHeapSize = "8196m"
-  classpath sourceSets.test.runtimeClasspath
-  environment 'PROJECT_ASSEMBLY_JAR', assemblyJar.files.asPath
-}
-
-task startSnappyIngestionPerf_CSV(type: JavaExec, dependsOn: classes) {
-  main = 'io.snappydata.benchmark.CSVSnappyIngestionPerf'
-  jvmArgs = ['-XX:MaxPermSize=512m']
-  maxHeapSize = "8196m"
   classpath sourceSets.test.runtimeClasspath
   environment 'PROJECT_ASSEMBLY_JAR', assemblyJar.files.asPath
 }
@@ -137,31 +94,4 @@ task startSnappyIngestionPerf_Kafka(type: JavaExec, dependsOn: classes) {
   maxHeapSize = "8196m"
   classpath sourceSets.test.runtimeClasspath
   environment 'PROJECT_ASSEMBLY_JAR', assemblyJar.files.asPath
-}
-
-task product(type: Exec) {
-  dependsOn ':assembly:shadowJar'
-
-  def productDir = "${rootProject.buildDir}/snappydata-poc"
-  def snappyData = System.env.SNAPPYDATA
-  if (snappyData == null || snappyData.length() == 0) {
-    snappyData = "${projectDir}/../snappydata"
-  }
-
-  doFirst {
-    delete productDir
-    file("${productDir}/lib").mkdirs()
-  }
-
-  // first execute the snappydata "product" target based on env var SNAPPYDATA
-  workingDir snappyData
-  commandLine './gradlew', 'copyProduct', "-PcopyToDir=${productDir}"
-
-  // lastly copy own assembly fat jar in product lib dir
-  doLast {
-    copy {
-      from assemblyJar
-      into "${productDir}/lib"
-    }
-  }
 }

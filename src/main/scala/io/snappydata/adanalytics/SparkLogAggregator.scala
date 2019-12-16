@@ -8,6 +8,7 @@ import org.apache.spark.sql.functions.{approx_count_distinct, avg, count, window
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{Encoders, Row, SparkSession}
 import org.apache.spark.streaming.{Seconds, StreamingContext}
+
 /**
   * Vanilla Spark implementation with no Snappy extensions being used.
   */
@@ -22,8 +23,10 @@ object SparkLogAggregator extends App {
     StructField("bid", DoubleType), StructField("cookie", StringType)))
 
   private val spark = SparkSession.builder().getOrCreate()
+
   import spark.implicits._
-//  private val snappy = new SnappySession(spark.sparkContext)
+
+  //  private val snappy = new SnappySession(spark.sparkContext)
   val df = spark.readStream
     .format("kafka")
     .option("kafka.bootstrap.servers", brokerList)
@@ -44,15 +47,15 @@ object SparkLogAggregator extends App {
     .filter(s"geo != '${Configs.UnknownGeo}'")
 
   // Group by on sliding window of 1 second
-  val windowedDF = df.withColumn("eventTime", $"timestamp1".cast("timestamp"))
+  val windowedDF = df.withColumn("eventTime", $"timestamp".cast("timestamp"))
     .withWatermark("eventTime", "10 seconds")
     .groupBy(window($"eventTime", "1 seconds", "1 seconds"),
-    df.col("publisher"), df.col("geo"))
-    .agg(avg("bid").alias("avg_bid"),count("geo").alias("imps"),
+      df.col("publisher"), df.col("geo"))
+    .agg(avg("bid").alias("avg_bid"), count("geo").alias("imps"),
       approx_count_distinct("cookie").alias("uniques"))
 
   val logStream = windowedDF.select("window.start", "publisher", "geo", "imps", "uniques")
-    .map(r=>Row(r.getValuesMap(Seq("start","publisher","geo","avg_bid","imps","uniques"))
+    .map(r => Row(r.getValuesMap(Seq("start", "publisher", "geo", "avg_bid", "imps", "uniques"))
       .mkString(",")))(RowEncoder(StructType(Seq(StructField("value", StringType, nullable = true)))))
     .writeStream
     .queryName("spark_log_aggregator")

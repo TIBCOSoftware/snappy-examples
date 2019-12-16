@@ -22,7 +22,7 @@ import io.snappydata.adanalytics.Configs._
 import org.apache.kafka.common.serialization.ByteArrayDeserializer
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.encoders.RowEncoder
-import org.apache.spark.sql.functions.{avg, count, approx_count_distinct, window}
+import org.apache.spark.sql.functions.{approx_count_distinct, avg, count, min, window}
 import org.apache.spark.sql.types._
 import org.apache.spark.{SparkConf, SparkContext}
 
@@ -92,8 +92,8 @@ object SnappyLogAggregator extends SnappySQLJob with App {
 
     val windowedDF = df.withColumn("eventTime", $"timestamp".cast("timestamp"))
       .withWatermark("eventTime", "10 seconds")
-      .groupBy(window($"eventTime", "1 seconds", "1 seconds"), $"timestamp", $"publisher", $"geo")
-      .agg(avg("bid").alias("avg_bid"), count("geo").alias("imps"),
+      .groupBy(window($"eventTime", "1 seconds", "1 seconds"), $"publisher", $"geo")
+      .agg(min("timestamp").alias("timestamp"), avg("bid").alias("avg_bid"), count("geo").alias("imps"),
         approx_count_distinct("cookie").alias("uniques"))
       .select("timestamp", "publisher", "geo", "avg_bid", "imps", "uniques")
 

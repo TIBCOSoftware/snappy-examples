@@ -68,12 +68,12 @@ The incoming AdImpression log is formatted as depicted below.
 
 
 We pre-aggregate these logs by publisher and geo, and compute the average bid, the number of impressions and the number
-of uniques (the number of unique users that viewed the Ad) every 2 seconds(TODO[vatsal]- every second?). We want to
-maintain the last day’s worth of data in memory for interactive analytics from external clients.
+of uniques (the number of unique users that viewed the Ad) every second. We want to maintain the last day’s worth of
+data in memory for interactive analytics from external clients.
 Some examples of interactive queries:
-- **Find total uniques for a certain AD grouped on geography;**
-- **Impression trends for advertisers over time;**
-- **Top ads based on uniques count for each Geo.**
+- **Find total uniques for a certain AD grouped on geography**
+- **Impression trends for advertisers over time**
+- **Top ads based on uniques count for each Geo**
 
 //todo[vatsal]: the timestamp millis values should be zero if we are aggregating on the window of 1 second
 So the aggregation will look something like:
@@ -87,11 +87,9 @@ So the aggregation will look something like:
 |2016-05-25 16:44:56.803 |publisher38| WI |0.4585381957119518|40  |31     |
 
 ### Code highlights
-TODO[vatsal] : verify these links after merge to master
-We implemented the ingestion logic using [Vanilla Spark API](src/main/scala/io/snappydata/adanalytics/SparkLogAggregator.scala)
-and [Spark API with Snappy extensions](src/main/scala/io/snappydata/adanalytics/SnappyLogAggregator.scala)
+We implemented the ingestion logic using [Vanilla Spark Structured Streaming](src/main/scala/io/snappydata/adanalytics/SparkLogAggregator.scala)
+and [Spark Structured Streaming with Snappy Sink](src/main/scala/io/snappydata/adanalytics/SnappyLogAggregator.scala)
 to work with the stream as a sequence of DataFrames.
-
 
 #### Generating the AdImpression logs    
 A [KafkaAdImpressionProducer](src/main/scala/io/snappydata/adanalytics/KafkaAdImpressionProducer.scala) simulates
@@ -241,7 +239,7 @@ Next from the checkout `/snappy-poc/` directory, build the example
 ```
 
 Goto the SnappyData product install home directory.
-In conf subdirectory, create file "spark-env.sh"(copy spark-env.sh.template) and add this line ...
+In conf subdirectory, create file "spark-env.sh" (copy spark-env.sh.template) and add this line ...
 
 ```
 SPARK_DIST_CLASSPATH=$SNAPPY_POC_HOME/assembly/build/libs/snappy-poc-1.1.1-assembly.jar
