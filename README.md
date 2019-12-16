@@ -88,21 +88,20 @@ So the aggregation will look something like:
 
 ### Code highlights
 TODO[vatsal] : verify these links after merge to master
-We implemented the ingestion logic using [Vanilla Spark API](https://github.com/SnappyDataInc/snappy-poc/blob/master/src/main/scala/io/snappydata/adanalytics/SparkLogAggregator.scala)
-and [Spark API with Snappy extensions](https://github.com/SnappyDataInc/snappy-poc/blob/master/src/main/scala/io/snappydata/adanalytics/SnappyLogAggregator.scala)
+We implemented the ingestion logic using [Vanilla Spark API](src/main/scala/io/snappydata/adanalytics/SparkLogAggregator.scala)
+and [Spark API with Snappy extensions](src/main/scala/io/snappydata/adanalytics/SnappyLogAggregator.scala)
 to work with the stream as a sequence of DataFrames.
 
 
-#### Generating the AdImpression logs 
-TODO[vatsal]: verify this step with along with the code snippet   
-A [KafkaAdImpressionGenerator](src/main/scala/io/snappydata/adanalytics/KafkaAdImpressionProducer.scala) simulates
+#### Generating the AdImpression logs    
+A [KafkaAdImpressionProducer](src/main/scala/io/snappydata/adanalytics/KafkaAdImpressionProducer.scala) simulates
 Adservers and generates random [AdImpressionLogs](src/avro/adimpressionlog.avsc)(Avro formatted objects) in batches to Kafka.
-  ```scala
+
+```scala 
   val props = new Properties()
-  //props.put("partitioner.class", "kafka.producer.DefaultPartitioner")
   props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer")
-  props.put("value.serializer", "io.snappydata.adanalytics.AdImpressionLogAvroSerializer")
-  props.put("bootstrap.servers", "localhost:9092")
+  props.put("value.serializer", "io.snappydata.adanalytics.AdImpressionLogAVROSerializer")
+  props.put("bootstrap.servers", brokerList)
 
   val producer = new KafkaProducer[String, AdImpressionLog](props)
 
@@ -121,14 +120,24 @@ Adservers and generates random [AdImpressionLogs](src/avro/adimpressionlog.avsc)
 
   def sendToKafka(log: AdImpressionLog): Future[RecordMetadata] = {
     producer.send(new ProducerRecord[String, AdImpressionLog](
-      Configs.kafkaTopic, log.getTimestamp.toString, log))
+      Configs.kafkaTopic, log.getTimestamp.toString, log), new org.apache.kafka.clients.producer.Callback() {
+      override def onCompletion(metadata: RecordMetadata, exception: Exception): Unit = {
+        if (exception != null) {
+          if (exception.isInstanceOf[RetriableException]) {
+            println(s"Encountered a retriable exception while sending messages: $exception")
+          } else {
+            throw exception
+          }
+        }
+      }
+    }
+    )
   }
-  ```
+```
 #### Spark Structured Streaming With Snappysink
  [SnappyLogAggregator](src/main/scala/io/snappydata/adanalytics/SnappyLogAggregator.scala) creates a stream over the
  Kafka source and ingests data into Snappydata table using [`Snappysink`](https://snappydatainc.github.io/snappydata/howto/use_stream_processing_with_snappydata/#structured-streaming).
 
-TODO: replace with structured streaming code
 ```scala
 // The volumes are low. Optimize Spark shuffle by reducing the partition count
 snappy.sql("set spark.sql.shuffle.partitions=8")
@@ -173,11 +182,10 @@ val windowedDF = df.withColumn("eventTime", $"timestamp".cast("timestamp"))
 val logStream = windowedDF
   .writeStream
   .format("snappysink")
-  .queryName("log_stream")
+  .queryName("log_aggregator")
   .trigger(ProcessingTime("1 seconds"))
   .option("tableName", "aggrAdImpressions")
-  //todo[vatsal]: accept checkpoint directory as argument
-  .option("checkpointLocation", s"/tmp/${this.getClass.getCanonicalName}")
+  .option("checkpointLocation", snappyLogAggregatorCheckpointDir)
   .outputMode("update")
   .start
 
@@ -199,16 +207,9 @@ In order to run this example, we need to install the following:
 
 1. [Apache Kafka 2.11-0.10.2.2](https://archive.apache.org/dist/kafka/0.10.2.2/kafka_2.11-0.10.2.2.tgz)  
 TODO[vatsal]: link to enterprise TIBCO ComputeDB here?
-2. [SnappyData 1.1.1 Enterprise Release](). Download the binary snappydata-1.0.0-bin.tar.gz and Unzip it.
+2. [SnappyData 1.1.1 Enterprise Release](). Download the artifact snappydata-1.1.1-bin.tar.gz and Unzip it.
 The binaries will be inside "snappydata-1.1.1-bin" directory.
 3. JDK 8
-
-Then checkout the Ad analytics example
-```
-git clone https://github.com/SnappyDataInc/snappy-poc.git
-```
-
-Note that the instructions for kafka configuration below are for 2.11-0.10.2.2 version of Kafka.
 
 To setup kafka cluster, start Zookeeper first from the root kafka folder with default zookeeper.properties:
 ```
@@ -225,6 +226,11 @@ From the root kafka folder, Create a topic "adImpressionsTopic":
 bin/kafka-topics.sh --create --zookeeper localhost:2181 --partitions 8 --topic adImpressionsTopic --replication-factor=1
 ```
 
+Checkout the Ad analytics example
+```
+git clone https://github.com/SnappyDataInc/snappy-poc.git
+```
+
 Next from the checkout `/snappy-poc/` directory, build the example
 ```
 -- Build and create a jar having all dependencies in assembly/build/libs
@@ -238,7 +244,7 @@ Goto the SnappyData product install home directory.
 In conf subdirectory, create file "spark-env.sh"(copy spark-env.sh.template) and add this line ...
 
 ```
-SPARK_DIST_CLASSPATH=SNAPPY_POC_HOME/assembly/build/libs/snappy-poc-1.1.1-assembly.jar
+SPARK_DIST_CLASSPATH=$SNAPPY_POC_HOME/assembly/build/libs/snappy-poc-1.1.1-assembly.jar
 ```
 > Make sure you set the SNAPPY_POC_HOME directory appropriately above
 
@@ -256,7 +262,7 @@ Submit the streaming job to the cluster and start it (consume the stream, aggreg
 > Make sure you copy/paste the SNAPPY_POC_HOME path from above in the command below where indicated
 
 ```
-./bin/snappy-job.sh submit --lead localhost:8090 --app-name AdAnalytics --class io.snappydata.adanalytics.SnappyLogAggregator --app-jar SNAPPY_POC_HOME/assembly/build/libs/snappy-poc-1.1.1-assembly.jar
+./bin/snappy-job.sh submit --lead localhost:8090 --app-name AdAnalytics --class io.snappydata.adanalytics.SnappyLogAggregator --app-jar $SNAPPY_POC_HOME/assembly/build/libs/snappy-poc-1.1.1-assembly.jar
 ```
 
 SnappyData supports "Managed Spark Drivers" by running these in Lead nodes. So, if the driver were to fail, it can
@@ -268,7 +274,7 @@ Start generating and publishing logs to Kafka from the `/snappy-poc/` folder
 ./gradlew generateAdImpressions
 ```
 
-You can monitor the streaming query processing on the [Structured Streaming UI](http://localhost:4040/streaming/). It is
+You can monitor the streaming query processing on the [Structured Streaming UI](http://localhost:5050/structuredstreaming/). It is
 important that our stream processing keeps up with the input rate. So, we should note that the `Processing Rate` keeps
 up with `Input Rate` and `Processing Time` remains less than the trigger interval which is one second.
 
@@ -354,9 +360,6 @@ Finally, stop the SnappyData cluster with:
 ### So, what was the point again?
 Hopefully we showed you how simple yet flexible it is to parallely ingest, process using SQL, run continuous queries,
 store data in column and sample tables and interactively query data. All in a single unified cluster. 
-TODO[vatsal]: should we keep this line?
-We will soon release Part B of this exercise - a benchmark of this use case where we compare SnappyData to other
-alternatives. Coming soon. 
 
 ### Ask questions, start a Discussion
 
