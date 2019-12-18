@@ -76,7 +76,7 @@ object SnappyLogAggregator extends SnappySQLJob with App {
       .option("kafka.bootstrap.servers", brokerList)
       .option("value.deserializer", classOf[ByteArrayDeserializer].getName)
       .option("startingOffsets", "earliest")
-      .option("maxOffsetsPerTrigger", 10000)
+      .option("maxOffsetsPerTrigger", 100000)
       .option("subscribe", kafkaTopic)
       .load().select("value").as[Array[Byte]](Encoders.BINARY)
       .mapPartitions(itr => {
