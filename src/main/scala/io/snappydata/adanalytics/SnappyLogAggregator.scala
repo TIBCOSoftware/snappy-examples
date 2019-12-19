@@ -62,10 +62,14 @@ object SnappyLogAggregator extends SnappySQLJob with App {
 
     import org.apache.spark.sql.streaming.ProcessingTime
     snappy.sql("drop table if exists aggrAdImpressions")
+    snappy.sql("drop table if exists sampledAdImpressions")
 
     snappy.sql("create table aggrAdImpressions(time_stamp timestamp, publisher string," +
       " geo string, avg_bid double, imps long, uniques long) " +
       "using column options(buckets '11')")
+    snappy.sql("CREATE SAMPLE TABLE sampledAdImpressions" +
+      " OPTIONS(qcs 'geo', fraction '0.03', strataReservoirSize '50', baseTable 'aggrAdImpressions')")
+
     val schema = StructType(Seq(StructField("timestamp", TimestampType), StructField("publisher", StringType),
       StructField("advertiser", StringType), StructField("website", StringType), StructField("geo", StringType),
       StructField("bid", DoubleType), StructField("cookie", StringType)))
