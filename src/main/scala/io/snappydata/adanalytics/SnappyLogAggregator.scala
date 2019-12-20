@@ -61,8 +61,8 @@ object SnappyLogAggregator extends SnappySQLJob with App {
     snappy.sql("set spark.sql.shuffle.partitions=8")
 
     import org.apache.spark.sql.streaming.ProcessingTime
-    snappy.sql("drop table if exists aggrAdImpressions")
     snappy.sql("drop table if exists sampledAdImpressions")
+    snappy.sql("drop table if exists aggrAdImpressions")
 
     snappy.sql("create table aggrAdImpressions(time_stamp timestamp, publisher string," +
       " geo string, avg_bid double, imps long, uniques long) " +
