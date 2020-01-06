@@ -242,11 +242,11 @@ Goto the SnappyData product install home directory.
 In conf subdirectory, create file "spark-env.sh" (copy spark-env.sh.template) and add this line ...
 
 ```
-SPARK_DIST_CLASSPATH=$SNAPPY_POC_HOME/assembly/build/libs/snappy-poc-1.1.1-assembly.jar
+SPARK_DIST_CLASSPATH=<snappy_poc_home>/assembly/build/libs/snappy-poc-1.1.1-assembly.jar
 ```
-> Make sure you set the SNAPPY_POC_HOME directory appropriately above
+> Make sure you set the `snappy_poc_home` directory appropriately above
 
-Leave this file open as you will copy/paste the path for SNAPPY_POC_HOME shortly.
+Leave this file open as you will copy/paste the path for `snappy_poc_home` shortly.
 
 Start SnappyData cluster using following command from installation directory. 
 

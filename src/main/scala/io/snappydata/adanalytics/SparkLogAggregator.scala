@@ -4,15 +4,16 @@ import io.snappydata.adanalytics.Configs._
 import org.apache.commons.lang.StringEscapeUtils
 import org.apache.kafka.common.serialization.ByteArrayDeserializer
 import org.apache.spark.SparkConf
-import org.apache.spark.sql.catalyst.encoders.RowEncoder
-import org.apache.spark.sql.functions.{approx_count_distinct, avg, count, window}
+import org.apache.spark.sql.catalyst.encoders.{ExpressionEncoder, RowEncoder}
+import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{Encoders, Row, SparkSession}
 import org.apache.spark.streaming.{Seconds, StreamingContext}
 
 /**
-  * Vanilla Spark implementation with no Snappy extensions being used.
-  */
+ * Vanilla Spark implementation with no Snappy extensions being used. The aggregated data is
+ * written to a kafka topic.
+ */
 object SparkLogAggregator extends App {
 
   val sc = new SparkConf()
@@ -44,19 +45,23 @@ object SparkLogAggregator extends App {
           adImpressionLog.getGeo.toString, adImpressionLog.getBid, adImpressionLog.getCookie.toString)
       })
     })(RowEncoder.apply(schema))
-    .filter(s"geo != '${Configs.UnknownGeo}'")
+    .filter(s"geo != '${Configs.UnknownGeo}'")   // filtering invalid data
 
   // Group by on sliding window of 1 second
   val windowedDF = df.withColumn("eventTime", $"timestamp".cast("timestamp"))
     .withWatermark("eventTime", "10 seconds")
     .groupBy(window($"eventTime", "1 seconds", "1 seconds"), $"publisher", $"geo")
-    .agg(avg("bid").alias("avg_bid"), count("geo").alias("imps"),
-      approx_count_distinct("cookie").alias("uniques"))
+    .agg(min("timestamp").alias("timestamp"), avg("bid").alias("avg_bid"), count("geo").alias
+    ("imps"), approx_count_distinct("cookie").alias("uniques"))
+    .select("timestamp", "publisher", "geo", "avg_bid", "imps", "uniques")
 
-  private val encoder = RowEncoder(StructType(Seq(StructField("value", StringType, nullable = true))))
-  val logStream = windowedDF.select("window.start", "publisher", "geo", "imps", "uniques")
-    .map(r => Row(r.getValuesMap(Seq("start", "publisher", "geo", "avg_bid", "imps", "uniques"))
-      .map(s => StringEscapeUtils.escapeCsv(s.toString())).mkString(",")))(encoder)
+  // content of 'value' column will be written to kafka topic as value
+  private val targetSchema = StructType(Seq(StructField("value", StringType)))
+  implicit val encoder: ExpressionEncoder[Row] = RowEncoder(targetSchema)
+
+  // writing aggregated records on a kafka topic in CSV format
+  val logStream = windowedDF
+    .map(r => Row(r.toSeq.map(f => StringEscapeUtils.escapeCsv(f.toString)).mkString(",")))
     .writeStream
     .queryName("spark_log_aggregator")
     .option("checkpointLocation", sparkLogAggregatorCheckpointDir)

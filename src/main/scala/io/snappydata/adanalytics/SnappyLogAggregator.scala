@@ -22,16 +22,32 @@ import io.snappydata.adanalytics.Configs._
 import org.apache.kafka.common.serialization.ByteArrayDeserializer
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.encoders.RowEncoder
-import org.apache.spark.sql.functions.{approx_count_distinct, avg, count, min, window}
+import org.apache.spark.sql.functions._
+import org.apache.spark.sql.streaming.ProcessingTime
 import org.apache.spark.sql.types._
 import org.apache.spark.{SparkConf, SparkContext}
 
 /**
-  * Example using Spark API + Snappy extension to model a Stream as a DataFrame.
-  *
-  * This example can be run either in local mode or can be submitted as a job
-  * to an already running SnappyData cluster.
-  */
+ * Example using Spark API + Snappy extension to model a Stream as a DataFrame.
+ *
+ * This example can be run either in local mode or can be submitted as a job
+ * to an already running SnappyData cluster.
+ *
+ * To run the job as snappy-job use following command from snappy product home:
+ * {{{
+ * ./bin/snappy-job.sh submit --lead localhost:8090 --app-name AdAnalytics \
+ * --class io.snappydata.adanalytics.SnappyLogAggregator --app-jar \
+ * <path to snappy-poc-1.1.1-assembly.jar>
+ * }}}
+ *
+ * To run the job as a smart connector application use the following command:
+ * {{{
+ * ./bin/spark-submit --class io.snappydata.adanalytics.SnappyLogAggregator \
+ * --conf spark.snappydata.connection=localhost:1527 --master <spark-master-url> \
+ * <path to snappy-poc-1.1.1-assembly.jar>
+ * }}}
+ * Note that for smart connector mode the application UI will be started on 4041 port.
+ */
 object SnappyLogAggregator extends SnappySQLJob with App {
 
   val conf = new SparkConf()
@@ -52,26 +68,23 @@ object SnappyLogAggregator extends SnappySQLJob with App {
 
   runSnappyJob(snappy, ConfigFactory.empty())
 
-  /** Contains the implementation of the Job, Snappy uses this as
-    * an entry point to execute Snappy job
-    */
+  /** Contains the implementation of the Job, Snappy uses this as an entry point to execute
+   * Snappy job
+   */
   override def runSnappyJob(snappy: SnappySession, jobConfig: Config): Any = {
 
     // The volumes are low. Optimize Spark shuffle by reducing the partition count
     snappy.sql("set spark.sql.shuffle.partitions=8")
 
-    import org.apache.spark.sql.streaming.ProcessingTime
-    snappy.sql("drop table if exists sampledAdImpressions")
     snappy.sql("drop table if exists aggrAdImpressions")
 
     snappy.sql("create table aggrAdImpressions(time_stamp timestamp, publisher string," +
       " geo string, avg_bid double, imps long, uniques long) " +
       "using column options(buckets '11')")
-    snappy.sql("CREATE SAMPLE TABLE sampledAdImpressions" +
-      " OPTIONS(qcs 'geo', fraction '0.03', strataReservoirSize '50', baseTable 'aggrAdImpressions')")
 
-    val schema = StructType(Seq(StructField("timestamp", TimestampType), StructField("publisher", StringType),
-      StructField("advertiser", StringType), StructField("website", StringType), StructField("geo", StringType),
+    val schema = StructType(Seq(StructField("timestamp", TimestampType), StructField("publisher",
+      StringType), StructField("advertiser", StringType),
+      StructField("website", StringType), StructField("geo", StringType),
       StructField("bid", DoubleType), StructField("cookie", StringType)))
 
     import snappy.implicits._
@@ -80,24 +93,30 @@ object SnappyLogAggregator extends SnappySQLJob with App {
       .option("kafka.bootstrap.servers", brokerList)
       .option("value.deserializer", classOf[ByteArrayDeserializer].getName)
       .option("startingOffsets", "earliest")
+      // limiting maximum events to be processed in a single batch
       .option("maxOffsetsPerTrigger", 100000)
       .option("subscribe", kafkaTopic)
       .load().select("value").as[Array[Byte]](Encoders.BINARY)
       .mapPartitions(itr => {
+        // Reuse deserializer for each partition which will internally reuse decoder and data object
         val deserializer = new AdImpressionLogAVRODeserializer
         itr.map(data => {
           val adImpressionLog = deserializer.deserialize(data)
-          Row(new java.sql.Timestamp(adImpressionLog.getTimestamp), adImpressionLog.getPublisher.toString,
-            adImpressionLog.getAdvertiser.toString, adImpressionLog.getWebsite.toString,
-            adImpressionLog.getGeo.toString, adImpressionLog.getBid, adImpressionLog.getCookie.toString)
+          Row(new java.sql.Timestamp(adImpressionLog.getTimestamp), adImpressionLog.getPublisher
+            .toString, adImpressionLog.getAdvertiser.toString, adImpressionLog.getWebsite.toString,
+            adImpressionLog.getGeo.toString, adImpressionLog.getBid,
+            adImpressionLog.getCookie.toString)
         })
       })(RowEncoder.apply(schema))
+      // filtering invalid records
       .filter(s"geo != '${Configs.UnknownGeo}'")
 
+    // Aggregating records with
     val windowedDF = df.withColumn("eventTime", $"timestamp".cast("timestamp"))
       .withWatermark("eventTime", "10 seconds")
       .groupBy(window($"eventTime", "1 seconds", "1 seconds"), $"publisher", $"geo")
-      .agg(min("timestamp").alias("timestamp"), avg("bid").alias("avg_bid"), count("geo").alias("imps"),
+      .agg(unix_timestamp(min("timestamp"), "MM-dd-yyyy HH:mm:ss").alias("timestamp"),
+        avg("bid").alias("avg_bid"), count("geo").alias("imps"),
         approx_count_distinct("cookie").alias("uniques"))
       .select("timestamp", "publisher", "geo", "avg_bid", "imps", "uniques")
 
