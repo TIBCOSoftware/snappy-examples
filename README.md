@@ -52,19 +52,18 @@ stream. To accomplish this, SnappyData collocates the store partitions with part
 i.e. a batch of data from the stream in each Spark executor is transformed into a compressed column batch and stored in
 the same JVM, avoiding redundant shuffles (except for HA).
 
-TODO: Need to review this architecture diagram
 ![Architecture Kinda](AdAnalytics_Architecture.png)
 
 
 The incoming AdImpression log is formatted as depicted below.
-
-|timestamp              |publisher  |advertiser  | website  |geo|bid     |cookie   |
-|-----------------------|-----------|------------|----------|---|--------|---------|
-|2016-05-25 16:45:29.027|publisher44|advertiser11|website233|NJ |0.857122|cookie210|                           
-|2016-05-25 16:45:29.027|publisher31|advertiser18|website642|WV |0.211305|cookie985|                           
-|2016-05-25 16:45:29.027|publisher21|advertiser27|website966|ND |0.539119|cookie923|                           
-|2016-05-25 16:45:29.027|publisher34|advertiser11|website284|WV |0.050856|cookie416|                           
-|2016-05-25 16:45:29.027|publisher29|advertiser29|website836|WA |0.896101|cookie781|                           
+                           
+|timestamp              |publisher  |advertiser  |website   |geo|bid                |cookie   |
+|-----------------------|-----------|------------|----------|---|-------------------|---------|
+|2020-02-17 16:37:59.289|publisher24|advertiser5 |website478|NJ |0.6682117005884909 |cookie649|
+|2020-02-17 16:37:59.289|publisher31|advertiser19|website337|NE |0.5697320252959912 |cookie340|
+|2020-02-17 16:37:59.289|publisher27|advertiser14|website364|OK |0.2685715410844016 |cookie536|
+|2020-02-17 16:37:59.289|publisher23|advertiser26|website531|MT |0.7226818935272965 |cookie487|
+|2020-02-17 16:37:59.289|publisher3 |advertiser15|website937|MT |0.48053937420374915|cookie605|
 
 
 We pre-aggregate these logs by publisher and geo, and compute the average bid, the number of impressions and the number
@@ -75,16 +74,15 @@ Some examples of interactive queries:
 - **Impression trends for advertisers over time**
 - **Top ads based on uniques count for each Geo**
 
-//todo[vatsal]: the timestamp millis values should be zero if we are aggregating on the window of 1 second
 So the aggregation will look something like:
-    
-|timestamp               |publisher  |geo | avg_bid          |imps|uniques|
-|------------------------|-----------|----|------------------|----|-------|
-|2016-05-25 16:45:01.026 |publisher10| UT |0.5725387931435979|30  |26     |              
-|2016-05-25 16:44:56.21  |publisher43| VA |0.5682680168342149|22  |20     |              
-|2016-05-25 16:44:59.024 |publisher19| OH |0.5619481767564926|5   |5      |             
-|2016-05-25 16:44:52.985 |publisher11| VA |0.4920346523303594|28  |21     |              
-|2016-05-25 16:44:56.803 |publisher38| WI |0.4585381957119518|40  |31     |
+
+|time_stamp            |publisher  |geo|avg_bid            |imps|uniques|
+|----------------------|-----------|---|-------------------|----|-------|
+|2020-02-17 16:39:28.0 |publisher16|NY |0.4269814055107817 |190 |158    |
+|2020-02-17 16:39:31.0 |publisher30|CT |0.4482890418617008 |19  |19     |
+|2020-02-17 16:39:26.0 |publisher37|HI |0.21539768570303286|2   |2      |
+|2020-02-17 16:39:33.0 |publisher38|ID |0.3639807522416625 |15  |15     |
+|2020-02-17 16:39:27.0 |publisher37|OH |0.381703659839993  |25  |26     |
 
 ### Code highlights
 We implemented the ingestion logic using [Vanilla Spark Structured Streaming](src/main/scala/io/snappydata/adanalytics/SparkLogAggregator.scala)
@@ -156,7 +154,7 @@ val df = snappy.readStream
   .option("kafka.bootstrap.servers", brokerList)
   .option("value.deserializer", classOf[ByteArrayDeserializer].getName)
   .option("startingOffsets", "earliest")
-  .option("maxOffsetsPerTrigger", 10000)
+  .option("maxOffsetsPerTrigger", 100000)
   .option("subscribe", kafkaTopic)
   .load().select("value").as[Array[Byte]](Encoders.BINARY)
   .mapPartitions(itr => {
@@ -204,8 +202,9 @@ snappy.sql("CREATE SAMPLE TABLE sampledAdImpressions" +
 In order to run this example, we need to install the following:
 
 1. [Apache Kafka 2.11-0.10.2.2](https://archive.apache.org/dist/kafka/0.10.2.2/kafka_2.11-0.10.2.2.tgz)  
-TODO[vatsal]: link to enterprise TIBCO ComputeDB here?
-2. [SnappyData 1.1.1 Enterprise Release](). Download the artifact snappydata-1.1.1-bin.tar.gz and Unzip it.
+TODO[vatsal]: link to TIBCO ComputeDB developer/enterprise edition here?
+2. [SnappyData 1.2.0 Enterprise Release](). Download the artifact snappydata-1.1.1-bin.tar.gz and
+ Unzip it.
 The binaries will be inside "snappydata-1.1.1-bin" directory.
 3. JDK 8
 

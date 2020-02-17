@@ -17,20 +17,7 @@
 
 package io.snappydata.adanalytics
 
-import org.apache.spark.sql.types._
-import org.apache.spark.streaming.Seconds
-
 object Configs {
-
-  val snappyMasterURL = "snappydata://localhost:10334"
-
-  val sparkMasterURL = "spark://127.0.0.1:7077"
-
-  val cassandraHost = "127.0.0.1"
-
-  val snappyLocators = "localhost:10334"
-
-  val maxRatePerPartition = 1000
 
   val kafkaTopic = "adImpressionsTopic"
 
@@ -56,17 +43,17 @@ object Configs {
 
   val advertisers = (0 to numAdvertisers).map("advertiser" +)
 
-  val numProducerThreads = 1
+  val numProducerThreads = 32
 
   val UnknownGeo = "un"
 
-  val geos = Seq("AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL",
+  val geos: Seq[String] = Seq("AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL",
     "GA", "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD",
     "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM",
     "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN",
     "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY", UnknownGeo)
 
-  val numGeos = geos.size
+  val numGeos: Int = geos.size
 
   val numWebsites = 999
 
@@ -78,20 +65,5 @@ object Configs {
 
   val numLogsPerThread = 20000000
 
-  val batchDuration = Seconds(1)
-
-  val topics = Set(kafkaTopic)
-
   val maxLogsPerSecPerThread = 5000
-
-  def getAdImpressionSchema: StructType = {
-    StructType(Array(
-      StructField("timestamp", TimestampType, true),
-      StructField("publisher", StringType, true),
-      StructField("advertiser", StringType, true),
-      StructField("website", StringType, true),
-      StructField("geo", StringType, true),
-      StructField("bid", DoubleType, true),
-      StructField("cookie", StringType, true)))
-  }
 }

@@ -37,14 +37,14 @@ import org.apache.spark.{SparkConf, SparkContext}
  * {{{
  * ./bin/snappy-job.sh submit --lead localhost:8090 --app-name AdAnalytics \
  * --class io.snappydata.adanalytics.SnappyLogAggregator --app-jar \
- * <path to snappy-poc-1.1.1-assembly.jar>
+ * <path to snappy poc assembly jar>
  * }}}
  *
  * To run the job as a smart connector application use the following command:
  * {{{
  * ./bin/spark-submit --class io.snappydata.adanalytics.SnappyLogAggregator \
  * --conf spark.snappydata.connection=localhost:1527 --master <spark-master-url> \
- * <path to snappy-poc-1.1.1-assembly.jar>
+ * <path to snappy poc assembly jar>
  * }}}
  * Note that for smart connector mode the application UI will be started on 4041 port.
  */
@@ -52,6 +52,7 @@ object SnappyLogAggregator extends SnappySQLJob with App {
 
   val conf = new SparkConf()
     .setAppName(getClass.getSimpleName)
+    .setMaster("local[*]")
     .set("spark.ui.port", "4041")
     .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
     .registerAvroSchemas(AdImpressionLog.getClassSchema)

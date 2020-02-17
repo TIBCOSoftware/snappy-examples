@@ -30,12 +30,19 @@ import org.apache.spark.streaming.{Seconds, StreamingContext}
 /**
  * Vanilla Spark implementation with no Snappy extensions being used. The aggregated data is
  * written to a kafka topic.
+ *
+ * Following command should be used to submit this job:
+ *
+ * {{{
+ * ./bin/spark-submit --class io.snappydata.adanalytics.SparkLogAggregator \
+ * --master <spark-master-url> <path to snappy poc assembly jar>
+ * }}}
  */
 object SparkLogAggregator extends App {
 
   val sc = new SparkConf()
     .setAppName(getClass.getName)
-    .setMaster("local[*]")
+    .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
   val ssc = new StreamingContext(sc, Seconds(1))
   val schema = StructType(Seq(StructField("timestamp", TimestampType), StructField("publisher", StringType),
     StructField("advertiser", StringType), StructField("website", StringType), StructField("geo", StringType),
