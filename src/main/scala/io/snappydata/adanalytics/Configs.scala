@@ -43,7 +43,7 @@ object Configs {
 
   val advertisers = (0 to numAdvertisers).map("advertiser" +)
 
-  val numProducerThreads = 32
+  val numProducerThreads = 1
 
   val UnknownGeo = "un"
 
