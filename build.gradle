@@ -59,6 +59,11 @@ dependencies {
   compile 'com.opencsv:opencsv:3.3'
 }
 
+sourceSets {
+    test.compileClasspath += configurations.compileOnly
+    test.runtimeClasspath += configurations.compileOnly
+}
+
 task generateAvro(type: com.commercehub.gradle.plugin.avro.GenerateAvroJavaTask) {
   source("src/avro")
   outputDir = file("src/main/java")
