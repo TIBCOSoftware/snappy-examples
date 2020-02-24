@@ -320,6 +320,8 @@ Next, let's find the total uniques for a given ad, grouped by geography:
 SELECT SUM(uniques) AS totalUniques, geo FROM aggrAdImpressions WHERE publisher='publisher11' GROUP BY geo ORDER BY totalUniques DESC LIMIT 20;
 ```
 
+Note: Following instructions will only work with TIBCO ComputeDB distribution and not with Snappydata community distribution.
+ 
 Now that we've seen some standard OLAP queries over the exact data, let's execute the same queries on our sample tables
 using SnappyData's [Approximate Query Processing techinques](https://github.com/SnappyDataInc/snappydata/blob/master/docs/aqp.md).
 In most production situations, the latency difference here would be significant because the volume of data in the exact
