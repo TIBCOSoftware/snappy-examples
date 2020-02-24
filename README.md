@@ -16,7 +16,7 @@
 speeds with commodity infrastructure and far less complexity than today.
 SnappyData fulfills this promise by
 - Enabling streaming, transactions and interactive analytics in a single unifying system rather than stitching different
-solutions—and
+solutions
 - Delivering true interactive speeds via a state-of-the-art approximate query engine that leverages a multitude of
 synopses as well as the full dataset. SnappyData implements this by deeply integrating an in-memory database into
 Apache Spark.
@@ -26,25 +26,19 @@ Here we use a simplified Ad Analytics example, which streams in [AdImpression](h
 logs, pre-aggregating the logs and ingesting into the built-in in-memory columnar store (where the data is stored both
 in 'exact' form as well as a stratified sample).
 We showcase the following aspects of this unified cluster:
-- Simplicity of using the [DataFrame API](http://spark.apache.org/docs/latest/sql-programming-guide.html#dataframes) to
-model streams in spark.
-- The use of Structured Streaming API to pre-aggregate AdImpression logs (it is faster and much more convenient to
-incorporate more complex analytics, rather than using map-reduce).
-- Demonstrate storing the pre-aggregated logs into the SnappyData columnar store with high efficiency. While the store
-itself provides a rich set of features like hybrid row+column store, eager replication, WAN replicas, HA, choice of memory-only, HDFS, native disk persistence, eviction, etc we only work with a column table in this simple example.
-- Run OLAP queries from any SQL client both on the full data set as well as sampled data (showcasing sub-second
-interactive query speeds). The stratified sample allows us to manage an infinitely growing data set at a fraction of the
-cost otherwise required.
+- Simplicity of using the [DataFrame API](http://spark.apache.org/docs/latest/sql-programming-guide.html#dataframes) to model streams in Apache Spark.
+- The use of Structured Streaming API to pre-aggregate AdImpression logs (it is faster and much more convenient to incorporate more complex analytics, rather than using map-reduce).
+- Demonstrate storing the pre-aggregated logs into the SnappyData columnar store with high efficiency. While the store itself provides a rich set of features like hybrid row+column store, eager replication, WAN replicas, high-availability, choice of memory-only, HDFS and native disk persistence, eviction, etc, We only work with a column table in this simple example.
+- Run OLAP queries from any SQL client both on the full data set as well as sampled data (showcasing sub-second interactive query speeds). The stratified sample allows us to manage an infinitely growing data set at a fraction of the cost otherwise required.
 
 ### Ad Impression Analytics use case
 We borrow our use case implementation from this [blog](https://chimpler.wordpress.com/2014/07/01/implementing-a-real-time-data-pipeline-with-spark-streaming/)
 \- We more or less use the same data structure and aggregation logic and we have adapted this code to showcase the
-SnappyData programming model extensions to Spark. We have also kept the native Spark example using structured streaming
-for comparison.
+SnappyData programming model extensions to Spark. For comparison, we are also having the [native Spark example](src/main/scala/io/snappydata/adanalytics/SparkLogAggregator.scala) using structured streaming.
 
 Our architecture is depicted in the figure below.
 
-We consider an adnetwork where adservers log impressions in [Apache Kafka](http://kafka.apache.org/). These impressions
+We consider an adnetwork where AdServers log impressions in [Apache Kafka](http://kafka.apache.org/). These impressions
 are then aggregated using [Spark Structured Streaming](https://spark.apache.org/docs/latest/structured-streaming-programming-guide.html) into the SnappyData Store. External clients connect to the same cluster using JDBC/ODBC and run arbitrary OLAP queries.
 As AdServers can feed logs from many websites and given that each AdImpression log message represents a single Ad viewed
 by a user, one can expect thousands of messages every second. It is crucial that ingestion logic keeps up with the
@@ -208,7 +202,7 @@ TODO[vatsal]: link to TIBCO ComputeDB developer/enterprise edition here?
 The binaries will be inside "snappydata-1.1.1-bin" directory.
 3. JDK 8
 
-To setup kafka cluster, start Zookeeper first from the root kafka folder with default zookeeper.properties:
+To setup Kafka cluster, start Zookeeper first from the root Kafka folder with default zookeeper.properties:
 ```
 bin/zookeeper-server-start.sh config/zookeeper.properties
 ```
@@ -218,7 +212,7 @@ Start one Kafka broker with default properties:
 bin/kafka-server-start.sh config/server.properties
 ```
 
-From the root kafka folder, Create a topic "adImpressionsTopic":
+From the root Kafka folder, Create a topic "adImpressionsTopic":
 ```
 bin/kafka-topics.sh --create --zookeeper localhost:2181 --partitions 8 --topic adImpressionsTopic --replication-factor=1
 ```
@@ -264,7 +258,7 @@ Submit the streaming job to the cluster and start it (consume the stream, aggreg
 
 SnappyData supports "Managed Spark Drivers" by running these in Lead nodes. So, if the driver were to fail, it can
 automatically re-start on a standby node. While the Lead node starts the streaming job, the actual work of parallel
-processing from kafka, etc is done in the SnappyData servers. Servers execute Spark Executors collocated with the data. 
+processing from Apache Kafka, etc is done in the SnappyData servers. Servers execute Spark Executors collocated with the data. 
 
 Start generating and publishing logs to Kafka from the `/snappy-poc/` folder
 ```
