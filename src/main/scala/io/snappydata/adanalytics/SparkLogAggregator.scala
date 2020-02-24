@@ -57,7 +57,6 @@ object SparkLogAggregator extends App {
     .option("kafka.bootstrap.servers", brokerList)
     .option("value.deserializer", classOf[ByteArrayDeserializer].getName)
     .option("startingOffsets", "earliest")
-    .option("maxOffsetsPerTrigger", 100000)
     .option("subscribe", kafkaTopic)
     .load().select("value").as[Array[Byte]](Encoders.BINARY)
     .mapPartitions(itr => {

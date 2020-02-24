@@ -129,17 +129,19 @@ Adservers and generates random [AdImpressionLogs](src/avro/adimpressionlog.avsc)
  Kafka source and ingests data into Snappydata table using [`Snappysink`](https://snappydatainc.github.io/snappydata/howto/use_stream_processing_with_snappydata/#structured-streaming).
 
 ```scala
+
 // The volumes are low. Optimize Spark shuffle by reducing the partition count
 snappy.sql("set spark.sql.shuffle.partitions=8")
 
-import org.apache.spark.sql.streaming.ProcessingTime
 snappy.sql("drop table if exists aggrAdImpressions")
 
 snappy.sql("create table aggrAdImpressions(time_stamp timestamp, publisher string," +
   " geo string, avg_bid double, imps long, uniques long) " +
   "using column options(buckets '11')")
-val schema = StructType(Seq(StructField("timestamp", TimestampType), StructField("publisher", StringType),
-  StructField("advertiser", StringType), StructField("website", StringType), StructField("geo", StringType),
+
+val schema = StructType(Seq(StructField("timestamp", TimestampType), StructField("publisher",
+  StringType), StructField("advertiser", StringType),
+  StructField("website", StringType), StructField("geo", StringType),
   StructField("bid", DoubleType), StructField("cookie", StringType)))
 
 import snappy.implicits._
@@ -148,38 +150,47 @@ val df = snappy.readStream
   .option("kafka.bootstrap.servers", brokerList)
   .option("value.deserializer", classOf[ByteArrayDeserializer].getName)
   .option("startingOffsets", "earliest")
-  .option("maxOffsetsPerTrigger", 100000)
   .option("subscribe", kafkaTopic)
-  .load().select("value").as[Array[Byte]](Encoders.BINARY)
+  .load()
+  // projecting only value column of the Kafka data an using
+  .select("value").as[Array[Byte]](Encoders.BINARY)
   .mapPartitions(itr => {
+    // Reuse deserializer for each partition which will internally reuse decoder and data object
     val deserializer = new AdImpressionLogAVRODeserializer
     itr.map(data => {
+      // deserializing AVRO binary data and formulating Row out of it
       val adImpressionLog = deserializer.deserialize(data)
-      Row(new java.sql.Timestamp(adImpressionLog.getTimestamp), adImpressionLog.getPublisher.toString,
-        adImpressionLog.getAdvertiser.toString, adImpressionLog.getWebsite.toString,
-        adImpressionLog.getGeo.toString, adImpressionLog.getBid, adImpressionLog.getCookie.toString)
+      Row(new java.sql.Timestamp(adImpressionLog.getTimestamp), adImpressionLog.getPublisher
+        .toString, adImpressionLog.getAdvertiser.toString, adImpressionLog.getWebsite.toString,
+        adImpressionLog.getGeo.toString, adImpressionLog.getBid,
+        adImpressionLog.getCookie.toString)
     })
   })(RowEncoder.apply(schema))
+  // filtering invalid records
   .filter(s"geo != '${Configs.UnknownGeo}'")
 
+// Aggregating records with
 val windowedDF = df.withColumn("eventTime", $"timestamp".cast("timestamp"))
   .withWatermark("eventTime", "10 seconds")
-  .groupBy(window($"eventTime", "1 seconds", "1 seconds"), $"timestamp", $"publisher", $"geo")
-  .agg(avg("bid").alias("avg_bid"), count("geo").alias("imps"),
+  .groupBy(window($"eventTime", "1 seconds", "1 seconds"), $"publisher", $"geo")
+  .agg(unix_timestamp(min("timestamp"), "MM-dd-yyyy HH:mm:ss").alias("timestamp"),
+    avg("bid").alias("avg_bid"), count("geo").alias("imps"),
     approx_count_distinct("cookie").alias("uniques"))
   .select("timestamp", "publisher", "geo", "avg_bid", "imps", "uniques")
 
 val logStream = windowedDF
   .writeStream
-  .format("snappysink")
-  .queryName("log_aggregator")
-  .trigger(ProcessingTime("1 seconds"))
-  .option("tableName", "aggrAdImpressions")
+  .format("snappysink")               // using snappysink as output sink
+  .queryName("log_aggregator")        // name of the streaming query
+  .trigger(ProcessingTime("1 seconds"))     // trigger the batch processing every second
+  .option("tableName", "aggrAdImpressions") // target table name where data will be ingested
+  //checkpoint location where the streaming query progress and intermediate aggregation state
+  // is stored. It should be ideally on some HDFS location.
   .option("checkpointLocation", snappyLogAggregatorCheckpointDir)
+  // Only the rows that were updated since the last trigger will be outputted to the sink.
+  // More details about output mode: https://spark.apache.org/docs/2.1.1/structured-streaming-programming-guide.html#output-modes
   .outputMode("update")
   .start
-
-logStream.awaitTermination()
 ```
 
 #### Ingesting into a Sample table
@@ -195,11 +206,9 @@ snappy.sql("CREATE SAMPLE TABLE sampledAdImpressions" +
 ### Let's get this going
 In order to run this example, we need to install the following:
 
-1. [Apache Kafka 2.11-0.10.2.2](https://archive.apache.org/dist/kafka/0.10.2.2/kafka_2.11-0.10.2.2.tgz)  
-TODO[vatsal]: link to TIBCO ComputeDB developer/enterprise edition here?
-2. [SnappyData 1.2.0 Enterprise Release](). Download the artifact snappydata-1.1.1-bin.tar.gz and
- Unzip it.
-The binaries will be inside "snappydata-1.1.1-bin" directory.
+1. [Apache Kafka 2.11-0.10.2.2](https://archive.apache.org/dist/kafka/0.10.2.2/kafka_2.11-0.10.2.2.tgz)
+2. [TIBCO ComputeDB 1.2.0](https://tap.tibco.com/storefront/trialware/tibco-computedb-developer-edition/prod15349.html)
+Or [Snappydata 1.2.0](https://github.com/SnappyDataInc/snappydata/releases/download/v1.2.0/snappydata-1.2.0-bin.tar.gz) 
 3. JDK 8
 
 To setup Kafka cluster, start Zookeeper first from the root Kafka folder with default zookeeper.properties:
@@ -253,8 +262,10 @@ Submit the streaming job to the cluster and start it (consume the stream, aggreg
 > Make sure you copy/paste the SNAPPY_POC_HOME path from above in the command below where indicated
 
 ```
-./bin/snappy-job.sh submit --lead localhost:8090 --app-name AdAnalytics --class io.snappydata.adanalytics.SnappyLogAggregator --app-jar $SNAPPY_POC_HOME/assembly/build/libs/snappy-poc-1.1.1-assembly.jar
+./bin/snappy-job.sh submit --lead localhost:8090 --app-name AdAnalytics --class io.snappydata.adanalytics.SnappyLogAggregator --app-jar $SNAPPY_POC_HOME/assembly/build/libs/snappy-poc-1.2.0-assembly.jar
 ```
+
+8090 is the default port of spark-jobserver which is used to manage snappy jobs.  
 
 SnappyData supports "Managed Spark Drivers" by running these in Lead nodes. So, if the driver were to fail, it can
 automatically re-start on a standby node. While the Lead node starts the streaming job, the actual work of parallel
@@ -265,9 +276,9 @@ Start generating and publishing logs to Kafka from the `/snappy-poc/` folder
 ./gradlew generateAdImpressions
 ```
 
-You can monitor the streaming query processing on the [Structured Streaming UI](http://localhost:5050/structuredstreaming/). It is
-important that our stream processing keeps up with the input rate. So, we should note that the `Processing Rate` keeps
-up with `Input Rate` and `Processing Time` remains less than the trigger interval which is one second.
+You can monitor the streaming query progress on the [Structured Streaming UI](http://localhost:5050/structuredstreaming/). It is
+important that our stream processing keeps up with the input rate. So, we should monitor that the `Processing Rate` keeps
+up with `Input Rate` and `Processing Time` remains less than the trigger interval which is one second. 
 
 ### Next, interact with the data. Fast.
 Now, we can run some interactive analytic queries on the pre-aggregated data. From the root SnappyData folder, enter:
@@ -279,34 +290,34 @@ Now, we can run some interactive analytic queries on the pre-aggregated data. Fr
 Once this loads, connect to your running local cluster with:
 
 ```
-connect client 'localhost:1527';
+CONNECT CLIENT 'localhost:1527';
 ```
 
-Set Spark shuffle partitions low since we don't have a lot of data; you can optionally view the members of the cluster
+Set Spark shuffle partitions to a lower number since we don't have a lot of data; you can optionally view the members of the cluster
 as well:
 
 ```
-set spark.sql.shuffle.partitions=7;
-show members;
+SET spark.sql.shuffle.partitions=8;
+SHOW members;
 ```
 
 Let's do a quick count to make sure we have the ingested data:
 
 ```sql
-select count(*) from aggrAdImpressions;
+SELECT COUNT(*) FROM aggrAdImpressions;
 ```
 
 Now, lets run some OLAP queries on the column table of exact data. First, lets find the top 20 geographies with the most
 ad impressions:
 
 ```sql
-select count(*) AS adCount, geo from aggrAdImpressions group by geo order by adCount desc limit 20;
+SELECT COUNT(*) AS adCount, geo FROM aggrAdImpressions GROUP BY geo ORDER BY adCount DESC LIMIT 20;
 ```
 
 Next, let's find the total uniques for a given ad, grouped by geography:
 
 ```sql
-select sum(uniques) AS totalUniques, geo from aggrAdImpressions where publisher='publisher11' group by geo order by totalUniques desc limit 20;
+SELECT SUM(uniques) AS totalUniques, geo FROM aggrAdImpressions WHERE publisher='publisher11' GROUP BY geo ORDER BY totalUniques DESC LIMIT 20;
 ```
 
 Now that we've seen some standard OLAP queries over the exact data, let's execute the same queries on our sample tables
@@ -316,30 +327,30 @@ table would be much higher than the sample tables. Since this is an example, the
 we are showcasing how easy AQP is to use.
 
 We are asking for an error rate of 20% or below and a confidence interval of 0.95 (note the last two clauses on the query).
-The addition of these last two clauses route the query to the sample table despite the exact table being in the FROM
+The addition of these last two clauses route the query to the sample table despite the base table being in the FROM
 clause. If the error rate exceeds 20% an exception will be produced:
 
 ```sql
-select count(*) AS adCount, geo from aggrAdImpressions group by geo order by adCount desc limit 20 with error 0.20 confidence 0.95 ;
+SELECT COUNT(*) AS adCount, geo FROM aggrAdImpressions GROUP BY geo ORDER BY adCount DESC LIMIT 20 WITH ERROR 0.20 CONFIDENCE 0.95 ;
 ```
 
 And the second query from above:
 
 ```sql
-select sum(uniques) AS totalUniques, geo from aggrAdImpressions where publisher='publisher11' group by geo order by totalUniques desc limit 20 with error 0.20 confidence 0.95 ;
+SELECT SUM(uniques) AS totalUniques, geo FROM aggrAdImpressions WHERE publisher='publisher11' GROUP BY geo ORDER BY totalUniques DESC LIMIT 20 WITH ERROR 0.20 CONFIDENCE 0.95 ;
 ```
 
 Note that you can still query the sample table without specifying error and confidence clauses by simply specifying the
 sample table in the FROM clause:
 
 ```sql
-select sum(uniques) AS totalUniques, geo from sampledAdImpressions where publisher='publisher11' group by geo order by totalUniques desc;
+SELECT SUM(uniques) AS totalUniques, geo FROM sampledAdImpressions WHERE publisher='publisher11' GROUP BY geo ORDER BY totalUniques DESC;
 ```
 
 Now, we check the size of the sample table:
 
 ```sql
-select count(*) as sample_cnt from sampledAdImpressions;
+SELECT COUNT(*) AS sample_cnt FROM sampledAdImpressions;
 ```
 
 Finally, stop the SnappyData cluster with:

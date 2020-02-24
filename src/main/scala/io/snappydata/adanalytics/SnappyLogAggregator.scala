@@ -94,14 +94,15 @@ object SnappyLogAggregator extends SnappySQLJob with App {
       .option("kafka.bootstrap.servers", brokerList)
       .option("value.deserializer", classOf[ByteArrayDeserializer].getName)
       .option("startingOffsets", "earliest")
-      // limiting maximum events to be processed in a single batch
-      .option("maxOffsetsPerTrigger", 100000)
       .option("subscribe", kafkaTopic)
-      .load().select("value").as[Array[Byte]](Encoders.BINARY)
+      .load()
+      // projecting only value column of the Kafka data an using
+      .select("value").as[Array[Byte]](Encoders.BINARY)
       .mapPartitions(itr => {
         // Reuse deserializer for each partition which will internally reuse decoder and data object
         val deserializer = new AdImpressionLogAVRODeserializer
         itr.map(data => {
+          // deserializing AVRO binary data and formulating Row out of it
           val adImpressionLog = deserializer.deserialize(data)
           Row(new java.sql.Timestamp(adImpressionLog.getTimestamp), adImpressionLog.getPublisher
             .toString, adImpressionLog.getAdvertiser.toString, adImpressionLog.getWebsite.toString,
@@ -123,11 +124,15 @@ object SnappyLogAggregator extends SnappySQLJob with App {
 
     val logStream = windowedDF
       .writeStream
-      .format("snappysink")
-      .queryName("log_aggregator")
-      .trigger(ProcessingTime("1 seconds"))
-      .option("tableName", "aggrAdImpressions")
+      .format("snappysink")               // using snappysink as output sink
+      .queryName("log_aggregator")    // name of the streaming query
+      .trigger(ProcessingTime("1 seconds"))     // trigger the batch processing every second
+      .option("tableName", "aggrAdImpressions") // target table name where data will be ingested
+      //checkpoint location where the streaming query progress and intermediate aggregation state
+      // is stored. It should be ideally on some HDFS location.
       .option("checkpointLocation", snappyLogAggregatorCheckpointDir)
+      // Only the rows that were updated since the last trigger will be outputted to the sink.
+      // More details about output mode: https://spark.apache.org/docs/2.1.1/structured-streaming-programming-guide.html#output-modes
       .outputMode("update")
       .start
 
