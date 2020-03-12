@@ -218,10 +218,10 @@ bin/kafka-topics.sh --create --zookeeper localhost:2181 --partitions 8 --topic a
 
 Checkout the Ad analytics example
 ```
-git clone https://github.com/SnappyDataInc/snappy-poc.git
+git clone https://github.com/SnappyDataInc/snappy-examples.git
 ```
 
-Next from the checkout `/snappy-poc/` directory, build the example
+Next from the checkout `/snappy-examples/` directory, build the example
 ```
 -- Build and create a jar having all dependencies in assembly/build/libs
 ./gradlew assemble
@@ -234,11 +234,11 @@ Goto the SnappyData product install home directory.
 In conf subdirectory, create file "spark-env.sh" (copy spark-env.sh.template) and add this line ...
 
 ```
-SPARK_DIST_CLASSPATH=<snappy_poc_home>/assembly/build/libs/snappy-poc-1.1.1-assembly.jar
+SPARK_DIST_CLASSPATH=<snappy_poc_home>/assembly/build/libs/snappy-examples-1.2.0-assembly.jar
 ```
-> Make sure you set the `snappy_poc_home` directory appropriately above
+> Make sure you set the `snappy_examples_home` directory appropriately above
 
-Leave this file open as you will copy/paste the path for `snappy_poc_home` shortly.
+Leave this file open as you will copy/paste the path for `snappy_examples_home` shortly.
 
 Start SnappyData cluster using following command from installation directory. 
 
@@ -252,7 +252,7 @@ Submit the streaming job to the cluster and start it (consume the stream, aggreg
 > Make sure you copy/paste the SNAPPY_POC_HOME path from above in the command below where indicated
 
 ```
-./bin/snappy-job.sh submit --lead localhost:8090 --app-name AdAnalytics --class io.snappydata.adanalytics.SnappyLogAggregator --app-jar $SNAPPY_POC_HOME/assembly/build/libs/snappy-poc-1.2.0-assembly.jar
+./bin/snappy-job.sh submit --lead localhost:8090 --app-name AdAnalytics --class io.snappydata.adanalytics.SnappyLogAggregator --app-jar $SNAPPY_EXAMPLES_HOME/assembly/build/libs/snappy-examples-1.2.0-assembly.jar
 ```
 
 8090 is the default port of spark-jobserver which is used to manage snappy jobs.  
@@ -261,7 +261,7 @@ SnappyData supports "Managed Spark Drivers" by running these in Lead nodes. So, 
 automatically re-start on a standby node. While the Lead node starts the streaming job, the actual work of parallel
 processing from Apache Kafka, etc is done in the SnappyData servers. Servers execute Spark Executors collocated with the data. 
 
-Start generating and publishing logs to Kafka from the `/snappy-poc/` folder
+Start generating and publishing logs to Kafka from the `/snappy-examples/` folder
 ```
 ./gradlew generateAdImpressions
 ```
@@ -372,7 +372,7 @@ store data in column and sample tables and interactively query data. All in a si
 
 [SnappyData Docs](http://snappydatainc.github.io/snappydata/)
 
-[This Example Source](https://github.com/SnappyDataInc/snappy-poc)
+[This Example Source](https://github.com/SnappyDataInc/snappy-examples)
 
 [SnappyData Technical Paper](http://www.snappydata.io/snappy-industrial)
 
