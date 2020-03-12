@@ -193,16 +193,6 @@ val logStream = windowedDF
   .start
 ```
 
-#### Ingesting into a Sample table
-Finally, create a sample table that ingests from the column table specified above. This is the table that approximate
-queries will execute over. Here we create a query column set on the 'geo' column, specify how large of a sample we want
-relative to the column table (3%) and specify which table to ingest from:
-
-```scala
-snappy.sql("CREATE SAMPLE TABLE sampledAdImpressions" + 
-" OPTIONS(qcs 'geo', fraction '0.03', strataReservoirSize '50', baseTable 'aggrAdImpressions')")
-```
-
 ### Let's get this going
 In order to run this example, we need to install the following:
 
@@ -284,7 +274,7 @@ up with `Input Rate` and `Processing Time` remains less than the trigger interva
 Now, we can run some interactive analytic queries on the pre-aggregated data. From the root SnappyData folder, enter:
 
 ```
-./bin/snappy-shell
+./bin/snappy-sql
 ```
 
 Once this loads, connect to your running local cluster with:
@@ -323,10 +313,18 @@ SELECT SUM(uniques) AS totalUniques, geo FROM aggrAdImpressions WHERE publisher=
 Note: Following instructions will only work with TIBCO ComputeDB distribution and not with Snappydata community distribution.
  
 Now that we've seen some standard OLAP queries over the exact data, let's execute the same queries on our sample tables
-using SnappyData's [Approximate Query Processing techinques](https://github.com/SnappyDataInc/snappydata/blob/master/docs/aqp.md).
+using SnappyData's [Approximate Query Processing techniques](https://github.com/SnappyDataInc/snappydata/blob/master/docs/aqp.md).
 In most production situations, the latency difference here would be significant because the volume of data in the exact
 table would be much higher than the sample tables. Since this is an example, there will not be a significant difference;
 we are showcasing how easy AQP is to use.
+
+Create a sample table that ingests from the column table specified above. This is the table that approximate
+queries will execute over. Here we create a query column set on the 'geo' column, specify how large of a sample we want
+relative to the column table (3%) and specify which table to ingest from:
+
+```sql
+CREATE SAMPLE TABLE sampledAdImpressions OPTIONS(qcs 'geo', fraction '0.03', strataReservoirSize '50', baseTable 'aggrAdImpressions');
+```
 
 We are asking for an error rate of 20% or below and a confidence interval of 0.95 (note the last two clauses on the query).
 The addition of these last two clauses route the query to the sample table despite the base table being in the FROM
