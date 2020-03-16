@@ -61,7 +61,7 @@ object SparkLogAggregator extends App {
 
   // Group by on sliding window of 1 second
   val windowedDF = df.withColumn("eventTime", $"timestamp".cast("timestamp"))
-    .withWatermark("eventTime", "10 seconds")
+    .withWatermark("eventTime", "0 seconds")
     .groupBy(window($"eventTime", "1 seconds", "1 seconds"), $"publisher", $"geo")
     .agg(min("timestamp").alias("timestamp"), avg("bid").alias("avg_bid"), count("geo").alias
     ("imps"), approx_count_distinct("cookie").alias("uniques"))

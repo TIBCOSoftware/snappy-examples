@@ -171,7 +171,7 @@ val df = snappy.readStream
 
 // Aggregating records with
 val windowedDF = df.withColumn("eventTime", $"timestamp".cast("timestamp"))
-  .withWatermark("eventTime", "10 seconds")
+  .withWatermark("eventTime", "0 seconds")
   .groupBy(window($"eventTime", "1 seconds", "1 seconds"), $"publisher", $"geo")
   .agg(unix_timestamp(min("timestamp"), "MM-dd-yyyy HH:mm:ss").alias("timestamp"),
     avg("bid").alias("avg_bid"), count("geo").alias("imps"),

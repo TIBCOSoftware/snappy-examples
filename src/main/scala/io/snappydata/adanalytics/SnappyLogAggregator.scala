@@ -72,8 +72,8 @@ object SnappyLogAggregator extends SnappySQLJob with App {
       " geo string, avg_bid double, imps long, uniques long) " +
       "using column options(buckets '11')")
 
-    val schema = StructType(Seq(StructField("timestamp", TimestampType), StructField("publisher",
-      StringType), StructField("advertiser", StringType),
+    val schema = StructType(Seq(StructField("timestamp", TimestampType),
+      StructField("publisher", StringType), StructField("advertiser", StringType),
       StructField("website", StringType), StructField("geo", StringType),
       StructField("bid", DoubleType), StructField("cookie", StringType)))
 
@@ -104,7 +104,7 @@ object SnappyLogAggregator extends SnappySQLJob with App {
 
     // Aggregating records with
     val windowedDF = df.withColumn("eventTime", $"timestamp".cast("timestamp"))
-      .withWatermark("eventTime", "10 seconds")
+      .withWatermark("eventTime", "0 seconds")
       .groupBy(window($"eventTime", "1 seconds", "1 seconds"), $"publisher", $"geo")
       .agg(unix_timestamp(min("timestamp"), "MM-dd-yyyy HH:mm:ss").alias("timestamp"),
         avg("bid").alias("avg_bid"), count("geo").alias("imps"),
