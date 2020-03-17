@@ -1,12 +1,9 @@
 apply plugin: 'com.github.johnrengelman.shadow'
 
-archivesBaseName = 'snappy-poc'
+archivesBaseName = 'snappy-examples'
 
 dependencies {
   compile rootProject
-  compile project(':spark-memsql')
-  compile project(':spark-cassandra')
-  compile project(':rabbitmq-snappy')
 }
 
 shadowJar {
