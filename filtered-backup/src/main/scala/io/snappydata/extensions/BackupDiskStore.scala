@@ -90,7 +90,7 @@ object BackupDiskStore extends SnappySQLJob with GetFunctionMembers with Logging
     FlushToDiskRequest.send(dm, allMembers)
     try {
       val prepareBackup = new PrepareFilteredBackupFunction
-      val existingDataStoreList = FunctionUtils.onMembers(dm.getSystem, this, true)
+      val existingDataStoreList = FunctionUtils.onMembers(dm.getSystem, this, false)
           .withArgs(Array(includes, excludes)).execute(prepareBackup)
           .getResult.asInstanceOf[java.util.List[(DistributedMember, JSet[PersistentID])]]
       // add self to backup list for disk store meta files

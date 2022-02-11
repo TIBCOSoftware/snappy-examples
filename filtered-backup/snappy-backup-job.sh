@@ -1,6 +1,11 @@
 #!/bin/sh -e
 
-if [ -z "$SNAPPY_JOB_SCRIPT" ]; then
+if [ -n "$SNAPPY_JOB_SCRIPT" ]; then
+  if ! [ -x "$SNAPPY_JOB_SCRIPT" ]; then
+    echo "SNAPPY_JOB_SCRIPT=$SNAPPY_JOB_SCRIPT does not exist or cannot be executed."
+    exit 1
+  fi
+else
   if type snappy-job.sh 2>/dev/null >/dev/null; then
     SNAPPY_JOB_SCRIPT="snappy-job.sh"
   elif [ -x "./snappy-job.sh" ]; then
