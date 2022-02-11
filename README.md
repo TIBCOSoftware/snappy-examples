@@ -18,6 +18,8 @@
 - Enabling streaming, transactions and interactive analytics in a single unifying system rather than stitching different solutions—and
 - Delivering true interactive speeds via a state-of-the-art approximate query engine that leverages a multitude of synopses as well as the full dataset. SnappyData implements this by deeply integrating an in-memory database into Apache Spark.
 
+One out-of-place "filtered-backup" project has been added separately that adds a job which allows for a backup with exclusion/inclusion patterns for disk stores to exclude/include -- see the README.txt in that directory.
+
 ### Purpose
 Here we use a simplified Ad Analytics example, which streams in [AdImpression](https://en.wikipedia.org/wiki/Impression_(online_media)) logs, pre-aggregating the logs and ingesting into the built-in in-memory columnar store (where the data is stored both in 'exact' form as well as a stratified sample).
 We showcase the following aspects of this unified cluster:
