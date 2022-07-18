@@ -50,9 +50,12 @@ import com.gemstone.gemfire.internal.cache.persistence.RestoreScript;
 import com.gemstone.gemfire.internal.i18n.LocalizedStrings;
 import com.pivotal.gemfirexd.internal.engine.GfxdConstants;
 import com.pivotal.gemfirexd.internal.engine.Misc;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class FilteredBackupManager extends BackupManager {
+
+  static final Logger logger = LoggerFactory.getLogger(FilteredBackupManager.class);
 
   private final GemFireCacheImpl gfCache;
   private final Pattern includePattern;
@@ -81,7 +84,7 @@ public class FilteredBackupManager extends BackupManager {
     if (!backupManager.compareAndSet(null, manager)) {
       throw new IOException("Backup already in progress");
     }
-    LoggerFactory.getLogger(FilteredBackupManager.class).warn("SW: set backup manager as " + cache.getBackupManager());
+    logger.info("Set the backup manager as " + cache.getBackupManager());
     manager.start();
     return manager;
   }
